@@ -22,29 +22,82 @@ bibliography: bibliography.bib
 require(knitr)
 library(captioner)
 library(rsofun)
+load_dependencies_rsofun()
 tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
 fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
 systr <- "''"    # for Mac
-rootdir <- rprojroot::find_rstudio_root_file()
-knitr::opts_knit$set( root.dir = rprojroot::find_rstudio_root_file() ) # does not work properly
 ```
 
 # Evaluation of GPP against FLUXNET data
 
 ## Evaluation settings
 
-Load settings and functions defined outside (e.g. as shown in `vignette_rsofun.Rmd`).
+For site-scale simulations the `rsofun` package requires a meta information file. Create this here for FLUXNET 2015 Tier 1 sites (their meta info is provided as a public variable by the package).
+```{r}
+write_csv( metainfo_Tier1_sites_kgclimate_fluxnet2015, path = "./ext/siteinfo_fluxnet2015.csv" )
+```
+
+Define settings.
 ```{r message=FALSE}
-load( "data/settings_sims_sitescale.Rdata" )
-load( "data/settings_input_sitescale.Rdata" )
-load( "data/setup_sofun_sitescale.Rdata" )
+# load( "data/settings_sims_sitescale.Rdata" )
+# load( "data/settings_input_sitescale.Rdata" )
+# load( "data/setup_sofun_sitescale.Rdata" )
+
+settings_sims_sitescale <- list(
+  path_siteinfo   = "./ext/siteinfo_fluxnet2015.csv",
+  ensemble        = TRUE,
+  setup           = "site",
+  name            = "fluxnet2015",
+  dir_sofun       = "~/sofun/trunk/",
+  path_output     = "~/sofun/output_fluxnet2015_sofun/s24/",
+  path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s24/",
+  path_input      = "~/sofun/input_fluxnet2015_sofun_TEST/",
+  grid            = NA,
+  implementation  = "fortran",
+  in_ppfd         = TRUE,
+  in_netrad       = FALSE,
+  recycle         = 1,
+  spinupyears     = 10,
+  calibvars       = c("gpp"),
+  soilmstress     = TRUE,
+  tempstress      = TRUE,
+  loutdgpp        = TRUE,
+  loutdwcont      = TRUE,
+  loutdaet        = TRUE,
+  loutdpet        = TRUE,
+  loutdalpha      = TRUE
+  )
+
+settings_input_sitescale <-  list(
+  data                     = NA,
+  temperature              = "fluxnet2015",
+  precipitation            = "fluxnet2015",
+  vpd                      = "fluxnet2015",
+  ppfd                     = "fluxnet2015",
+  netrad                   = NA,
+  cloudcover               = "cru",
+  path_watch_wfdei         = "~/data/watch_wfdei/",
+  path_cru                 = "~/data/cru/ts_4.01/",
+  path_MODIS_EVI_MOD13Q1   = "~/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
+  path_MODIS_FPAR_MCD15A3H = "~/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
+  path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
+  path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  get_from_remote          = FALSE
+  )
+
+setup_sofun_sitescale <- list(
+  model      = "pmodel",
+  dir        = "~/sofun/trunk",
+  do_compile = FALSE,
+  simsuite   = FALSE
+  )
 ```
 
 Define common model evaluation settings as a list.
-```{r, eval=FALSE, message=FALSE}
-mylist <- readr::read_csv("my_external_stuff/myselect_fluxnet2015.csv") %>% dplyr::filter( use==1 ) %>% dplyr::select( -use ) %>% unlist()
+```{r, message=FALSE}
+mylist <- readr::read_csv("ext/myselect_fluxnet2015.csv") %>% dplyr::filter( use==1 ) %>% dplyr::select( -use ) %>% unlist()
 settings_eval <- list(
-  sitenames = dplyr::filter(siteinfo$light, c4 %in% c(FALSE, NA) )$mysitename,
+  sitenames = dplyr::filter( metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) )$sitename,
   sitenames_siteplots = mylist,
   agg = 5,
   path_fluxnet2015_d = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
@@ -95,7 +148,7 @@ settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input_sitescale$splined_fapar = TRUE
 
 ## run the model with these parameters and read output into mod_RED
-if (!file.exists("tmpdir/mod_RED.Rdata")){
+if (!file.exists("data/mod_RED.Rdata")){
 
   settings_sims_sitescale <- prepare_setup_sofun( 
     settings = settings_sims_sitescale, 
@@ -103,26 +156,25 @@ if (!file.exists("tmpdir/mod_RED.Rdata")){
     )
 
   ## Prepare and save input data for later use
-  inputdata_FPATspl <- prepare_input_sofun( 
+  inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input_sitescale, 
     settings_sims = settings_sims_sitescale, 
-    return_data = TRUE, 
-    overwrite_climate = FALSE, 
-    overwrite_fapar = TRUE, 
+    return_data = FALSE, 
+    overwrite_csv_fapar = TRUE, 
     verbose = TRUE
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "tmpdir/params_opt_RED.csv" )
+  params_opt <- readr::read_csv( "results_calib/params_opt_RED.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   mod_RED <- runread_sofun( 
     settings = settings_sims_sitescale, 
     setup = setup_sofun_sitescale 
     )
-  save( mod_RED, file = "tmpdir/mod_RED.Rdata" )
+  save( mod_RED, file = "data/mod_RED.Rdata" )
 } else {
-  load("tmpdir/mod_RED.Rdata")
+  load("data/mod_RED.Rdata")
 }
 
 ## get sites for which no model output is available and overwrite settings_eval$sitenames
@@ -133,25 +185,25 @@ settings_eval$sitenames <- settings_eval$sitenames[which(!(settings_eval$sitenam
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("tmpdir/obs_eval_NT.Rdata")){
+if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims_sitescale, overwrite = TRUE )
-  save( obs_eval_NT, file = "tmpdir/obs_eval_NT.Rdata")
+  save( obs_eval_NT, file = "data/obs_eval_NT.Rdata")
 } else {
-  load("tmpdir/obs_eval_NT.Rdata")
+  load("data/obs_eval_NT.Rdata")
 }
 
 ## evaluate RED simulations
-if (!file.exists("tmpdir/out_eval_RED.Rdata")){
+if (!file.exists("data/out_eval_RED.Rdata")){
   out_eval_RED <- eval_sofun( mod_RED, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_NT, overwrite = TRUE )
-  save( out_eval_RED, file = "tmpdir/out_eval_RED.Rdata" )
+  save( out_eval_RED, file = "data/out_eval_RED.Rdata" )
 } else {
-  load("tmpdir/out_eval_RED.Rdata")
+  load("data/out_eval_RED.Rdata")
 }
 
 row_rsqtable_RED <- bind_cols( Setup = "RED", getrow_statstable( out_eval_RED, stat = "rsq" ) )
 
 ## Plot mod-vs-obs for daily values
-# if (!exists("out_eval_RED")) load("tmpdir/out_eval_RED.Rdata")
+# if (!exists("out_eval_RED")) load("data/out_eval_RED.Rdata")
 # modobs_ddf_RED <- plot_modobs_daily( out_eval_RED$data$ddf, subtitle = "RED, FPARspl, NT", dir = "./fig", makepdf = TRUE )
 ```
 
@@ -171,35 +223,33 @@ settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input_sitescale$splined_fapar = TRUE
 
 ## run the model with these parameters and read output into mod_FULL
-if (!file.exists("tmpdir/mod_FULL.Rdata")){
+if (!file.exists("data/mod_FULL.Rdata")){
 
   settings_sims_sitescale <- prepare_setup_sofun(
     settings = settings_sims_sitescale, 
-    calibvars = c(),
     write_paramfils = TRUE 
     )
 
   # Prepare and save input data for later use - THE SAME AS ABOVE
-  inputdata_FPATspl <- prepare_input_sofun( 
+  inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input_sitescale, 
     settings_sims = settings_sims_sitescale, 
-    return_data = TRUE, 
-    overwrite_climate = FALSE, 
-    overwrite_fapar = TRUE, 
+    return_data = FALSE, 
+    overwrite_csv_fapar = TRUE, 
     verbose = TRUE
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "tmpdir/params_opt_FULL.csv" )
+  params_opt <- readr::read_csv( "results_calib/params_opt_FULL.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   mod_FULL <- runread_sofun( 
     settings = settings_sims_sitescale, 
     setup = setup_sofun_sitescale 
     )
-  save( mod_FULL, file = "tmpdir/mod_FULL.Rdata" )
+  save( mod_FULL, file = "data/mod_FULL.Rdata" )
 } else {
-  load("tmpdir/mod_FULL.Rdata")
+  load("data/mod_FULL.Rdata")
 }
 
 ## get sites for which no model output is available and overwrite settings_eval$sitenames
@@ -210,19 +260,19 @@ settings_eval$sitenames <- settings_eval$sitenames[which(!(settings_eval$sitenam
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 
 # get observational data separately and save since it's the same for multiple evaluations - THE SAME AS ABOVE
-if (!file.exists("tmpdir/obs_eval_NT.Rdata")){
+if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims_sitescale, overwrite = TRUE )
-  save( obs_eval_NT, file = "tmpdir/obs_eval_NT.Rdata")
+  save( obs_eval_NT, file = "data/obs_eval_NT.Rdata")
 } else {
-  load("tmpdir/obs_eval_NT.Rdata")
+  load("data/obs_eval_NT.Rdata")
 }
 
 ## evaluate FULL simulations
-if (!file.exists("tmpdir/out_eval_FULL.Rdata")){
+if (!file.exists("data/out_eval_FULL.Rdata")){
   out_eval_FULL <- eval_sofun( mod_FULL, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_NT, overwrite = TRUE )
-  save( out_eval_FULL, file = "tmpdir/out_eval_FULL.Rdata" )
+  save( out_eval_FULL, file = "data/out_eval_FULL.Rdata" )
 } else {
-  load("tmpdir/out_eval_FULL.Rdata")
+  load("data/out_eval_FULL.Rdata")
 }
 
 row_rsqtable_FULL <- bind_cols( Setup = "FULL", getrow_statstable( out_eval_FULL, stat = "rsq" ) )
@@ -238,11 +288,11 @@ $$
 LUE is a constant and is calibrated, given GPP data (here based on the nighttime decomposition method). fAPAR is splined MODIS FPAR MCD15A3H.
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-if (!file.exists("tmpdir/obs_eval_NT.Rdata")){
+if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims_sitescale, overwrite = TRUE )
-  save( obs_eval_NT, file = "tmpdir/obs_eval_NT.Rdata")
+  save( obs_eval_NT, file = "data/obs_eval_NT.Rdata")
 } else {
-  load("tmpdir/obs_eval_NT.Rdata")
+  load("data/obs_eval_NT.Rdata")
 }
 mod_NULL <- obs_eval_NT$ddf %>% 
             dplyr::select( sitename, date, gpp_obs, ppfd_fluxnet2015, fapar ) %>% 
@@ -265,11 +315,11 @@ mod_NULL$daily <- tmp
 rm("tmp")
 
 ## evaluate NULL simulations
-if (!file.exists("tmpdir/out_eval_NULL.Rdata")){
+if (!file.exists("data/out_eval_NULL.Rdata")){
   out_eval_NULL <- eval_sofun( mod_NULL, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_NT, overwrite = TRUE )
-  save( out_eval_NULL, file = "tmpdir/out_eval_NULL.Rdata" )
+  save( out_eval_NULL, file = "data/out_eval_NULL.Rdata" )
 } else {
-  load("tmpdir/out_eval_NULL.Rdata")
+  load("data/out_eval_NULL.Rdata")
 }
 
 row_rsqtable_NULL <- bind_cols( Setup = "NULL", getrow_statstable( out_eval_NULL, stat = "rsq" ) )
@@ -292,7 +342,7 @@ add_gpp_mod <- function( data ){
 sum_NULLpft <-  obs_eval_NT$ddf %>% 
                 dplyr::select( sitename, date, gpp_obs, ppfd_fluxnet2015, fapar ) %>% 
                 mutate( apar = ppfd_fluxnet2015 * fapar, gpp_obs = ifelse( date < "2000-02-18", NA, gpp_obs ) ) %>%
-                left_join( dplyr::rename( dplyr::select( siteinfo$light, mysitename, classid ), sitename = mysitename ), by = "sitename" ) %>%
+                left_join( dplyr::rename( dplyr::select( metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename, classid )), by = "sitename" ) %>%
                 group_by( classid ) %>%
                 nest() %>%
                 mutate( nobs = purrr::map( data, ~sum(!is.na( .$gpp_obs )  ) ) ) %>%
@@ -319,11 +369,11 @@ mod_NULLpft$daily <- tmp
 rm("tmp")
 
 ## evaluate NULL simulations
-if (!file.exists("tmpdir/out_eval_NULLpft.Rdata")){
+if (!file.exists("data/out_eval_NULLpft.Rdata")){
   out_eval_NULLpft <- eval_sofun( mod_NULLpft, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_NT, overwrite = TRUE )
-  save( out_eval_NULLpft, file = "tmpdir/out_eval_NULLpft.Rdata" )
+  save( out_eval_NULLpft, file = "data/out_eval_NULLpft.Rdata" )
 } else {
-  load("tmpdir/out_eval_NULLpft.Rdata")
+  load("data/out_eval_NULLpft.Rdata")
 }
 
 row_rsqtable_NULLpft <- bind_cols( Setup = "NULLpft", getrow_statstable( out_eval_NULLpft, stat = "rsq" ) )
@@ -344,7 +394,7 @@ settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input_sitescale$splined_fapar = FALSE
 
 ## run the model with these parameters and read output into mod_RED_FPARitp
-if (!file.exists("tmpdir/mod_RED_FPARitp.Rdata")){
+if (!file.exists("data/mod_RED_FPARitp.Rdata")){
 
   settings_sims_sitescale <- prepare_setup_sofun( 
     settings = settings_sims_sitescale, 
@@ -356,22 +406,21 @@ if (!file.exists("tmpdir/mod_RED_FPARitp.Rdata")){
     settings_input = settings_input_sitescale, 
     settings_sims = settings_sims_sitescale, 
     return_data = FALSE, 
-    overwrite_climate = FALSE, 
-    overwrite_fapar = TRUE, 
+    overwrite_csv_fapar = TRUE, 
     verbose = TRUE
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "tmpdir/params_opt_RED_FPARitp.csv" )
+  params_opt <- readr::read_csv( "results_calib/params_opt_RED_FPARitp.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   mod_RED_FPARitp <- runread_sofun( 
     settings = settings_sims_sitescale, 
     setup = setup_sofun_sitescale 
     )
-  save( mod_RED_FPARitp, file = "tmpdir/mod_RED_FPARitp.Rdata" )
+  save( mod_RED_FPARitp, file = "data/mod_RED_FPARitp.Rdata" )
 } else {
-  load("tmpdir/mod_RED_FPARitp.Rdata")
+  load("data/mod_RED_FPARitp.Rdata")
 }
 
 ## get sites for which no model output is available and overwrite settings_eval$sitenames
@@ -382,19 +431,19 @@ settings_eval$sitenames <- settings_eval$sitenames[which(!(settings_eval$sitenam
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("tmpdir/obs_eval_NT.Rdata")){
+if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims_sitescale, overwrite = TRUE )
-  save( obs_eval_NT, file = "tmpdir/obs_eval_NT.Rdata")
+  save( obs_eval_NT, file = "data/obs_eval_NT.Rdata")
 } else {
-  load("tmpdir/obs_eval_NT.Rdata")
+  load("data/obs_eval_NT.Rdata")
 }
 
 ## evaluate RED_FPARitp simulations
-if (!file.exists("tmpdir/out_eval_RED_FPARitp.Rdata")){
+if (!file.exists("data/out_eval_RED_FPARitp.Rdata")){
   out_eval_RED_FPARitp <- eval_sofun( mod_RED_FPARitp, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_NT, overwrite = TRUE )
-  save( out_eval_RED_FPARitp, file = "tmpdir/out_eval_RED_FPARitp.Rdata" )
+  save( out_eval_RED_FPARitp, file = "data/out_eval_RED_FPARitp.Rdata" )
 } else {
-  load("tmpdir/out_eval_RED_FPARitp.Rdata")
+  load("data/out_eval_RED_FPARitp.Rdata")
 }
 
 row_rsqtable_RED_FPARitp <- bind_cols( Setup = "RED_FPARitp", getrow_statstable( out_eval_RED_FPARitp, stat = "rsq" ) )
@@ -415,11 +464,10 @@ settings_input_sitescale$fapar = "MODIS_EVI_MOD13Q1"
 settings_input_sitescale$splined_fapar = FALSE
 
 ## run the model with these parameters and read output into mod_RED_EVI
-if (!file.exists("tmpdir/mod_RED_EVI.Rdata")){
+if (!file.exists("data/mod_RED_EVI.Rdata")){
 
   settings_sims_sitescale <- prepare_setup_sofun( 
     settings = settings_sims_sitescale, 
-    calibvars = c(),
     write_paramfils = TRUE 
     )
 
@@ -428,13 +476,12 @@ if (!file.exists("tmpdir/mod_RED_EVI.Rdata")){
     settings_input = settings_input_sitescale, 
     settings_sims = settings_sims_sitescale, 
     return_data = FALSE, 
-    overwrite_climate = FALSE, 
-    overwrite_fapar = TRUE, 
+    overwrite_csv_fapar = TRUE, 
     verbose = FALSE
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "tmpdir/params_opt_RED_EVI.csv" )
+  params_opt <- readr::read_csv( "results_calib/params_opt_RED_EVI.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   settings_sims_sitescale$loutdrd     = FALSE
@@ -443,9 +490,9 @@ if (!file.exists("tmpdir/mod_RED_EVI.Rdata")){
     settings = settings_sims_sitescale, 
     setup = setup_sofun_sitescale 
     )
-  save( mod_RED_EVI, file = "tmpdir/mod_RED_EVI.Rdata" )
+  save( mod_RED_EVI, file = "data/mod_RED_EVI.Rdata" )
 } else {
-  load("tmpdir/mod_RED_EVI.Rdata")
+  load("data/mod_RED_EVI.Rdata")
 }
 
 ## get sites for which no model output is available and overwrite settings_eval$sitenames
@@ -456,19 +503,19 @@ settings_eval$sitenames <- settings_eval$sitenames[which(!(settings_eval$sitenam
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("tmpdir/obs_eval_NT.Rdata")){
+if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims_sitescale, overwrite = TRUE )
-  save( obs_eval_NT, file = "tmpdir/obs_eval_NT.Rdata")
+  save( obs_eval_NT, file = "data/obs_eval_NT.Rdata")
 } else {
-  load("tmpdir/obs_eval_NT.Rdata")
+  load("data/obs_eval_NT.Rdata")
 }
 
 ## evaluate RED_EVI simulations
-if (!file.exists("tmpdir/out_eval_RED_EVI.Rdata")){
+if (!file.exists("data/out_eval_RED_EVI.Rdata")){
   out_eval_RED_EVI <- eval_sofun( mod_RED_EVI, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_NT, overwrite = TRUE )
-  save( out_eval_RED_EVI, file = "tmpdir/out_eval_RED_EVI.Rdata" )
+  save( out_eval_RED_EVI, file = "data/out_eval_RED_EVI.Rdata" )
 } else {
-  load("tmpdir/out_eval_RED_EVI.Rdata")
+  load("data/out_eval_RED_EVI.Rdata")
 }
 
 row_rsqtable_RED_EVI <- bind_cols( Setup = "RED_EVI", getrow_statstable( out_eval_RED_EVI, stat = "rsq" ) )
@@ -489,26 +536,24 @@ settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input_sitescale$splined_fapar = TRUE
 
 ## run the model with these parameters and read output into mod_RED_EVI
-if (!file.exists("tmpdir/mod_RED_DT.Rdata")){
+if (!file.exists("data/mod_RED_DT.Rdata")){
 
   settings_sims_sitescale <- prepare_setup_sofun( 
     settings = settings_sims_sitescale, 
-    calibvars = c(),
     write_paramfils = FALSE
     )
 
   ## Prepare and save input data for later use
-  inputdata_FPATspl <- prepare_input_sofun( 
+  inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input_sitescale, 
     settings_sims = settings_sims_sitescale, 
     return_data = FALSE, 
-    overwrite_climate = FALSE, 
-    overwrite_fapar = TRUE, 
+    overwrite_csv_fapar = TRUE, 
     verbose = TRUE
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "tmpdir/params_opt_RED_DT.csv" )
+  params_opt <- readr::read_csv( "results_calib/params_opt_RED_DT.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   settings_sims_sitescale$loutdrd     = FALSE
@@ -517,9 +562,9 @@ if (!file.exists("tmpdir/mod_RED_DT.Rdata")){
     settings = settings_sims_sitescale, 
     setup = setup_sofun_sitescale 
     )
-  save( mod_RED_DT, file = "tmpdir/mod_RED_DT.Rdata" )
+  save( mod_RED_DT, file = "data/mod_RED_DT.Rdata" )
 } else {
-  load("tmpdir/mod_RED_DT.Rdata")
+  load("data/mod_RED_DT.Rdata")
 }
 
 ## get sites for which no model output is available and overwrite settings_eval$sitenames
@@ -530,19 +575,19 @@ settings_eval$sitenames <- settings_eval$sitenames[which(!(settings_eval$sitenam
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_DT") )
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("tmpdir/obs_eval_DT.Rdata")){
+if (!file.exists("data/obs_eval_DT.Rdata")){
   obs_eval_DT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims_sitescale, overwrite = TRUE )
-  save( obs_eval_DT, file = "tmpdir/obs_eval_DT.Rdata")
+  save( obs_eval_DT, file = "data/obs_eval_DT.Rdata")
 } else {
-  load("tmpdir/obs_eval_DT.Rdata")
+  load("data/obs_eval_DT.Rdata")
 }
 
 ## evaluate RED_DT simulations
-if (!file.exists("tmpdir/out_eval_RED_DT.Rdata")){
+if (!file.exists("data/out_eval_RED_DT.Rdata")){
   out_eval_RED_DT <- eval_sofun( mod_RED_DT, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_DT, overwrite = TRUE )
-  save( out_eval_RED_DT, file = "tmpdir/out_eval_RED_DT.Rdata" )
+  save( out_eval_RED_DT, file = "data/out_eval_RED_DT.Rdata" )
 } else {
-  load("tmpdir/out_eval_RED_DT.Rdata")
+  load("data/out_eval_RED_DT.Rdata")
 }
 
 row_rsqtable_RED_DT <- bind_cols( Setup = "RED_DT", getrow_statstable( out_eval_RED_DT, stat = "rsq" ) )
@@ -563,26 +608,24 @@ settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input_sitescale$splined_fapar = TRUE
 
 ## run the model with these parameters and read output into mod_RED_EVI
-if (!file.exists("tmpdir/mod_RED_Ty.Rdata")){
+if (!file.exists("data/mod_RED_Ty.Rdata")){
 
   settings_sims_sitescale <- prepare_setup_sofun( 
     settings = settings_sims_sitescale, 
-    calibvars = c(),
     write_paramfils = FALSE
     )
 
   ## Prepare and save input data for later use
-  inputdata_FPATspl <- prepare_input_sofun( 
+  inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input_sitescale, 
     settings_sims = settings_sims_sitescale, 
     return_data = FALSE, 
-    overwrite_climate = FALSE, 
-    overwrite_fapar = TRUE, 
+    overwrite_csv_fapar = TRUE, 
     verbose = TRUE
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "tmpdir/params_opt_RED_Ty.csv" )
+  params_opt <- readr::read_csv( "results_calib/params_opt_RED_Ty.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   settings_sims_sitescale$loutdrd     = FALSE
@@ -591,9 +634,9 @@ if (!file.exists("tmpdir/mod_RED_Ty.Rdata")){
     settings = settings_sims_sitescale, 
     setup = setup_sofun_sitescale 
     )
-  save( mod_RED_Ty, file = "tmpdir/mod_RED_Ty.Rdata" )
+  save( mod_RED_Ty, file = "data/mod_RED_Ty.Rdata" )
 } else {
-  load("tmpdir/mod_RED_Ty.Rdata")
+  load("data/mod_RED_Ty.Rdata")
 }
 
 ## get sites for which no model output is available and overwrite settings_eval$sitenames
@@ -604,19 +647,19 @@ settings_eval$sitenames <- settings_eval$sitenames[which(!(settings_eval$sitenam
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_Ty") )
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("tmpdir/obs_eval_Ty.Rdata")){
+if (!file.exists("data/obs_eval_Ty.Rdata")){
   obs_eval_Ty <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims_sitescale, overwrite = TRUE )
-  save( obs_eval_Ty, file = "tmpdir/obs_eval_Ty.Rdata")
+  save( obs_eval_Ty, file = "data/obs_eval_Ty.Rdata")
 } else {
-  load("tmpdir/obs_eval_Ty.Rdata")
+  load("data/obs_eval_Ty.Rdata")
 }
 
 ## evaluate RED_Ty simulations
-if (!file.exists("tmpdir/out_eval_RED_Ty.Rdata")){
+if (!file.exists("data/out_eval_RED_Ty.Rdata")){
   out_eval_RED_Ty <- eval_sofun( mod_RED_Ty, settings_eval, settings_sims_sitescale, obs_eval = obs_eval_Ty, overwrite = TRUE )
-  save( out_eval_RED_Ty, file = "tmpdir/out_eval_RED_Ty.Rdata" )
+  save( out_eval_RED_Ty, file = "data/out_eval_RED_Ty.Rdata" )
 } else {
-  load("tmpdir/out_eval_RED_Ty.Rdata")
+  load("data/out_eval_RED_Ty.Rdata")
 }
 
 row_rsqtable_RED_Ty <- bind_cols( Setup = "RED_Ty", getrow_statstable( out_eval_RED_Ty, stat = "rsq" ) )
@@ -636,8 +679,7 @@ if (!file.exists(ncfiln)) {
   epop <- ncvar_get( nc, varid="EP_OVER_P_CRU_NCEP" )
 }
 source("plot_map_siteoverview.R")
-load("tmpdir/siteinfo.Rdata")
-plot_map_siteoverview( dplyr::filter(siteinfo$light, mysitename %in% settings_eval$sitenames ), 1/epop ) # , plotfiln="fig/map_sites.pdf"
+plot_map_siteoverview( dplyr::filter( metainfo_Tier1_sites_kgclimate_fluxnet2015, mysitename %in% settings_eval$sitenames ), 1/epop ) # , plotfiln="fig/map_sites.pdf"
 cap_siteoverview_fig <- fig_nums( "siteoverview_fig", caption=" Geographical distribution of sites selected for the bias evaluation. Sites listed in Table S1 as group 1 are in green, sites of group 2 are in black. The color of land area represents aridity, quantified as the ratio of potential evapotranspiration over precipitation from xxx" )
 ```
 
@@ -684,28 +726,19 @@ The features of variability in GPP, for which model-observation agreement is cal
 
 ## Results of evaluation
 
-```{r, eval=TRUE, echo=FALSE, message=FALSE}
-# Generate data used for plotting and get performance metrics
-source("eval_sofun.R")
-filn <- "out_eval.Rdata"
-overwrite <- TRUE
-load( "mod.Rdata" )
-if (!file.exists(filn)|overwrite){
-  out_eval <- eval_sofun( mod, settings_eval, settings_sims_sitescale, siteinfo, overwrite = TRUE )
-  save( out_eval, file = filn )
-} else {
-  load( filn )
-}
-```
-
-### Overview
+### Metrics table
 
 ```{r}
+table_rsq <- rbind( row_rsqtable_NULL, row_rsqtable_NULLpft, row_rsqtable_RED, row_rsqtable_FULL, row_rsqtable_RED_FPARitp, row_rsqtable_RED_EVI, row_rsqtable_RED_DT, row_rsqtable_RED_Ty )
+table_rsq_formatted <- table_rsq %>% mutate_at( vars(one_of("spatial", "annual", "monthly", "daily", "seasonal", "annual_var", "daily_var")), funs(format(., digits=3)))
+latextable <- xtable::xtable( table_rsq_formatted, caption = "Caption text" )
+print( latextable, hline.after=c(-1, 0), tabular.environment = "longtable", file = "table_rsq.tex" )
+
 library(tidyr)
-out_eval$metrics %>%
+out_eval_RED$metrics$gpp$fluxnet2015 %>%
   bind_rows() %>%
   unnest() %>%
-  mutate( level = (out_eval$metrics$gpp$fluxnet2015 %>% names()) ) %>%
+  mutate( level = (out_eval_RED$metrics$gpp$fluxnet2015 %>% names()) ) %>%
   mutate_at( vars(one_of("rsq", "rmse", "slope", "bias")), funs(format(., digits=3))) %>%
   dplyr::select( Level=level, N=nvals, R2=rsq, RMSE=rmse, Slope=slope, Bias=bias) %>%
   knitr::kable( caption="Performance metrics of correlations between modelled and observed values at different temporal aggregation levels, absolute values and anomalies.")
@@ -723,10 +756,140 @@ out_eval$metrics %>%
 This shows the same as in the SI of our submitted manuscript: Figures S14 and S15 [here](http://rpubs.com/stineb/si_soilm_global).
 
 ```{r, echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
-plot_modobs_spatial_annual( out_eval_RED$data$meandf, out_eval_RED$data$linmod_meandf, out_eval_RED$data$adf_stats, out_eval_RED$metrics$gpp$fluxnet2015$annual_pooled, out_eval_RED$metrics$gpp$fluxnet2015$spatial, makepdf = TRUE, pattern = "RED", xlim = c(0,4000), ylim = c(0,4000) )
-plot_modobs_spatial_annual( out_eval_NULL$data$meandf, out_eval_NULL$data$linmod_meandf, out_eval_NULL$data$adf_stats, out_eval_NULL$metrics$gpp$fluxnet2015$annual_pooled, out_eval_NULL$metrics$gpp$fluxnet2015$spatial, makepdf = TRUE, pattern = "NULL", xlim = c(0,4000), ylim = c(0,4000) )
-plot_modobs_spatial_annual( out_eval_NULLpft$data$meandf, out_eval_NULLpft$data$linmod_meandf, out_eval_NULLpft$data$adf_stats, out_eval_NULLpft$metrics$gpp$fluxnet2015$annual_pooled, out_eval_NULLpft$metrics$gpp$fluxnet2015$spatial, makepdf = TRUE, pattern = "NULLpft", xlim = c(0,4000), ylim = c(0,4000) )
+## Use customized plotting
+source("plot_modobs_spatial_annual.R")
+plot_modobs_spatial_annual( out_eval_RED, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, pattern = "RED" )
+plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, pattern = "NULL" )
 ```
+
+#### Seasonal cycle by climate zones
+
+More insights are provided by looking at the seasonal cycle explicitly. Plots for each site are given in the Appendix. Aggregating across multiple sites doesn't make much sense. However, I aggregated across climate zones and distinguishing between respective zones on the northern and southern hemisphere.
+
+The classification of sites into Koeppen-Geiger climate zones is based on Falge et al. 2016. [ORNL DAAC](https://doi.org/10.3334/ORNLDAAC/1530), and complemented by extracting information from a global map. A table explaining the Koeppen-Geiger codes is given below.
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+koeppen_legend %>% knitr::kable(caption = "Koeppen-Geiger climate zones.")
+```
+
+## Mean seasonality by climate zone
+
+Plot only for climate zones where data from at least five different sites are available. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+source("plot_by_doy_allzones.R")
+plot_by_doy_allzones( out_eval_RED, makepdf=TRUE, pattern="RED" ) # out_eval_FULL, out_eval_RED_EVI, 
+plot_by_doy_allzones( out_eval_RED, makepdf=TRUE, pattern="FULL" ) # out_eval_FULL, out_eval_RED_EVI, 
+plot_by_doy_allzones( out_eval_NULL, makepdf=TRUE, pattern="NULL" )
+plot_by_doy_allzones( out_eval_RED_EVI, makepdf=TRUE, pattern="RED_EVI" )
+
+metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+  mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
+  group_by( koeppen_code, hemisphere ) %>% 
+  summarise( nsites = n() ) %>% 
+  left_join( dplyr::rename( koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>% 
+  arrange( -nsites )
+```
+
+Insights from seasonality analysis by climate zones (results see below, red is the model, black the observations, discussing only climate zones with data from more than three sites):
+
+- Big problems simulating GPP in the Tropics (Am, Equatorial monsoon): substantial underestimation during most of the year except a short period (Is that the dry period?). Could be related to fAPAR data contaminated by clouds except during the dry period? Unfortunately, only two sites are available in this climate zone.
+- Insufficient GPP decline during dry periods in tropical and hot climates (Aw: Equatorial savannah with dry winter, and BSh: Arid Steppe hot). This is not a surprise. The empirical soil moisture correction is **not** applied here.
+- Overestimation of GPP in arid steppes (BSk: Arid Steppe cold). Quite robust, seen at 7 sites in total. Probably, model improved by soil moisture correction.
+- In temperate and boreal regions, early-season GPP is consistently overestimated, and late-season in most cases (Cfa: Warm temperate fully humid with hot summer, Cfb: Warm temperate fully humid with warm summer, Dfb: Snow fully humid warm summer, Dfc: Snow fully humid cool summer). It looks like at cold air (or soil?) temperatures, GPP tends to be overestimated.
+- There is a general overestimation of GPP at sites in Cwcb (Warm temperate with dry winter and warm summer).
+
+In brief, there is room for improvement by reducing GPP at low temperatures (sort of found before, but we never dealt with a temperature ramp, and why should we?) and low soil moisture (of course). fAPAR data in the tropics needs to be examined, otherwise, it looks like we have a problem with the Aw sites.
+
+
+### Monthly values
+
+Ignoring that we don't expect a LUE-type linear relationship between absorbed light $I_{\text{abs}}$ and GPP, we can still evaluate the daily GPP estimated by the P-model:
+$$
+\text{GPP}(d) = \text{LUE}(m|d)\; \times \; I_{\text{abs}}(d)
+$$
+Here, $LUE(m|d)$ is the monthly varying light use efficiency simulated by the P-model using forcing data averaged to monthly means. $m|d$ refers to the month of a given day.
+
+The correlation is still quite good...
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+source("plot_modobs_daily.R")
+# modobs_ddf <- plot_modobs_daily(   out_eval_RED, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
+# modobs_xdf <- plot_modobs_xdaily(  out_eval_RED, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
+modobs_mdf <- plot_modobs_monthly( out_eval_RED, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), pattern = "RED" )
+modobs_mdf <- plot_modobs_monthly( out_eval_FULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), pattern = "FULL" )
+modobs_mdf <- plot_modobs_monthly( out_eval_NULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), pattern = "NULL" )
+```
+
+### Daily anomalies
+
+```{r}
+source("plot_modobs_anomalies_daily.R")
+modobs_anomalies_daily_RED  <- plot_modobs_anomalies_daily( out_eval_RED,  makepdf=TRUE, pattern = "RED" )
+modobs_anomalies_daily_FULL <- plot_modobs_anomalies_daily( out_eval_FULL, makepdf=TRUE, pattern = "FULL" )
+modobs_anomalies_daily_NULL <- plot_modobs_anomalies_daily( out_eval_NULL, makepdf=TRUE, pattern = "NULL" )
+```
+
+
+### Functional relationships
+
+Functional relationships seen in the data can be extracted using Artificial Neural Networks (ANN). This is done here. First, a model is fitted to observed GPP with temperature, PPFD, VPD, fAPAR, and soil moisture as predictors. Then, functional relationships are evaluated by using the trained ANN to predict values for a synthetic datasets. The synthetic dataset is generated for each predictor value. E.g. for temperature, a sample of 50 data points is drawn from the empirical distribution of VPD, fAPAR, PPFD, and soil moisture, respectively, and 50 levels of temperature (evenly from 0-40 $^{\circ}$C) Then, the dataset is created by all combinations of these variables. Finally, functional relationship between temperature and GPP are assessed by taking the mean across all variable combination for each level of temperature separately. This approach implies that for the evaluation, correlations between predictor variables in the observational dataset are ignored.
+
+In order to improve comparability, ANNs are trained at (P-) modelled and observed GPP, and functional relationships thus derived for observed and modelled. This improves comparability and is preferred here over evaluating the model directly. As always, observations are in black and modelled in red.
+
+```{r neuralnet, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+testdf <- eval_response( out_eval_RED$data$ddf, "results_calib/params_opt_RED.csv", overwrite = FALSE, ndays_agg = 10, makepdf=FALSE, dir = "./fig/", pattern = "RED"  )
+```
+
+There are several points here:
+
+- This mixes responses at different time scales and within/across sites.
+- The functional relationships based on the ANN look surprisingly "stiff".
+- The data suggests increasing GPP across the whole temperature range, while the P-model simulates a levelling off. This could be related to the prescribed temperature sensitivity of ecosystem respiration for the flux decomposition.
+- The response to VPD looks surprisingly not like $\sim1/\sqrt{D}$ in the P-model, but in the observations although the respective equation should force it to look so. Therefore, this must have to do with how the ANNs pick up relationships and the noise and correlation structure in the data.
+
+**OPEN POINT:**
+
+Colin has shown some plots at the ICDC that apparently Trevor produced. They show something similar as I have tried here, but as I remember, there seemed to be much more fine-structure in the functional relationships. **Trevor**, how did you do that? Using GAMs (as I remember you saying once)? I don't understand however, why the ANNs look so "stiff" here...
+
+
+
+### Values aggregated to X days
+
+Aggregated to longer periods, the performance slightly improves. Here, I aggregated modeled and observational data to 5-days periods.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+modobs_ddf <- plot_modobs_xdaily( out_eval$data$xdf, makepdf=FALSE, xlim=c(0,20), ylim=c(0,20) )
+```
+
+- There is a pattern: Many simulated data points in the lower range tend to be too high and too low in the higher range. The lower range overestimation will definitely be improved by emprirical soil moisture, and, if applicable, a low-temperature stress function. The underestimation of values in the upper range raise a more fundamental challenge...
+- The fact that the correlation improves when aggregating daily values to 5-daily values might reflect that applying the P-model as a light use efficiency model at the daily time scale violates its basic assumption related to the acclimation time scale. Non-linearities of the light-response curve imply that the ratio of GPP to absorbed light relationship declines with increasing light levels (right?). Day-to-day variations in GPP are mainly driven by light availability (not systematically investigated). Hence, anomalies of daily GPP from its mean seasonal cycle should be larger in the P-model than in the observations. This is the case as the figures below show.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+modobs_anomalies_daily <- plot_modobs_anomalies_daily( out_eval_RED$data$idvdf, out_eval_RED$data$idvdf_stats, pattern = "RED", makepdf=TRUE )
+```
+Above figure shows the correlation and the distribution of anomalies in daily GPP from the respective mean seasonal cycle in the observations and in simulated values. Note that the blue lines in the first plot are the regression lines of daily anomalies for each site. The fact that their slope is consistently lower than 1, indicates that the day-to-day variability in simulated GPP is higher than in observed GPP. This is also reflected by the histogram in the second plot (note standard deviation values given in the upper left corner).
+
+When plotting the same for values aggregated to 5-day bins, the standard deviation of simulated anomalies declines strongly and is in better agreement with the observations (see histogram), but the correlation analysis doesn't suggest a better performance.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+modobs_anomalies_xdaily <- plot_modobs_anomalies_xdaily( out_eval$data$ixvdf, out_eval$data$ixvdf_stats, makepdf=FALSE)
+```
+
+**OPEN POINT:**
+
+Would it be worth exploring this in more detail, e.g. quantifying the relationship between some metric and aggregation level, and 'some metric' being e.g. the standard deviation of anomalies, the *R*$^2$ of obs. vs. mod., or ... ?
+
+
+
+
+
+
+
+
+
+
+
+
 
 <!-- **OPEN POINT:** -->
 
@@ -773,82 +936,8 @@ modobs_meandoy <- plot_modobs_meandoy( out_eval_RED$data$meandoydf, out_eval_RED
 modobs_meandoy <- plot_modobs_meandoy( out_eval_NULL$data$meandoydf, out_eval_NULL$data$meandoydf_stats, makepdf=TRUE, pattern = "NULL" )
 ```
 
-#### Seasonal cycle by climate zones
-
-More insights are provided by looking at the seasonal cycle explicitly. Plots for each site are given in the Appendix. Aggregating across multiple sites doesn't make much sense. However, I aggregated across climate zones and distinguishing between respective zones on the northern and southern hemisphere.
-
-The classification of sites into Koeppen-Geiger climate zones is based on Falge et al. 2016. [ORNL DAAC](https://doi.org/10.3334/ORNLDAAC/1530), and complemented by extracting information from a global map. A table explaining the Koeppen-Geiger codes is given below.
-```{r message=FALSE, warning=FALSE, echo=FALSE}
-koeppen_legend %>% knitr::kable(caption = "Koeppen-Geiger climate zones.")
-```
-
-## Mean seasonality by climate zone
-
-Plot only for climate zones where data from at least five different sites are available. 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
-nothing <- plot_by_doy_allzones( out_eval_RED$data$meandoydf_byclim_stats, dashed=out_eval_FULL$data$meandoydf_byclim_stats, makepdf=TRUE, pattern="RED" )
-nothing <- plot_by_doy_allzones( out_eval_NULL$data$meandoydf_byclim_stats, makepdf=TRUE, pattern ="NULL" )
-metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
-  mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
-  group_by( koeppen_code, hemisphere ) %>% 
-  summarise( nsites = n() ) %>% 
-  left_join( dplyr::rename( koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>% 
-  arrange( -nsites )
-```
 
 
-Insights from seasonality analysis by climate zones (results see below, red is the model, black the observations, discussing only climate zones with data from more than three sites):
-
-- Big problems simulating GPP in the Tropics (Am, Equatorial monsoon): substantial underestimation during most of the year except a short period (Is that the dry period?). Could be related to fAPAR data contaminated by clouds except during the dry period? Unfortunately, only two sites are available in this climate zone.
-- Insufficient GPP decline during dry periods in tropical and hot climates (Aw: Equatorial savannah with dry winter, and BSh: Arid Steppe hot). This is not a surprise. The empirical soil moisture correction is **not** applied here.
-- Overestimation of GPP in arid steppes (BSk: Arid Steppe cold). Quite robust, seen at 7 sites in total. Probably, model improved by soil moisture correction.
-- In temperate and boreal regions, early-season GPP is consistently overestimated, and late-season in most cases (Cfa: Warm temperate fully humid with hot summer, Cfb: Warm temperate fully humid with warm summer, Dfb: Snow fully humid warm summer, Dfc: Snow fully humid cool summer). It looks like at cold air (or soil?) temperatures, GPP tends to be overestimated.
-- There is a general overestimation of GPP at sites in Cwcb (Warm temperate with dry winter and warm summer).
-
-In brief, there is room for improvement by reducing GPP at low temperatures (sort of found before, but we never dealt with a temperature ramp, and why should we?) and low soil moisture (of course). fAPAR data in the tropics needs to be examined, otherwise, it looks like we have a problem with the Aw sites.
-
-
-
-### Daily values
-
-Ignoring that we don't expect a LUE-type linear relationship between absorbed light $I_{\text{abs}}$ and GPP, we can still evaluate the daily GPP estimated by the P-model:
-$$
-\text{GPP}(d) = \text{LUE}(m|d)\; \times \; I_{\text{abs}}(d)
-$$
-Here, $LUE(m|d)$ is the monthly varying light use efficiency simulated by the P-model using forcing data averaged to monthly means. $m|d$ refers to the month of a given day.
-
-The correlation is still quite good...
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-modobs_ddf <- plot_modobs_daily( out_eval$data$ddf, makepdf=FALSE, xlim=c(0,25), ylim=c(0,25) )
-```
-
-### Values aggregated to X days
-
-Aggregated to longer periods, the performance slightly improves. Here, I aggregated modeled and observational data to 5-days periods.
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-modobs_ddf <- plot_modobs_xdaily( out_eval$data$xdf, makepdf=FALSE, xlim=c(0,20), ylim=c(0,20) )
-```
-
-- There is a pattern: Many simulated data points in the lower range tend to be too high and too low in the higher range. The lower range overestimation will definitely be improved by emprirical soil moisture, and, if applicable, a low-temperature stress function. The underestimation of values in the upper range raise a more fundamental challenge...
-- The fact that the correlation improves when aggregating daily values to 5-daily values might reflect that applying the P-model as a light use efficiency model at the daily time scale violates its basic assumption related to the acclimation time scale. Non-linearities of the light-response curve imply that the ratio of GPP to absorbed light relationship declines with increasing light levels (right?). Day-to-day variations in GPP are mainly driven by light availability (not systematically investigated). Hence, anomalies of daily GPP from its mean seasonal cycle should be larger in the P-model than in the observations. This is the case as the figures below show.
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-modobs_anomalies_daily <- plot_modobs_anomalies_daily( out_eval_RED$data$idvdf, out_eval_RED$data$idvdf_stats, pattern = "RED", makepdf=TRUE )
-```
-Above figure shows the correlation and the distribution of anomalies in daily GPP from the respective mean seasonal cycle in the observations and in simulated values. Note that the blue lines in the first plot are the regression lines of daily anomalies for each site. The fact that their slope is consistently lower than 1, indicates that the day-to-day variability in simulated GPP is higher than in observed GPP. This is also reflected by the histogram in the second plot (note standard deviation values given in the upper left corner).
-
-When plotting the same for values aggregated to 5-day bins, the standard deviation of simulated anomalies declines strongly and is in better agreement with the observations (see histogram), but the correlation analysis doesn't suggest a better performance.
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-modobs_anomalies_xdaily <- plot_modobs_anomalies_xdaily( out_eval$data$ixvdf, out_eval$data$ixvdf_stats, makepdf=FALSE)
-```
-
-**OPEN POINT:**
-
-Would it be worth exploring this in more detail, e.g. quantifying the relationship between some metric and aggregation level, and 'some metric' being e.g. the standard deviation of anomalies, the *R*$^2$ of obs. vs. mod., or ... ?
 
 ### Monthly values
 
@@ -864,26 +953,6 @@ modobs_mdf <- plot_modobs_monthly( out_eval$data$mdf, makepdf=FALSE )
 modobs_adf <- plot_modobs_annual( out_eval$data$adf, makepdf=FALSE )
 ```
 
-### Functional relationships
-
-Functional relationships seen in the data can be extracted using Artificial Neural Networks (ANN). This is done here. First, a model is fitted to observed GPP with temperature, PPFD, VPD, fAPAR, and soil moisture as predictors. Then, functional relationships are evaluated by using the trained ANN to predict values for a synthetic datasets. The synthetic dataset is generated for each predictor value. E.g. for temperature, a sample of 50 data points is drawn from the empirical distribution of VPD, fAPAR, PPFD, and soil moisture, respectively, and 50 levels of temperature (evenly from 0-40 $^{\circ}$C) Then, the dataset is created by all combinations of these variables. Finally, functional relationship between temperature and GPP are assessed by taking the mean across all variable combination for each level of temperature separately. This approach implies that for the evaluation, correlations between predictor variables in the observational dataset are ignored.
-
-In order to improve comparability, ANNs are trained at (P-) modelled and observed GPP, and functional relationships thus derived for observed and modelled. This improves comparability and is preferred here over evaluating the model directly. As always, observations are in black and modelled in red.
-
-```{r neuralnet, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-eval_response( out_eval_RED$data$ddf, makepdf=FALSE )
-```
-
-There are several points here:
-
-- This mixes responses at different time scales and within/across sites.
-- The functional relationships based on the ANN look surprisingly "stiff".
-- The data suggests increasing GPP across the whole temperature range, while the P-model simulates a levelling off. This could be related to the prescribed temperature sensitivity of ecosystem respiration for the flux decomposition.
-- The response to VPD looks surprisingly not like $\sim1/\sqrt{D}$ in the P-model, but in the observations although the respective equation should force it to look so. Therefore, this must have to do with how the ANNs pick up relationships and the noise and correlation structure in the data.
-
-**OPEN POINT:**
-
-Colin has shown some plots at the ICDC that apparently Trevor produced. They show something similar as I have tried here, but as I remember, there seemed to be much more fine-structure in the functional relationships. **Trevor**, how did you do that? Using GAMs (as I remember you saying once)? I don't understand however, why the ANNs look so "stiff" here...
 
 # Appendix
 
