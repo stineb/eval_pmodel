@@ -34,6 +34,7 @@ systr <- "''"    # for Mac
 
 For site-scale simulations the `rsofun` package requires a meta information file. Create this here for FLUXNET 2015 Tier 1 sites (their meta info is provided as a public variable by the package).
 ```{r}
+if (!dir.exists("./ext")) system("mkdir")
 write_csv( metainfo_Tier1_sites_kgclimate_fluxnet2015, path = "./ext/siteinfo_fluxnet2015.csv" )
 ```
 
@@ -165,7 +166,7 @@ if (!file.exists("data/mod_RED.Rdata")){
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "results_calib/params_opt_RED.csv" )
+  params_opt <- readr::read_csv( "params/params_opt_RED.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   mod_RED <- runread_sofun( 
@@ -240,7 +241,7 @@ if (!file.exists("data/mod_FULL.Rdata")){
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "results_calib/params_opt_FULL.csv" )
+  params_opt <- readr::read_csv( "params/params_opt_FULL.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   mod_FULL <- runread_sofun( 
@@ -411,7 +412,7 @@ if (!file.exists("data/mod_RED_FPARitp.Rdata")){
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "results_calib/params_opt_RED_FPARitp.csv" )
+  params_opt <- readr::read_csv( "params/params_opt_RED_FPARitp.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   mod_RED_FPARitp <- runread_sofun( 
@@ -481,7 +482,7 @@ if (!file.exists("data/mod_RED_EVI.Rdata")){
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "results_calib/params_opt_RED_EVI.csv" )
+  params_opt <- readr::read_csv( "params/params_opt_RED_EVI.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   settings_sims_sitescale$loutdrd     = FALSE
@@ -553,7 +554,7 @@ if (!file.exists("data/mod_RED_DT.Rdata")){
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "results_calib/params_opt_RED_DT.csv" )
+  params_opt <- readr::read_csv( "params/params_opt_RED_DT.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   settings_sims_sitescale$loutdrd     = FALSE
@@ -625,7 +626,7 @@ if (!file.exists("data/mod_RED_Ty.Rdata")){
     )
 
   ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "results_calib/params_opt_RED_Ty.csv" )
+  params_opt <- readr::read_csv( "params/params_opt_RED_Ty.csv" )
   nothing <- update_params( params_opt, settings_sims_sitescale$dir_sofun )
 
   settings_sims_sitescale$loutdrd     = FALSE
@@ -837,7 +838,7 @@ Functional relationships seen in the data can be extracted using Artificial Neur
 In order to improve comparability, ANNs are trained at (P-) modelled and observed GPP, and functional relationships thus derived for observed and modelled. This improves comparability and is preferred here over evaluating the model directly. As always, observations are in black and modelled in red.
 
 ```{r neuralnet, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-testdf <- eval_response( out_eval_RED$data$ddf, "results_calib/params_opt_RED.csv", overwrite = FALSE, ndays_agg = 10, makepdf=FALSE, dir = "./fig/", pattern = "RED"  )
+testdf <- eval_response( out_eval_RED$data$ddf, "params/params_opt_RED.csv", overwrite = FALSE, ndays_agg = 10, makepdf=FALSE, dir = "./fig/", pattern = "RED"  )
 ```
 
 There are several points here:
@@ -856,27 +857,37 @@ Colin has shown some plots at the ICDC that apparently Trevor produced. They sho
 
 Load fLUE data to use their definition of soil moisture droughts.
 ```{r}
-## Get fLUE Stocker et al., 2018 publicly available data
-df_flue <- read_csv( "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv" ) %>% 
-  select(-year, -doy, -cluster) %>% 
-  rename( isevent = is_flue_drought )
+source("align_events.R")
+source("eval_droughtresponse.R")
+source("plot_dday.R")
+df_dday_agg_RED <- eval_droughtresponse( 
+  mod = mod_RED$daily, 
+  obs = obs_eval_NT$ddf, 
+  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
+  before=20, 
+  after=79,
+  leng_threshold = 10, 
+  nbins=10, 
+  do_norm=TRUE
+  )
+df_dday_agg_FULL <- eval_droughtresponse( 
+  mod = mod_FULL$daily, 
+  obs = obs_eval_NT$ddf, 
+  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
+  before=20, 
+  after=79,
+  leng_threshold = 10, 
+  nbins=10, 
+  do_norm=TRUE
+  )
+plot_dday( df_dday_agg_RED, df_dday_agg_FULL, before=20, after=79, bias=TRUE )
 
-## do some weird cleaning and do some weird cleaning
-load("data/mod_RED.Rdata")
-na.omit.list <- function(y) { return(y[!sapply(y, function(x) all(is.na(x)))]) }
-mod_RED <- na.omit.list(mod_RED$daily) %>% bind_rows( .id = "sitename" ) %>% select( site=sitename, date, gpp_mod = gpp )
-
-## Get observational data
-load("data/obs_eval_NT.Rdata")
-obs_NT <- obs_eval_NT$ddf %>% select( site=sitename, date, gpp_obs )
-
-## combine data frames into one
-df_modobs <- obs_NT %>% left_join( mod_RED, by=c("site", "date") ) %>% mutate( bias_gpp = gpp_mod - gpp_obs )
-
-## Rearrange data. Function returns list( df_dday, df_dday_aggbydday )
-dovars <- colnames( dplyr::select( df_modobs, -date, -site ) )
-out_align <- align_events( df_modobs, df_flue, dovars, leng_threshold = 10, before=20, after=60, nbins=8, do_norm=FALSE )
-with( out_align$df_dday_aggbydday, plot(dday, bias_gpp_median, type="l" ) )
+## An example: Something is going very wrong here.
+df_red  <- filter(mod_RED$daily$`AU-How`,  year(date) %in% 2005:2010 )
+df_full <- filter(mod_FULL$daily$`AU-How`, year(date) %in% 2005:2010 )
+with( df_red, plot(  date, gpp, type="l" ) )
+with( df_full, lines( date, gpp, col="red" ) )
+plot( df_red$date, df_full$gpp/df_red$gpp, type="l")
 ```
 
 

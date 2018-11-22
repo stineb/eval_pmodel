@@ -11,11 +11,28 @@
 #'
 #' @examples xxx
 #' 
-eval_droughtresponse <- function( df_modobs, df_isdrought, obsvarnam, modvarnam ){
+eval_droughtresponse <- function( mod, obs, path_flue, before, after, leng_threshold, nbins, do_norm=FALSE ){
 
-  ## Get information which dates are classified as 'soil moisture drought' based on fLUE (Stocker et al., 2018)
+  ## Get fLUE Stocker et al., 2018 publicly available data
+  df_flue <- read_csv( path_flue ) %>% 
+    select(-year, -doy, -cluster) %>% 
+    rename( isevent = is_flue_drought )
+
+  ## do some weird cleaning and do some weird cleaning
+  mod <- na.omit.list(mod) %>% bind_rows( .id = "sitename" ) %>% select( site=sitename, date, gpp_mod = gpp )
+
+  ## Get observational data
+  obs <- obs %>% select( site=sitename, date, gpp_obs )
+
+  ## combine data frames into one
+  df_modobs <- obs %>% left_join( mod, by=c("site", "date") ) %>% mutate( bias_gpp = gpp_mod - gpp_obs )
 
   ## Rearrange data. Function returns list( df_dday, df_dday_aggbydday )
-  out_align <- align_events( df_modobs, df_isevent, dovars, before=20, after=100, do_norm=FALSE, normbin=2 )
+  dovars <- colnames( dplyr::select( df_modobs, -date, -site ) )
 
+  out_align <- align_events( df_modobs, df_flue, dovars, leng_threshold, before, after, nbins, do_norm=do_norm )
+
+  return( out_align$df_dday_aggbydday )
 }
+
+na.omit.list <- function(y) { return(y[!sapply(y, function(x) all(is.na(x)))]) }
