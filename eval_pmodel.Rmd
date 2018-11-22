@@ -1,5 +1,5 @@
 ---
-title: "eval_sofun"
+title: "eval_pmodel"
 author: "Beni Stocker"
 date: "`r Sys.Date()`"
 # output:
@@ -850,6 +850,38 @@ There are several points here:
 **OPEN POINT:**
 
 Colin has shown some plots at the ICDC that apparently Trevor produced. They show something similar as I have tried here, but as I remember, there seemed to be much more fine-structure in the functional relationships. **Trevor**, how did you do that? Using GAMs (as I remember you saying once)? I don't understand however, why the ANNs look so "stiff" here...
+
+
+### Drought response
+
+Load fLUE data to use their definition of soil moisture droughts.
+```{r}
+## Get fLUE Stocker et al., 2018 publicly available data
+df_flue <- read_csv( "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv" ) %>% 
+  select(-year, -doy, -cluster) %>% 
+  rename( isevent = is_flue_drought )
+
+## do some weird cleaning and do some weird cleaning
+load("data/mod_RED.Rdata")
+na.omit.list <- function(y) { return(y[!sapply(y, function(x) all(is.na(x)))]) }
+mod_RED <- na.omit.list(mod_RED$daily) %>% bind_rows( .id = "sitename" ) %>% select( site=sitename, date, gpp_mod = gpp )
+
+## Get observational data
+load("data/obs_eval_NT.Rdata")
+obs_NT <- obs_eval_NT$ddf %>% select( site=sitename, date, gpp_obs )
+
+## combine data frames into one
+df_modobs <- obs_NT %>% left_join( mod_RED, by=c("site", "date") ) %>% mutate( bias_gpp = gpp_mod - gpp_obs )
+
+## Rearrange data. Function returns list( df_dday, df_dday_aggbydday )
+dovars <- colnames( dplyr::select( df_modobs, -date, -site ) )
+out_align <- align_events( df_modobs, df_flue, dovars, leng_threshold = 10, before=20, after=60, nbins=8, do_norm=FALSE )
+with( out_align$df_dday_aggbydday, plot(dday, bias_gpp_median, type="l" ) )
+```
+
+
+
+
 
 
 
