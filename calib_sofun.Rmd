@@ -31,32 +31,69 @@ First, load simulation and input settings defined outside (e.g. as shown in `vig
 library(dplyr)
 library(readr)
 library(rsofun)
-load("settings_sims_sitescale.Rdata")
-load("settings_input_sitescale.Rdata")
-load("setup_sofun_sitescale.Rdata")
-```
 
-Then, define model calibration settings as a list. Note that in the example below, the element `sitenames` is all the sites where no C4 vegetation is present (or documented to be present). To get this information, first run::
-```{r, eval=FALSE, message=FALSE, warning=FALSE}
-siteinfo <- prepare_metainfo_fluxnet2015(
-  settings_sims = settings_sims_sitescale,
-  settings_input = settings_input_sitescale,
-  overwrite = FALSE,
-  filn_elv_watch = paste0( settings_input_sitescale$path_cx1data, "watch_wfdei/WFDEI-elevation.nc" )
+settings_sims <- list(
+  path_siteinfo   = "./ext/siteinfo_fluxnet2015.csv",
+  ensemble        = TRUE,
+  setup           = "site",
+  name            = "fluxnet2015",
+  dir_sofun       = "~/sofun/trunk/",
+  path_output     = "~/sofun/output_fluxnet2015_sofun/s24/",
+  path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s24/",
+  path_input      = "~/sofun/input_fluxnet2015_sofun_TEST/",
+  grid            = NA,
+  implementation  = "fortran",
+  in_ppfd         = TRUE,
+  in_netrad       = FALSE,
+  recycle         = 1,
+  spinupyears     = 10,
+  calibvars       = c("gpp"),
+  soilmstress     = TRUE,
+  tempstress      = TRUE,
+  loutdgpp        = TRUE,
+  loutdwcont      = TRUE,
+  loutdaet        = TRUE,
+  loutdpet        = TRUE,
+  loutdalpha      = TRUE
+  )
+
+settings_input <-  list(
+  data                     = NA,
+  temperature              = "fluxnet2015",
+  precipitation            = "fluxnet2015",
+  vpd                      = "fluxnet2015",
+  ppfd                     = "fluxnet2015",
+  netrad                   = NA,
+  cloudcover               = "cru",
+  path_watch_wfdei         = "~/data/watch_wfdei/",
+  path_cru                 = "~/data/cru/ts_4.01/",
+  path_MODIS_EVI_MOD13Q1   = "~/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
+  path_MODIS_FPAR_MCD15A3H = "~/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
+  path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
+  path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  get_from_remote          = FALSE
+  )
+
+setup_sofun <- list(
+  model      = "pmodel",
+  dir        = "~/sofun/trunk",
+  do_compile = FALSE,
+  simsuite   = FALSE
   )
 ```
 
 Then define the calibration settings as.
-```{r, eval=FALSE}
+```{r}
 ## Use only sites for calibration for which ANN method by Stocker et al. (2018) worked fine,
 ## and exclude sites where C4 vegetation is present.
+siteinfo <- read_csv( settings_sims$path_siteinfo )
 calibsites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
               dplyr::filter( !is.na(cluster) ) %>%
               dplyr::select( site ) %>%
               distinct() %>%
 
               ## additionally exclude C4
-              dplyr::filter( !(site %in% dplyr::filter(siteinfo$light, c4 )$mysitename) ) %>%
+              dplyr::filter( !(site %in% dplyr::filter(siteinfo, c4 )$mysitename) ) %>%
 
               dplyr::select( site ) %>%
               unlist()
@@ -71,11 +108,12 @@ settings_calib <- list(
   timescale        = list( gpp = "d" ),
   path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
-  maxit            = 30,
+  maxit            = 50,
   sitenames        = calibsites,  # dplyr::filter(siteinfo$light, c4 %in% c(FALSE, NA) )$mysitename, # calibrate for non-C4 sites
   filter_temp_max  = 35.0,
   filter_drought   = FALSE,
-  metric           = "rmse"
+  metric           = "rmse",
+  dir_results      = "/Users/benjaminstocker/eval_pmodel/calib_results"
  )
 ```
 
@@ -116,33 +154,31 @@ Define settings, prepare setup and input data and do the calibration for the set
 
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims_sitescale$soilmstress = FALSE
-settings_sims_sitescale$tempstress  = FALSE
-settings_sims_sitescale$loutdgpp    = FALSE
-settings_sims_sitescale$loutdrd     = FALSE
-settings_sims_sitescale$loutdtransp = FALSE
-settings_sims_sitescale$loutdwcont  = FALSE
-settings_sims_sitescale$loutdaet    = FALSE
-settings_sims_sitescale$loutdpet    = FALSE
-settings_sims_sitescale$loutdalpha  = FALSE
+settings_sims$soilmstress = FALSE
+settings_sims$tempstress  = FALSE
+settings_sims$loutdgpp    = FALSE
+settings_sims$loutdrd     = FALSE
+settings_sims$loutdtransp = FALSE
+settings_sims$loutdwcont  = FALSE
+settings_sims$loutdaet    = FALSE
+settings_sims$loutdpet    = FALSE
+settings_sims$loutdalpha  = FALSE
 
 ## Prepare the model setup for this calibration set
-settings_sims_sitescale <- prepare_setup_sofun( 
-  settings = settings_sims_sitescale, 
-  calibvars = c("gpp"),
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
   write_paramfils = TRUE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
-settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
-settings_input_sitescale$splined_fapar = TRUE
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
 
 inputdata <- prepare_input_sofun( 
-  settings_input = settings_input_sitescale, 
-  settings_sims = settings_sims_sitescale, 
+  settings_input = settings_input, 
+  settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_climate = FALSE, 
-  overwrite_fapar = TRUE, 
+  overwrite_csv_fapar = FALSE, 
   verbose = TRUE
   )
 
@@ -152,17 +188,17 @@ settings_calib_RED <- settings_calib
 settings_calib_RED$name = "RED"
 settings_calib_RED$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
 settings_calib_RED$datasource = list( gpp = "fluxnet2015_NT" )
-settings_calib_RED$filter_temp_min = 10.0
-settings_calib_RED$filter_soilm_min = 0.6
+settings_calib_RED$filter_temp_min = NA
+settings_calib_RED$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
-ddf_obs_NT <- get_obs( settings_calib_RED, settings_sims_sitescale, settings_input_sitescale )
+ddf_obs_NT <- get_obs_calib( settings_calib_RED, settings_sims, settings_input )
 
 settings_calib_RED <- calib_sofun(
-  setup          = setup_sofun_sitescale,
+  setup          = setup_sofun,
   settings_calib = settings_calib_RED,
-  settings_sims  = settings_sims_sitescale,
-  settings_input = settings_input_sitescale,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
   ddf_obs        = ddf_obs_NT
   )
 ```
@@ -174,27 +210,25 @@ Define settings, prepare setup and input data and do the calibration for the set
 
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims_sitescale$soilmstress = TRUE
-settings_sims_sitescale$tempstress  = TRUE
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
 
 ## Prepare the model setup for this calibration set
-settings_sims_sitescale <- prepare_setup_sofun( 
-  settings = settings_sims_sitescale, 
-  calibvars = c("gpp"),
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
   write_paramfils = TRUE 
   )
 
 ## Same fAPAR data used as above - nothing to be done 
 ## Define fAPAR input data and re-write input files for SOFUN
-settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
-settings_input_sitescale$splined_fapar = TRUE
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
 
 inputdata <- prepare_input_sofun(
-  settings_input = settings_input_sitescale,
-  settings_sims = settings_sims_sitescale,
+  settings_input = settings_input,
+  settings_sims = settings_sims,
   return_data = FALSE,
-  overwrite_climate = FALSE,
-  overwrite_fapar = TRUE,
+  overwrite_csv_fapar = FALSE, # WARNING: ASSUMING "LINEAR" KNITTING 
   verbose = TRUE
   )
 
@@ -204,18 +238,18 @@ settings_calib_FULL <- settings_calib
 settings_calib_FULL$name = "FULL"
 settings_calib_FULL$par = list( kphio          = list( lower=0.01, upper=0.12, init=0.05 ),
                                 temp_ramp_edge = list( lower=0.01, upper=20, init=5 ),
-                                soilm_par_a    = list( lower=0.0, upper=0.5, init=0.2 ),
-                                soilm_par_b    = list( lower=0.0, upper=2.0, init=0.5 ) )
+                                soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
+                                soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
 settings_calib_FULL$datasource = list( gpp = "fluxnet2015_NT" )
 settings_calib_FULL$filter_temp_min = NA
 settings_calib_FULL$filter_soilm_min = NA
 
 ## Same observational data as for setup 'RED' (filtering is done afterwards, inside calib_sofun())
 settings_calib_FULL <- calib_sofun(
-  setup          = setup_sofun_sitescale,
+  setup          = setup_sofun,
   settings_calib = settings_calib_FULL,
-  settings_sims  = settings_sims_sitescale,
-  settings_input = settings_input_sitescale,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
   ddf_obs        = ddf_obs_NT
   )
 ```
@@ -228,26 +262,24 @@ Do the same as described under `RED`, but with alternative fAPAR data. Calibrate
 #### Setup `RED_FPARitp`
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims_sitescale$soilmstress = FALSE
-settings_sims_sitescale$tempstress  = FALSE
+settings_sims$soilmstress = FALSE
+settings_sims$tempstress  = FALSE
 
 ## Prepare the model setup for this calibration set
-settings_sims_sitescale <- prepare_setup_sofun( 
-  settings = settings_sims_sitescale, 
-  calibvars = c("gpp"),
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
   write_paramfils = TRUE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
-settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
-settings_input_sitescale$splined_fapar = FALSE
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = FALSE
 
 inputdata <- prepare_input_sofun( 
-  settings_input = settings_input_sitescale, 
-  settings_sims = settings_sims_sitescale, 
+  settings_input = settings_input, 
+  settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_climate = FALSE, 
-  overwrite_fapar = TRUE, 
+  overwrite_csv_fapar = TRUE, 
   verbose = TRUE
   )
 
@@ -261,10 +293,10 @@ settings_calib_RED_FPARitp$filter_temp_min = 10.0
 settings_calib_RED_FPARitp$filter_soilm_min = 0.6
 
 settings_calib_RED_FPARitp <- calib_sofun(
-  setup          = setup_sofun_sitescale,
+  setup          = setup_sofun,
   settings_calib = settings_calib_RED_FPARitp,
-  settings_sims  = settings_sims_sitescale,
-  settings_input = settings_input_sitescale,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
   ddf_obs        = ddf_obs_NT
   )
 ```
@@ -273,15 +305,14 @@ settings_calib_RED_FPARitp <- calib_sofun(
 #### Setup `RED_EVI`
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define fAPAR input data and re-write input files for SOFUN
-settings_input_sitescale$fapar = "MODIS_EVI_MOD13Q1"
-settings_input_sitescale$splined_fapar = FALSE
+settings_input$fapar = "MODIS_EVI_MOD13Q1"
+settings_input$splined_fapar = FALSE
 
 inputdata <- prepare_input_sofun( 
-  settings_input = settings_input_sitescale, 
-  settings_sims = settings_sims_sitescale, 
+  settings_input = settings_input, 
+  settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_climate = FALSE, 
-  overwrite_fapar = TRUE, 
+  overwrite_csv_fapar = TRUE, 
   verbose = TRUE
   )
 
@@ -295,10 +326,10 @@ settings_calib_RED_EVI$filter_temp_min = 10.0
 settings_calib_RED_EVI$filter_soilm_min = 0.6
 
 settings_calib_RED_EVI <- calib_sofun(
-  setup          = setup_sofun_sitescale,
+  setup          = setup_sofun,
   settings_calib = settings_calib_RED_EVI,
-  settings_sims  = settings_sims_sitescale,
-  settings_input = settings_input_sitescale,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
   ddf_obs        = ddf_obs_NT
   )
 ```
@@ -312,33 +343,31 @@ Do the same as described under `RED`, but with calibration target data. Calibrat
 
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims_sitescale$soilmstress = FALSE
-settings_sims_sitescale$tempstress  = FALSE
-settings_sims_sitescale$loutdgpp    = FALSE
-settings_sims_sitescale$loutdrd     = FALSE
-settings_sims_sitescale$loutdtransp = FALSE
-settings_sims_sitescale$loutdwcont  = FALSE
-settings_sims_sitescale$loutdaet    = FALSE
-settings_sims_sitescale$loutdpet    = FALSE
-settings_sims_sitescale$loutdalpha  = FALSE
+settings_sims$soilmstress = FALSE
+settings_sims$tempstress  = FALSE
+settings_sims$loutdgpp    = FALSE
+settings_sims$loutdrd     = FALSE
+settings_sims$loutdtransp = FALSE
+settings_sims$loutdwcont  = FALSE
+settings_sims$loutdaet    = FALSE
+settings_sims$loutdpet    = FALSE
+settings_sims$loutdalpha  = FALSE
 
 ## Prepare the model setup for this calibration set
-settings_sims_sitescale <- prepare_setup_sofun( 
-  settings = settings_sims_sitescale, 
-  calibvars = c("gpp"),
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
   write_paramfils = TRUE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
-settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
-settings_input_sitescale$splined_fapar = TRUE
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
 
 inputdata <- prepare_input_sofun( 
-  settings_input = settings_input_sitescale, 
-  settings_sims = settings_sims_sitescale, 
+  settings_input = settings_input, 
+  settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_climate = FALSE, 
-  overwrite_fapar = TRUE, 
+  overwrite_csv_fapar = TRUE, 
   verbose = TRUE
   )
 
@@ -352,13 +381,13 @@ settings_calib_RED_DT$filter_temp_min = 10.0
 settings_calib_RED_DT$filter_soilm_min = 0.6
 
 ## Get observational data (GPP based on NT method) used as target for calibration
-ddf_obs_DT <- get_obs( settings_calib_RED_DT, settings_sims_sitescale, settings_input_sitescale )
+ddf_obs_DT <- get_obs_calib( settings_calib_RED_DT, settings_sims, settings_input )
 
 settings_calib_RED_DT <- calib_sofun(
-  setup          = setup_sofun_sitescale,
+  setup          = setup_sofun,
   settings_calib = settings_calib_RED_DT,
-  settings_sims  = settings_sims_sitescale,
-  settings_input = settings_input_sitescale,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
   ddf_obs        = ddf_obs_DT
   )
 ```
@@ -368,30 +397,29 @@ settings_calib_RED_DT <- calib_sofun(
 
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims_sitescale$soilmstress = FALSE
-settings_sims_sitescale$tempstress  = FALSE
-settings_sims_sitescale$loutdgpp    = FALSE
-settings_sims_sitescale$loutdrd     = FALSE
-settings_sims_sitescale$loutdtransp = FALSE
-settings_sims_sitescale$loutdwcont  = FALSE
-settings_sims_sitescale$loutdaet    = FALSE
-settings_sims_sitescale$loutdpet    = FALSE
-settings_sims_sitescale$loutdalpha  = FALSE
+settings_sims$soilmstress = FALSE
+settings_sims$tempstress  = FALSE
+settings_sims$loutdgpp    = FALSE
+settings_sims$loutdrd     = FALSE
+settings_sims$loutdtransp = FALSE
+settings_sims$loutdwcont  = FALSE
+settings_sims$loutdaet    = FALSE
+settings_sims$loutdpet    = FALSE
+settings_sims$loutdalpha  = FALSE
 
 # ## Prepare the model setup for this calibration set
-# settings_sims_sitescale <- prepare_setup_sofun( 
-#   settings = settings_sims_sitescale, 
-#   calibvars = c("gpp"),
+# settings_sims <- prepare_setup_sofun( 
+#   settings = settings_sims, 
 #   write_paramfils = TRUE 
 #   )
 # 
 # ## Define fAPAR input data and re-write input files for SOFUN
-# settings_input_sitescale$fapar = "MODIS_FPAR_MCD15A3H"
-# settings_input_sitescale$splined_fapar = TRUE
+# settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+# settings_input$splined_fapar = TRUE
 # 
 # inputdata <- prepare_input_sofun( 
-#   settings_input = settings_input_sitescale, 
-#   settings_sims = settings_sims_sitescale, 
+#   settings_input = settings_input, 
+#   settings_sims = settings_sims, 
 #   return_data = FALSE, 
 #   overwrite_climate = FALSE, 
 #   overwrite_fapar = TRUE, 
@@ -408,13 +436,13 @@ settings_calib_RED_Ty$filter_temp_min = 10.0
 settings_calib_RED_Ty$filter_soilm_min = 0.6
 
 ## Get observational data (GPP based on NT method) used as target for calibration
-ddf_obs_Ty <- get_obs( settings_calib_RED_Ty, settings_sims_sitescale, settings_input_sitescale )
+ddf_obs_Ty <- get_obs_calib( settings_calib_RED_Ty, settings_sims, settings_input )
 
 settings_calib_RED_Ty <- calib_sofun(
-  setup          = setup_sofun_sitescale,
+  setup          = setup_sofun,
   settings_calib = settings_calib_RED_Ty,
-  settings_sims  = settings_sims_sitescale,
-  settings_input = settings_input_sitescale,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
   ddf_obs        = ddf_obs_Ty
   )
 ```
