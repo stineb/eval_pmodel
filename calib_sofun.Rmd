@@ -98,17 +98,20 @@ calibsites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
               dplyr::select( site ) %>%
               unlist()
 
+# ## Calibration sites test ("5sites")
+# calibsites <- c("AU-Tum", "FR-Pue", "IT-Cpz", "FI-Hyy", "NL-Loo" )
+
 # ## Calibration sites for TerraP, excluding CA-Obs
 # calibsites <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
 
 ## Define calibration settings common for all setups
 settings_calib <- list(
-  method           = "optimr",
+  method           = "gensa",
   targetvars       = c("gpp"),
   timescale        = list( gpp = "d" ),
   path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
-  maxit            = 50,
+  maxit            = 10, # (5 for gensa) (30 for optimr)    #
   sitenames        = calibsites,  # dplyr::filter(siteinfo$light, c4 %in% c(FALSE, NA) )$mysitename, # calibrate for non-C4 sites
   filter_temp_max  = 35.0,
   filter_drought   = FALSE,
@@ -167,7 +170,7 @@ settings_sims$loutdalpha  = FALSE
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims, 
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -193,6 +196,7 @@ settings_calib_RED$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
 ddf_obs_NT <- get_obs_calib( settings_calib_RED, settings_sims, settings_input )
+save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
 
 settings_calib_RED <- calib_sofun(
   setup          = setup_sofun,
@@ -216,7 +220,7 @@ settings_sims$tempstress  = TRUE
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims, 
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Same fAPAR data used as above - nothing to be done 
@@ -236,13 +240,18 @@ inputdata <- prepare_input_sofun(
 ## Specify data source for observations to which model is calibrated
 settings_calib_FULL <- settings_calib
 settings_calib_FULL$name = "FULL"
-settings_calib_FULL$par = list( kphio          = list( lower=0.01, upper=0.12, init=0.05 ),
-                                temp_ramp_edge = list( lower=0.01, upper=20, init=5 ),
+settings_calib_FULL$par = list( kphio          = list( lower=0.01, upper=0.4, init=0.1 ),
                                 soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
                                 soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
+# settings_calib_FULL$par = list( kphio          = list( lower=0.01, upper=0.12, init=0.05 ),
+#                                 soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
+#                                 soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
 settings_calib_FULL$datasource = list( gpp = "fluxnet2015_NT" )
 settings_calib_FULL$filter_temp_min = NA
 settings_calib_FULL$filter_soilm_min = NA
+
+## load obs data if not available
+if (!exists("ddf_obs_NT")) load("./data/ddf_obs_NT.Rdata")
 
 ## Same observational data as for setup 'RED' (filtering is done afterwards, inside calib_sofun())
 settings_calib_FULL <- calib_sofun(
@@ -254,6 +263,30 @@ settings_calib_FULL <- calib_sofun(
   )
 ```
 
+#### Additional test for `FULL`
+Test the sensitivity of calibrated parameters to the observational data: repeat calibration of each site separately.
+```{r}
+# ## test 
+# settings_calib_FULL_1site <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib_FULL,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = dplyr::filter( ddf_obs_NT, sitename=="FR-Pue" ),
+#   sitename       = "FR-Pue"
+#   )
+
+# list_calib_bysite <- purrr::map( as.list(calibsites), 
+#                                  ~calib_sofun(
+#                                               setup          = setup_sofun,
+#                                               settings_calib = settings_calib_FULL,
+#                                               settings_sims  = settings_sims,
+#                                               settings_input = settings_input,
+#                                               ddf_obs        = dplyr::filter( ddf_obs_NT, sitename==. ),
+#                                               sitename       = .
+#                                               ) )
+# save( list_calib_bysite, file = "data/list_calib_bysite.Rdata" )
+```
 
 ### Sensitivity to fAPAR forcing data with `RED_FPARitp` and `RED_EVI`
 
@@ -289,8 +322,8 @@ settings_calib_RED_FPARitp <- settings_calib
 settings_calib_RED_FPARitp$name = "RED_FPARitp"
 settings_calib_RED_FPARitp$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
 settings_calib_RED_FPARitp$datasource = list( gpp = "fluxnet2015_NT" )
-settings_calib_RED_FPARitp$filter_temp_min = 10.0
-settings_calib_RED_FPARitp$filter_soilm_min = 0.6
+settings_calib_RED_FPARitp$filter_temp_min = NA
+settings_calib_RED_FPARitp$filter_soilm_min = NA
 
 settings_calib_RED_FPARitp <- calib_sofun(
   setup          = setup_sofun,
@@ -322,8 +355,8 @@ settings_calib_RED_EVI <- settings_calib
 settings_calib_RED_EVI$name = "RED_EVI"
 settings_calib_RED_EVI$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
 settings_calib_RED_EVI$datasource = list( gpp = "fluxnet2015_NT" )
-settings_calib_RED_EVI$filter_temp_min = 10.0
-settings_calib_RED_EVI$filter_soilm_min = 0.6
+settings_calib_RED_EVI$filter_temp_min = NA
+settings_calib_RED_EVI$filter_soilm_min = NA
 
 settings_calib_RED_EVI <- calib_sofun(
   setup          = setup_sofun,
@@ -377,8 +410,8 @@ settings_calib_RED_DT <- settings_calib
 settings_calib_RED_DT$name <- "RED_DT"
 settings_calib_RED_DT$par <- list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
 settings_calib_RED_DT$datasource = list( gpp = "fluxnet2015_DT" )
-settings_calib_RED_DT$filter_temp_min = 10.0
-settings_calib_RED_DT$filter_soilm_min = 0.6
+settings_calib_RED_DT$filter_temp_min = NA
+settings_calib_RED_DT$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
 ddf_obs_DT <- get_obs_calib( settings_calib_RED_DT, settings_sims, settings_input )
@@ -432,8 +465,8 @@ settings_calib_RED_Ty <- settings_calib
 settings_calib_RED_Ty$name = "RED_Ty"
 settings_calib_RED_Ty$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
 settings_calib_RED_Ty$datasource = list( gpp = "fluxnet2015_Ty" )
-settings_calib_RED_Ty$filter_temp_min = 10.0
-settings_calib_RED_Ty$filter_soilm_min = 0.6
+settings_calib_RED_Ty$filter_temp_min = NA
+settings_calib_RED_Ty$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
 ddf_obs_Ty <- get_obs_calib( settings_calib_RED_Ty, settings_sims, settings_input )
