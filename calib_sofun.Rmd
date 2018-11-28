@@ -19,6 +19,8 @@ header-includes:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(captioner)
+library(rsofun)
+load_dependencies_rsofun()
 tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
 fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
 systr <- "''"    # for Mac
@@ -138,22 +140,24 @@ settings_calib <- list(
 
 Parameters are calibrated for six different simulation suites and parameter values saved in CSV files. The simulation suites are FLUXNET site-scale simulations with different fAPAR input data, differrent GPP calibration target data, and different model setups (empirical soil moisture and temperature stress function) with their calibration data set. 
 
-| output set    | fAPAR input data                 | GPP target data | Calibration set | SM limit.  | temp. ramp  | setup name  | parameter file name              |
-|---------------|----------------------------------|---------------- |-----------------|------------|-------------|-------------|----------------------------------|
-| s24           | MODIS FPAR MCD15A3H, splined     | NT              | RED             | no         | no          | RED         | params_opt_calib_RED.csv         |
-| s25           | MODIS FPAR MCD15A3H, splined     | NT              | FULL            | yes        | yes         | FULL        | params_opt_calib_FULL.csv        |
-|---------------|----------------------------------|---------------- |-----------------|------------|-------------|-------------|----------------------------------|
-| s26           | MODIS FPAR MCD15A3H, interpolated| NT              | RED             | no         | no          | RED_FPARitp | params_opt_calib_RED_FPARitp.csv |
-| s27           | MODIS EVI MOD13Q1, interpolated  | NT              | RED             | no         | no          | RED_EVI     | params_opt_calib_RED_EVI.csv     |
-|---------------|----------------------------------|---------------- |-----------------|------------|-------------|-------------|----------------------------------|
-| s28           | MODIS FPAR MCD15A3H, splined     | DT              | RED             | no         | no          | RED_DT      | params_opt_calib_RED_DT.csv      |
-| s29           | MODIS FPAR MCD15A3H, splined     | Ty              | RED             | no         | no          | RED_Ty      | params_opt_calib_RED_Ty.csv      |
-|---------------|----------------------------------|---------------- |-----------------|------------|-------------|-------------|----------------------------------|
+| Output set    | fAPAR data                       | GPP target data | Calibration set  | SM limit.  | temp stress | setup name   | parameter file name                 |
+|---------------|----------------------------------|---------------- |----------------- |------------|-------------|--------------|----------------------------------   |
+| s24           | MODIS FPAR MCD15A3H, splined     | NT              | valid NT data    | no         | no          | ORG          | params_opt_calib_ORG.csv            |
+| s25           | MODIS FPAR MCD15A3H, splined     | NT              | valid NT data    | yes        | yes         | FULL         | params_opt_calib_FULL.csv           |
+| s30           | MODIS FPAR MCD15A3H, splined     | NT              | valid NT data    | no         | yes         | BRC          | params_opt_calib_BRC.csv            |
+|---------------|----------------------------------|---------------- |----------------- |------------|-------------|--------------|----------------------------------   |
+| s26           | MODIS FPAR MCD15A3H, interpolated| NT              | valid NT data    | yes        | yes         | FULL_FPARitp | params_opt_calib_FULL_FPARitp.csv   |
+| s27           | MODIS EVI MOD13Q1, interpolated  | NT              | valid NT data    | yes        | yes         | FULL_EVI     | params_opt_calib_FULL_EVI.csv       |
+|---------------|----------------------------------|---------------- |----------------- |------------|-------------|--------------|----------------------------------   |
+| s28           | MODIS FPAR MCD15A3H, splined     | DT              | valid NT, DT, Ty | yes        | yes         | FULL_DT      | params_opt_calib_FULL_DT.csv        |
+| s29           | MODIS FPAR MCD15A3H, splined     | Ty              | valid NT, DT, Ty | yes        | yes         | FULL_Ty      | params_opt_calib_FULL_Ty.csv        |
+| s31           | MODIS FPAR MCD15A3H, splined     | NT              | valid NT, DT, Ty | yes        | yes         | FULL_DT      | params_opt_calib_FULL_DT.csv        |
+|---------------|----------------------------------|---------------- |----------------- |------------|-------------|--------------|----------------------------------   |
 
 
-### Setup `RED`
+### Setup `ORG`
 
-Define settings, prepare setup and input data and do the calibration for the setup `RED`. This is based on filtered target data (excluding dry and cold days), without empirical soil moisture and low temperature stress functions and calibrates only `kphio`. `settings_calib()` returns calibration settings, now including calibrated parameters inside the list (`settings_calib$par[[param_name]]$opt`). Calibrated parameters are also written to a CSV file `"params_opt_RED.csv"`.
+Define settings, prepare setup and input data and do the calibration for the setup `ORG`. This calibrates only `kphio`. `settings_calib()` returns calibration settings, now including calibrated parameters inside the list (`settings_calib$par[[param_name]]$opt`). Calibrated parameters are also written to a CSV file `"params_opt_ORG.csv"`.
 
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
@@ -170,7 +174,7 @@ settings_sims$loutdalpha  = FALSE
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims, 
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -182,25 +186,81 @@ inputdata <- prepare_input_sofun(
   settings_sims = settings_sims, 
   return_data = FALSE, 
   overwrite_csv_fapar = FALSE, 
+  overwrite_fapar = FALSE, 
   verbose = TRUE
   )
 
 ## Additional setup-specific calibration-settings
 ## Specify data source for observations to which model is calibrated
-settings_calib_RED <- settings_calib
-settings_calib_RED$name = "RED"
-settings_calib_RED$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
-settings_calib_RED$datasource = list( gpp = "fluxnet2015_NT" )
-settings_calib_RED$filter_temp_min = NA
-settings_calib_RED$filter_soilm_min = NA
+settings_calib_ORG <- settings_calib
+settings_calib_ORG$name = "ORG"
+settings_calib_ORG$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
+settings_calib_ORG$datasource = list( gpp = "fluxnet2015_NT" )
+settings_calib_ORG$filter_temp_min = NA
+settings_calib_ORG$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
-ddf_obs_NT <- get_obs_calib( settings_calib_RED, settings_sims, settings_input )
-save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
+if (!exists("ddf_obs_NT")){
+  ddf_obs_NT <- get_obs_calib( settings_calib_ORG, settings_sims, settings_input )
+  save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
+}
 
-settings_calib_RED <- calib_sofun(
+settings_calib_ORG <- calib_sofun(
   setup          = setup_sofun,
-  settings_calib = settings_calib_RED,
+  settings_calib = settings_calib_ORG,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
+  ddf_obs        = ddf_obs_NT
+  )
+```
+
+
+### Setup `BRC`
+
+The setup `BRC` is different from `ORG` in that it implements the temperature dependence of the quantum yield efficiency parameter after Bernacchi et al., 2003 PCE (included by setting `settings_sims$tempstress  = TRUE`)
+
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
+## Define calibration setup-specific simulation parameters
+settings_sims$soilmstress = FALSE
+settings_sims$tempstress  = TRUE
+
+## Prepare the model setup for this calibration set
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
+  write_paramfils = TRUE 
+  )
+
+## Define fAPAR input data and re-write input files for SOFUN
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
+
+inputdata <- prepare_input_sofun( 
+  settings_input = settings_input, 
+  settings_sims = settings_sims, 
+  return_data = FALSE, 
+  overwrite_csv_fapar = FALSE, 
+  overwrite_fapar = FALSE, 
+  verbose = TRUE
+  )
+
+## Additional setup-specific calibration-settings
+## Specify data source for observations to which model is calibrated
+settings_calib_BRC <- settings_calib
+settings_calib_BRC$name = "BRC"
+settings_calib_BRC$par = list( kphio = list( lower=0.01, upper=0.2, init=0.05 ) )
+settings_calib_BRC$datasource = list( gpp = "fluxnet2015_NT" )
+settings_calib_BRC$filter_temp_min = NA
+settings_calib_BRC$filter_soilm_min = NA
+
+## Get observational data (GPP based on NT method) used as target for calibration
+if (!exists("ddf_obs_NT")){
+  ddf_obs_NT <- get_obs_calib( settings_calib_BRC, settings_sims, settings_input )
+  save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
+}
+
+settings_calib_BRC <- calib_sofun(
+  setup          = setup_sofun,
+  settings_calib = settings_calib_BRC,
   settings_sims  = settings_sims,
   settings_input = settings_input,
   ddf_obs        = ddf_obs_NT
@@ -233,6 +293,7 @@ inputdata <- prepare_input_sofun(
   settings_sims = settings_sims,
   return_data = FALSE,
   overwrite_csv_fapar = FALSE, # WARNING: ASSUMING "LINEAR" KNITTING 
+  overwrite_fapar = FALSE, # WARNING: ASSUMING "LINEAR" KNITTING 
   verbose = TRUE
   )
 
@@ -243,9 +304,6 @@ settings_calib_FULL$name = "FULL"
 settings_calib_FULL$par = list( kphio          = list( lower=0.01, upper=0.4, init=0.1 ),
                                 soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
                                 soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
-# settings_calib_FULL$par = list( kphio          = list( lower=0.01, upper=0.12, init=0.05 ),
-#                                 soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
-#                                 soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
 settings_calib_FULL$datasource = list( gpp = "fluxnet2015_NT" )
 settings_calib_FULL$filter_temp_min = NA
 settings_calib_FULL$filter_soilm_min = NA
@@ -263,7 +321,7 @@ settings_calib_FULL <- calib_sofun(
   )
 ```
 
-#### Additional test for `FULL`
+<!-- #### Additional test for `FULL`
 Test the sensitivity of calibrated parameters to the observational data: repeat calibration of each site separately.
 ```{r}
 # ## test 
@@ -287,21 +345,22 @@ Test the sensitivity of calibrated parameters to the observational data: repeat 
 #                                               ) )
 # save( list_calib_bysite, file = "data/list_calib_bysite.Rdata" )
 ```
+ -->
 
-### Sensitivity to fAPAR forcing data with `RED_FPARitp` and `RED_EVI`
+### Sensitivity to fAPAR forcing data with `FULL_FPARitp` and `FULL_EVI`
 
-Do the same as described under `RED`, but with alternative fAPAR data. Calibrated parameters are written to `"params_opt_RED_FPARitp.csv"` and `"params_opt_RED_EVI.csv"`.
+Do the same as described under `FULL`, but with alternative fAPAR data. Calibrated parameters are written to `"params_opt_FULL_FPARitp.csv"` and `"params_opt_FULL_EVI.csv"`.
 
-#### Setup `RED_FPARitp`
+#### Setup `FULL_FPARitp`
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims$soilmstress = FALSE
-settings_sims$tempstress  = FALSE
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
 
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims, 
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -312,22 +371,25 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = TRUE, 
+  overwrite_csv_fapar = FALSE,
+  overwrite_fapar = FALSE,
   verbose = TRUE
   )
 
 ## Additional setup-specific calibration-settings
 ## Specify data source for observations to which model is calibrated
-settings_calib_RED_FPARitp <- settings_calib
-settings_calib_RED_FPARitp$name = "RED_FPARitp"
-settings_calib_RED_FPARitp$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
-settings_calib_RED_FPARitp$datasource = list( gpp = "fluxnet2015_NT" )
-settings_calib_RED_FPARitp$filter_temp_min = NA
-settings_calib_RED_FPARitp$filter_soilm_min = NA
+settings_calib_FULL_FPARitp <- settings_calib
+settings_calib_FULL_FPARitp$name = "FULL_FPARitp"
+settings_calib_FULL_FPARitp$par = list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
+                                        soilm_par_a = list( lower=0.0, upper=1.0, init=0.2 ),
+                                        soilm_par_b = list( lower=0.0, upper=2.0, init=0.2 ) )
+settings_calib_FULL_FPARitp$datasource = list( gpp = "fluxnet2015_NT" )
+settings_calib_FULL_FPARitp$filter_temp_min = NA
+settings_calib_FULL_FPARitp$filter_soilm_min = NA
 
-settings_calib_RED_FPARitp <- calib_sofun(
+settings_calib_FULL_FPARitp <- calib_sofun(
   setup          = setup_sofun,
-  settings_calib = settings_calib_RED_FPARitp,
+  settings_calib = settings_calib_FULL_FPARitp,
   settings_sims  = settings_sims,
   settings_input = settings_input,
   ddf_obs        = ddf_obs_NT
@@ -335,8 +397,17 @@ settings_calib_RED_FPARitp <- calib_sofun(
 ```
 
 
-#### Setup `RED_EVI`
+#### Setup `FULL_EVI`
 ```{r, eval=FALSE, message=FALSE, warning=FALSE}
+## Define calibration setup-specific simulation parameters
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
+
+## Prepare the model setup for this calibration set
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
+  write_paramfils = FALSE 
+  )
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_EVI_MOD13Q1"
 settings_input$splined_fapar = FALSE
@@ -345,22 +416,25 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = TRUE, 
+  overwrite_csv_fapar = FALSE,
+  overwrite_fapar = FALSE,
   verbose = TRUE
   )
 
 ## Additional setup-specific calibration-settings
 ## Specify data source for observations to which model is calibrated
-settings_calib_RED_EVI <- settings_calib
-settings_calib_RED_EVI$name = "RED_EVI"
-settings_calib_RED_EVI$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
-settings_calib_RED_EVI$datasource = list( gpp = "fluxnet2015_NT" )
-settings_calib_RED_EVI$filter_temp_min = NA
-settings_calib_RED_EVI$filter_soilm_min = NA
+settings_calib_FULL_EVI <- settings_calib
+settings_calib_FULL_EVI$name = "FULL_EVI"
+settings_calib_FULL_EVI$par = list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
+                                    soilm_par_a = list( lower=0.0, upper=1.0, init=0.2 ),
+                                    soilm_par_b = list( lower=0.0, upper=2.0, init=0.2 ) )
+settings_calib_FULL_EVI$datasource = list( gpp = "fluxnet2015_NT" )
+settings_calib_FULL_EVI$filter_temp_min = NA
+settings_calib_FULL_EVI$filter_soilm_min = NA
 
-settings_calib_RED_EVI <- calib_sofun(
+settings_calib_FULL_EVI <- calib_sofun(
   setup          = setup_sofun,
-  settings_calib = settings_calib_RED_EVI,
+  settings_calib = settings_calib_FULL_EVI,
   settings_sims  = settings_sims,
   settings_input = settings_input,
   ddf_obs        = ddf_obs_NT
@@ -368,28 +442,21 @@ settings_calib_RED_EVI <- calib_sofun(
 ```
 
 
-### Sensitivity to target GPP data with `RED_DT` and `RED_Ty`
+### Sensitivity to target GPP data with `FULL_DT` and `FULL_Ty` and `FULL_NTsub`
 
-Do the same as described under `RED`, but with calibration target data. Calibrated parameters are written to `"params_opt_RED_DT.csv"` and `"params_opt_RED_Ty.csv"`.
+Do the same as described under `ORG`, but with alternative calibration target data: GPP based on the daytime decomposition method and GPP on GePiSaT method. Note that GPP data decomposed based on the GePiSaT method is much sparser than the FLUXNET 2015 data (NT and DT decomposition). To have a fair comparison, we use days that have valid data in all datasets GePiSaT, NT, and DT. This requires the `FULL` setup to be repeated with only a subset of the data (`FULL_NTsub`). Calibrated parameters are written to `"params_opt_FULL_DT.csv"` and `"params_opt_FULL_Ty.csv"`.
 
-#### Setup `RED_DT`
+#### Setup `FULL_DT`
 
-```{r, eval=FALSE, message=FALSE, warning=FALSE}
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims$soilmstress = FALSE
-settings_sims$tempstress  = FALSE
-settings_sims$loutdgpp    = FALSE
-settings_sims$loutdrd     = FALSE
-settings_sims$loutdtransp = FALSE
-settings_sims$loutdwcont  = FALSE
-settings_sims$loutdaet    = FALSE
-settings_sims$loutdpet    = FALSE
-settings_sims$loutdalpha  = FALSE
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
 
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims, 
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -400,80 +467,149 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = TRUE, 
+  overwrite_csv_fapar = FALSE, 
+  overwrite_fapar = FALSE, 
   verbose = TRUE
   )
 
 ## Additional setup-specific calibration-settings
 ## Specify data source for observations to which model is calibrated
-settings_calib_RED_DT <- settings_calib
-settings_calib_RED_DT$name <- "RED_DT"
-settings_calib_RED_DT$par <- list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
-settings_calib_RED_DT$datasource = list( gpp = "fluxnet2015_DT" )
-settings_calib_RED_DT$filter_temp_min = NA
-settings_calib_RED_DT$filter_soilm_min = NA
+settings_calib_FULL_DT <- settings_calib
+settings_calib_FULL_DT$name <- "FULL_DT"
+settings_calib_FULL_DT$par <- list( kphio          = list( lower=0.01, upper=0.4, init=0.1 ),
+                                    soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
+                                    soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
+settings_calib_FULL_DT$datasource = list( gpp = "fluxnet2015_DT" )
+settings_calib_FULL_DT$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
+settings_calib_FULL_DT$filter_temp_min = NA
+settings_calib_FULL_DT$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
-ddf_obs_DT <- get_obs_calib( settings_calib_RED_DT, settings_sims, settings_input )
+if (!exists("ddf_obs_DTsub")){
+  ddf_obs_DTsub <- get_obs_calib( settings_calib_FULL_DT, settings_sims, settings_input )
+  save(ddf_obs_DTsub, file = "data/ddf_obs_DTsub.Rdata")
+} else {
+  load("data/ddf_obs_DTsub.Rdata")
+}
+print(paste0("Total number of calibration target data points: ", sum(!is.na(ddf_obs_DTsub$gpp_obs))))
 
-settings_calib_RED_DT <- calib_sofun(
+settings_calib_FULL_DT <- calib_sofun(
   setup          = setup_sofun,
-  settings_calib = settings_calib_RED_DT,
+  settings_calib = settings_calib_FULL_DT,
   settings_sims  = settings_sims,
   settings_input = settings_input,
-  ddf_obs        = ddf_obs_DT
+  ddf_obs        = ddf_obs_DTsub
+  )
+```
+
+#### Setup `FULL_NTsub`
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+## Define calibration setup-specific simulation parameters
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
+
+## Prepare the model setup for this calibration set
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
+  write_paramfils = FALSE 
+  )
+
+## Define fAPAR input data and re-write input files for SOFUN
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
+
+inputdata <- prepare_input_sofun( 
+  settings_input = settings_input, 
+  settings_sims = settings_sims, 
+  return_data = FALSE, 
+  overwrite_csv_fapar = FALSE, 
+  overwrite_fapar = FALSE, 
+  verbose = TRUE
+  )
+
+## Additional setup-specific calibration-settings
+## Specify data source for observations to which model is calibrated
+settings_calib_FULL_NTsub <- settings_calib
+settings_calib_FULL_NTsub$name <- "FULL_NTsub"
+settings_calib_FULL_NTsub$par <- list( kphio          = list( lower=0.01, upper=0.4, init=0.1 ),
+                                    soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
+                                    soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
+settings_calib_FULL_NTsub$datasource = list( gpp = "fluxnet2015_NT" )
+settings_calib_FULL_NTsub$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
+settings_calib_FULL_NTsub$filter_temp_min = NA
+settings_calib_FULL_NTsub$filter_soilm_min = NA
+
+## Get observational data (GPP based on NT method) used as target for calibration
+if (!exists("ddf_obs_NTsub")){
+  ddf_obs_NTsub <- get_obs_calib( settings_calib_FULL_NTsub, settings_sims, settings_input )
+  save( ddf_obs_NTsub, file = "data/ddf_obs_NTsub.Rdata")
+} else {
+  load("data/ddf_obs_NTsub.Rdata")
+}
+print(paste0("Total number of calibration target data points: ", sum(!is.na(ddf_obs_NTsub$gpp_obs))))
+
+settings_calib_FULL_NTsub <- calib_sofun(
+  setup          = setup_sofun,
+  settings_calib = settings_calib_FULL_NTsub,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
+  ddf_obs        = ddf_obs_NTsub
   )
 ```
 
 
-#### Setup `RED_Ty`
+#### Setup `FULL_Ty`
 
-```{r, eval=FALSE, message=FALSE, warning=FALSE}
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define calibration setup-specific simulation parameters
-settings_sims$soilmstress = FALSE
-settings_sims$tempstress  = FALSE
-settings_sims$loutdgpp    = FALSE
-settings_sims$loutdrd     = FALSE
-settings_sims$loutdtransp = FALSE
-settings_sims$loutdwcont  = FALSE
-settings_sims$loutdaet    = FALSE
-settings_sims$loutdpet    = FALSE
-settings_sims$loutdalpha  = FALSE
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
 
-# ## Prepare the model setup for this calibration set
-# settings_sims <- prepare_setup_sofun( 
-#   settings = settings_sims, 
-#   write_paramfils = TRUE 
-#   )
-# 
-# ## Define fAPAR input data and re-write input files for SOFUN
-# settings_input$fapar = "MODIS_FPAR_MCD15A3H"
-# settings_input$splined_fapar = TRUE
-# 
-# inputdata <- prepare_input_sofun( 
-#   settings_input = settings_input, 
-#   settings_sims = settings_sims, 
-#   return_data = FALSE, 
-#   overwrite_climate = FALSE, 
-#   overwrite_fapar = TRUE, 
-#   verbose = TRUE
-#   )
+## Prepare the model setup for this calibration set
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
+  write_paramfils = FALSE 
+  )
+
+## Define fAPAR input data and re-write input files for SOFUN
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
+
+inputdata <- prepare_input_sofun( 
+  settings_input = settings_input, 
+  settings_sims = settings_sims, 
+  return_data = FALSE, 
+  overwrite_climate = FALSE, 
+  overwrite_csv_fapar = FALSE, 
+  overwrite_fapar = FALSE, 
+  verbose = TRUE
+  )
 
 ## Additional setup-specific calibration-settings
 ## Specify data source for observations to which model is calibrated
-settings_calib_RED_Ty <- settings_calib
-settings_calib_RED_Ty$name = "RED_Ty"
-settings_calib_RED_Ty$par = list( kphio = list( lower=0.01, upper=0.12, init=0.05 ) )
-settings_calib_RED_Ty$datasource = list( gpp = "fluxnet2015_Ty" )
-settings_calib_RED_Ty$filter_temp_min = NA
-settings_calib_RED_Ty$filter_soilm_min = NA
+settings_calib_FULL_Ty <- settings_calib
+settings_calib_FULL_Ty$name = "FULL_Ty"
+settings_calib_FULL_Ty$par = list( kphio          = list( lower=0.01, upper=0.4, init=0.1 ),
+                                   soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
+                                   soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
+settings_calib_FULL_Ty$datasource = list( gpp = "fluxnet2015_Ty" )
+settings_calib_FULL_Ty$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
+settings_calib_FULL_Ty$filter_temp_min = NA
+settings_calib_FULL_Ty$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
-ddf_obs_Ty <- get_obs_calib( settings_calib_RED_Ty, settings_sims, settings_input )
+if (!exists("ddf_obs_Ty")){
+  ddf_obs_Ty <- get_obs_calib( settings_calib_FULL_Ty, settings_sims, settings_input )
+  save( ddf_obs_Ty, file = "data/ddf_obs_Ty.Rdata" )
+} else {
+  load("data/ddf_obs_Ty.Rdata")
+}
+print(paste0("Total number of calibration target data points: ", sum(!is.na(ddf_obs_Ty$gpp_obs))))
 
-settings_calib_RED_Ty <- calib_sofun(
+settings_calib_FULL_Ty <- calib_sofun(
   setup          = setup_sofun,
-  settings_calib = settings_calib_RED_Ty,
+  settings_calib = settings_calib_FULL_Ty,
   settings_sims  = settings_sims,
   settings_input = settings_input,
   ddf_obs        = ddf_obs_Ty
