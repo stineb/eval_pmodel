@@ -40,8 +40,8 @@ plot_dday <- function( df_dday_agg, df_dday_agg2=NA, bias=FALSE, before, after, 
         with( df_dday_agg, lines( dday, bias_gpp_median, col="black", lwd=2 ) )
 
         if (!identical(NA, df_dday_agg2)){
-          with( df_dday_agg2, polygon( c(dday, rev(dday)), c(bias_gpp_q33, rev(bias_gpp_q66)), col=add_alpha("black", 0.2), border = NA ) )
-          with( df_dday_agg2, lines( dday, bias_gpp_median, col="black", lwd=2, lty=2 ) )
+          with( df_dday_agg2, polygon( c(dday, rev(dday)), c(bias_gpp_q33, rev(bias_gpp_q66)), col=add_alpha("royalblue", 0.2), border = NA ) )
+          with( df_dday_agg2, lines( dday, bias_gpp_median, col="royalblue", lwd=2 ) )
         }
 
     } else {
