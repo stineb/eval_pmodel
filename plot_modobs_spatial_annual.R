@@ -1,25 +1,28 @@
-plot_modobs_spatial_annual <- function( out_eval, annual_pooled_stats = NA, spatial_stats = NA, pattern = "", makepdf = FALSE, ... ){
+plot_modobs_spatial_annual <- function( out_eval, annual_pooled_stats = NA, spatial_stats = NA, label = "", makepdf = FALSE, ... ){
   
   if (!identical(out_eval$data$linmod_meandf, NA)){
     
     dir_figs <- "./fig/"
     if (makepdf && !dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
-    if (makepdf) filn <- paste0( dir_figs, "/modobs_spatial_annual_", pattern, ".pdf" )
+    if (makepdf) filn <- paste0( dir_figs, "/modobs_spatial_annual_", label, ".pdf" )
     if (makepdf) print( paste( "Plotting to file:", filn ) )
     if (makepdf) pdf( filn )
     
     par(las=1, mar=c(4,4.5,4,1))
     
     ## set up plotting and add linear regression line for means by site
-    with( out_eval$data$meandf, plot( gpp_mod, gpp_obs, pch=16, col=rgb(0,0,0,0.5), type = "n", ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ), ... ) )
+    with( out_eval$data$meandf, plot( gpp_mod, gpp_obs, 
+        pch=16, col=rgb(0,0,0,0.5), type = "n", 
+        ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
+        xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ),
+        main = label,
+        ... ) )
     abline( out_eval$data$linmod_meandf, col="red")
     lines(c(-9999,9999), c(-9999,9999), lty=3)
     
     ## plot black regression lines of annual values within sites
     out <- out_eval$data$adf_stats %>%  mutate( purrr::map( data, ~lines( fitted ~ gpp_mod, data = . ) ) )  # to have it sorted: %>% mutate( data = purrr::map( data, ~arrange( ., gpp_mod ) ) )
-    
-    title( "Spatial/annual correlation" )
-    
+        
     ## Add annotations for statistics of annual values (pooled)
     if (!identical(NA, out_eval$metrics$gpp$fluxnet2015$annual_pooled)) mtext( bquote( italic(R)^2 == .(format( out_eval$metrics$gpp$fluxnet2015$annual_pooled$rsq,  digits = 2) ) ), adj = 1, cex = 0.8, line=2 )
     if (!identical(NA, out_eval$metrics$gpp$fluxnet2015$annual_pooled)) mtext( paste0( "RMSE = ",       format( out_eval$metrics$gpp$fluxnet2015$annual_pooled$rmse, digits = 3 ) ),  adj = 1, cex = 0.8, line=1 )

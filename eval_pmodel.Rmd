@@ -174,11 +174,11 @@ if (!file.exists("data/out_eval_NULL.Rdata")){
   out_eval_NULL <- eval_sofun( mod_NULL, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
   save( out_eval_NULL, file = "data/out_eval_NULL.Rdata" )
 } else {
-  load("data/out_eval_NULL.Rdata")
+  if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
 }
 
 row_rsqtable_NULL <- bind_cols( Setup = "NULL", getrow_statstable( out_eval_NULL, stat = "rsq" ) )
-rm("out_eval_NULL")
+# rm("out_eval_NULL")
 ```
 
 
@@ -232,11 +232,11 @@ if (!file.exists("data/out_eval_NULLpft.Rdata")){
   out_eval_NULLpft <- eval_sofun( mod_NULLpft, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
   save( out_eval_NULLpft, file = "data/out_eval_NULLpft.Rdata" )
 } else {
-  load("data/out_eval_NULLpft.Rdata")
+  if (!exists("out_eval_NULLpft")) load("data/out_eval_NULLpft.Rdata")
 }
 
 row_rsqtable_NULLpft <- bind_cols( Setup = "NULLpft", getrow_statstable( out_eval_NULLpft, stat = "rsq" ) )
-rm("out_eval_NULLpft")
+# rm("out_eval_NULLpft")
 ```
 
 
@@ -309,11 +309,11 @@ if (!file.exists("data/out_eval_ORG.Rdata")){
   out_eval_ORG <- eval_sofun( mod_ORG, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
   save( out_eval_ORG, file = "data/out_eval_ORG.Rdata" )
 } else {
-  load("data/out_eval_ORG.Rdata")
+  if (!exists("out_eval_ORG")) load("data/out_eval_ORG.Rdata")
 }
 
 row_rsqtable_ORG <- bind_cols( Setup = "ORG", getrow_statstable( out_eval_ORG, stat = "rsq" ) )
-rm("out_eval_ORG")
+# rm("out_eval_ORG")
 rm("mod_ORG")
 
 ## Plot mod-vs-obs for daily values
@@ -382,11 +382,11 @@ if (!file.exists("data/out_eval_BRC.Rdata")){
   out_eval_BRC <- eval_sofun( mod_BRC, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
   save( out_eval_BRC, file = "data/out_eval_BRC.Rdata" )
 } else {
-  load("data/out_eval_BRC.Rdata")
+  if (!exists("out_eval_BRC")) load("data/out_eval_BRC.Rdata")
 }
 
 row_rsqtable_BRC <- bind_cols( Setup = "BRC", getrow_statstable( out_eval_BRC, stat = "rsq" ) )
-rm("out_eval_BRC")
+# rm("out_eval_BRC")
 rm("mod_BRC")
 
 ## Plot mod-vs-obs for daily values
@@ -454,11 +454,11 @@ if (!file.exists("data/out_eval_FULL.Rdata")){
   out_eval_FULL <- eval_sofun( mod_FULL, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
   save( out_eval_FULL, file = "data/out_eval_FULL.Rdata" )
 } else {
-  load("data/out_eval_FULL.Rdata")
+  if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 }
 
 row_rsqtable_FULL <- bind_cols( Setup = "FULL", getrow_statstable( out_eval_FULL, stat = "rsq" ) )
-rm("out_eval_FULL")
+# rm("out_eval_FULL")
 rm("mod_FULL")
 
 ```
@@ -520,15 +520,15 @@ if (!file.exists("data/obs_eval_NT.Rdata")){
 }
 
 ## evaluate FULL_FPARitp simulations
-if (!file.exists("data/out_eval_ORG_FPARitp.Rdata")){
-  out_eval_ORG_FPARitp <- eval_sofun( mod_FULL_FPARitp, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
-  save( out_eval_ORG_FPARitp, file = "data/out_eval_ORG_FPARitp.Rdata" )
+if (!file.exists("data/out_eval_FULL_FPARitp.Rdata")){
+  out_eval_FULL_FPARitp <- eval_sofun( mod_FULL_FPARitp, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
+  save( out_eval_FULL_FPARitp, file = "data/out_eval_FULL_FPARitp.Rdata" )
 } else {
-  load("data/out_eval_ORG_FPARitp.Rdata")
+  if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 }
 
-row_rsqtable_FULL_FPARitp <- bind_cols( Setup = "FULL_FPARitp", getrow_statstable( out_eval_ORG_FPARitp, stat = "rsq" ) )
-rm("out_eval_ORG_FPARitp")
+row_rsqtable_FULL_FPARitp <- bind_cols( Setup = "FULL_FPARitp", getrow_statstable( out_eval_FULL_FPARitp, stat = "rsq" ) )
+# rm("out_eval_FULL_FPARitp")
 rm("mod_FULL_FPARitp")
 ```
 
@@ -595,11 +595,11 @@ if (!file.exists("data/out_eval_FULL_EVI.Rdata")){
   out_eval_FULL_EVI <- eval_sofun( mod_FULL_EVI, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
   save( out_eval_FULL_EVI, file = "data/out_eval_FULL_EVI.Rdata" )
 } else {
-  load("data/out_eval_FULL_EVI.Rdata")
+  if (!exists("out_eval_FULL_EVI")) load("data/out_eval_FULL_EVI.Rdata")
 }
 
 row_rsqtable_FULL_EVI <- bind_cols( Setup = "FULL_EVI", getrow_statstable( out_eval_FULL_EVI, stat = "rsq" ) )
-rm("out_eval_FULL_EVI")
+# rm("out_eval_FULL_EVI")
 rm("mod_FULL_EVI")
 ```
 
@@ -658,22 +658,11 @@ settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_N
 if (!file.exists("data/obs_eval_DT.Rdata")){
   obs_eval_DT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   obs_eval_DT$ddf <- obs_eval_DT$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
+  print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_DT$ddf$gpp_obs))))
   save( obs_eval_DT, file = "data/obs_eval_DT.Rdata")
 } else {
   load("data/obs_eval_DT.Rdata")
 }
-
-## evaluate FULL_DT simulations
-if (!file.exists("data/out_eval_FULL_DT.Rdata")){
-  out_eval_FULL_DT <- eval_sofun( mod_FULL_DT, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
-  save( out_eval_FULL_DT, file = "data/out_eval_FULL_DT.Rdata" )
-} else {
-  load("data/out_eval_FULL_DT.Rdata")
-}
-
-row_rsqtable_FULL_DT <- bind_cols( Setup = "FULL_DT", getrow_statstable( out_eval_FULL_DT, stat = "rsq" ) )
-rm("out_eval_FULL_DT")
-rm("mod_FULL_DT")
 ```
 
 ### Sensitivity to GPP data xxx (`FULL_NTsub`)
@@ -729,22 +718,11 @@ settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_N
 if (!file.exists("data/obs_eval_NTsub.Rdata")){
   obs_eval_NTsub <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   obs_eval_NTsub$ddf <- obs_eval_NTsub$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
+  print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_NTsub$ddf$gpp_obs))))
   save( obs_eval_NTsub, file = "data/obs_eval_NTsub.Rdata")
 } else {
   load("data/obs_eval_NTsub.Rdata")
 }
-
-## evaluate FULL_NTsub simulations
-if (!file.exists("data/out_eval_FULL_NTsub.Rdata")){
-  out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
-  save( out_eval_FULL_NTsub, file = "data/out_eval_FULL_NTsub.Rdata" )
-} else {
-  load("data/out_eval_FULL_NTsub.Rdata")
-}
-
-row_rsqtable_FULL_NTsub <- bind_cols( Setup = "FULL_NTsub", getrow_statstable( out_eval_FULL_NTsub, stat = "rsq" ) )
-rm("out_eval_FULL_NTsub")
-rm("mod_FULL_NTsub")
 ```
 
 ### Sensitivity to GPP data with Ty (`FULL_Ty`)
@@ -801,23 +779,60 @@ settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_N
 if (!file.exists("data/obs_eval_Ty.Rdata")){
   obs_eval_Ty <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   obs_eval_Ty$ddf <- obs_eval_Ty$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
+  print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_Ty$ddf$gpp_obs))))
   save( obs_eval_Ty, file = "data/obs_eval_Ty.Rdata")
 } else {
   load("data/obs_eval_Ty.Rdata")
 }
+```
+
+Evaluate in two steps, after making sure all data points are available in all setups.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+## Make sure data is available in all three
+merged <- select( obs_eval_DT$ddf, sitename, date, gpp_DT = gpp_obs ) %>% 
+  left_join( select( obs_eval_NTsub$ddf, sitename, date, gpp_NT = gpp_obs ), by = c("sitename", "date") ) %>% 
+  left_join( select( obs_eval_Ty$ddf, sitename, date, gpp_Ty = gpp_obs ),    by = c("sitename", "date") ) %>% 
+  mutate( use = ifelse( !is.na(gpp_DT) & !is.na(gpp_NT) & !is.na(gpp_Ty), TRUE, FALSE ) ) %>% 
+  mutate( gpp_DT = ifelse(use, gpp_DT, NA), gpp_NT = ifelse(use, gpp_NT, NA), gpp_Ty = ifelse(use, gpp_Ty, NA) )
+
+obs_eval_DT$ddf$gpp_obs    <- merged$gpp_DT
+obs_eval_NTsub$ddf$gpp_obs <- merged$gpp_NT
+obs_eval_Ty$ddf$gpp_obs    <- merged$gpp_Ty
+
+## evaluate FULL_DT simulations
+if (!file.exists("data/out_eval_FULL_DT.Rdataxxx")){
+  out_eval_FULL_DT <- eval_sofun( mod_FULL_DT, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
+  save( out_eval_FULL_DT, file = "data/out_eval_FULL_DT.Rdata" )
+} else {
+  if (!exists("out_eval_FULL_DT")) load("data/out_eval_FULL_DT.Rdata")
+}
+
+row_rsqtable_FULL_DT <- bind_cols( Setup = "FULL_DT", getrow_statstable( out_eval_FULL_DT, stat = "rsq" ) )
+rm("mod_FULL_DT")
+
+## evaluate FULL_NTsub simulations
+if (!file.exists("data/out_eval_FULL_NTsub.Rdataxxx")){
+  out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
+  save( out_eval_FULL_NTsub, file = "data/out_eval_FULL_NTsub.Rdata" )
+} else {
+  if (!exists("out_eval_FULL_NTsub")) load("data/out_eval_FULL_NTsub.Rdata")
+}
+
+row_rsqtable_FULL_NTsub <- bind_cols( Setup = "FULL_NTsub", getrow_statstable( out_eval_FULL_NTsub, stat = "rsq" ) )
+rm("mod_FULL_NTsub")
 
 ## evaluate FULL_Ty simulations
-if (!file.exists("data/out_eval_FULL_Ty.Rdata")){
+if (!file.exists("data/out_eval_FULL_Ty.Rdataxxx")){
   out_eval_FULL_Ty <- eval_sofun( mod_FULL_Ty, settings_eval, settings_sims, obs_eval = obs_eval_Ty, overwrite = TRUE )
   save( out_eval_FULL_Ty, file = "data/out_eval_FULL_Ty.Rdata" )
 } else {
-  load("data/out_eval_FULL_Ty.Rdata")
+  if (!exists("out_eval_FULL_Ty")) load("data/out_eval_FULL_Ty.Rdata")
 }
 
 row_rsqtable_FULL_Ty <- bind_cols( Setup = "FULL_Ty", getrow_statstable( out_eval_FULL_Ty, stat = "rsq" ) )
-rm("out_eval_FULL_Ty")
 rm("mod_FULL_Ty")
 ```
+
 
 ## Sites selection
 
@@ -899,6 +914,39 @@ print( latextable, hline.after=c(-1, 0), tabular.environment = "longtable", file
 #   knitr::kable( caption="Performance metrics of correlations between modelled and observed values at different temporal aggregation levels, absolute values and anomalies.")
 ```
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
+if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
+if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
+if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
+
+table_rsq <- bind_rows( 
+  bind_cols( Setup = "ORG",  select( getrow_statstable( out_eval_ORG, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "BRC",  select( getrow_statstable( out_eval_BRC, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "FULL", select( getrow_statstable( out_eval_FULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "NULL", select( getrow_statstable( out_eval_NULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) 
+  )
+table_rsq_formatted <- table_rsq %>% mutate_at( vars(-Setup), funs(format(., digits=2)))
+print(table_rsq_formatted)
+
+table_rmse <- bind_rows( 
+  bind_cols( Setup = "ORG",  select( getrow_statstable( out_eval_ORG, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "BRC",  select( getrow_statstable( out_eval_BRC, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "FULL", select( getrow_statstable( out_eval_FULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "NULL", select( getrow_statstable( out_eval_NULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) 
+  )
+table_rmse_formatted <- table_rmse %>% mutate_at( vars(-Setup), funs(format(., digits=3)))
+print(table_rmse_formatted)
+
+## print to .tex file
+table_rsq_tex <- xtable::xtable( table_rsq_formatted, caption = "Caption text", auto = TRUE )
+print( table_rsq_tex, hline.after=c(-1, 0), file = "tab/table_rsq.tex" )
+
+table_rmse_tex <- xtable::xtable( table_rmse_formatted, caption = "Caption text", auto = TRUE  )
+print( table_rmse_tex, hline.after=c(-1, 0), file = "tab/table_rmse.tex" )
+```
+
+
 <!-- ### Annual values -->
 
 <!-- Annual values in modelled and simulated GPP can be decomposed into the mean annual GPP per site $\overline{X}_i$ and its anomaly from the multi-annual mean $X'_{i,t}$: -->
@@ -913,14 +961,14 @@ This shows the same as in the SI of our submitted manuscript: Figures S14 and S1
 ```{r, echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 ## Use customized plotting
 source("plot_modobs_spatial_annual.R")
-load("data/out_eval_ORG.Rdata")
-load("data/out_eval_BRC.Rdata")
-load("data/out_eval_FULL.Rdata")
-load("data/out_eval_NULL.Rdata")
-plot_modobs_spatial_annual( out_eval_ORG, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, pattern = "RED" )
-plot_modobs_spatial_annual( out_eval_BRC, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, pattern = "BRC" )
-plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, pattern = "FULL" )
-plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, pattern = "NULL" )
+if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
+if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
+if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
+if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
+plot_modobs_spatial_annual( out_eval_ORG, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "ORG" )
+plot_modobs_spatial_annual( out_eval_BRC, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "BRC" )
+plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "FULL" )
+plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "NULL" )
 ```
 
 #### Seasonal cycle by climate zones
@@ -938,18 +986,18 @@ Plot only for climate zones where data from at least five different sites are av
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( out_eval_ORG, makepdf=TRUE, pattern="ORG" ) # out_eval_FULL, out_eval_FULL_EVI, 
-plot_by_doy_allzones( out_eval_BRC, makepdf=TRUE, pattern="BRC" ) # out_eval_FULL, out_eval_FULL_EVI, 
-plot_by_doy_allzones( out_eval_FULL, makepdf=TRUE, pattern="FULL" ) # out_eval_FULL, out_eval_FULL_EVI, 
+plot_by_doy_allzones( out_eval_FULL, out_eval_BRC, out_eval_ORG, makepdf=TRUE, pattern="all", lab1="FULL", lab2="BRC", lab3="ORG" )
 plot_by_doy_allzones( out_eval_NULL, makepdf=TRUE, pattern="NULL" )
-plot_by_doy_allzones( out_eval_FULL_EVI, makepdf=TRUE, pattern="FULL_EVI" )
 
 metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
   group_by( koeppen_code, hemisphere ) %>% 
   summarise( nsites = n() ) %>% 
   left_join( dplyr::rename( koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>% 
-  arrange( -nsites )
+  arrange( -nsites ) %>%
+  xtable::xtable( caption = "Caption text", auto = TRUE ) %>%
+  print( hline.after=c(-1, 0), file = "tab/table_nsites_kgclimate.tex" )
+
 ```
 
 Insights from seasonality analysis by climate zones (results see below, red is the model, black the observations, discussing only climate zones with data from more than three sites):
@@ -974,23 +1022,94 @@ Here, $LUE(m|d)$ is the monthly varying light use efficiency simulated by the P-
 The correlation is still quite good...
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-source("plot_modobs_daily.R")
+source("plot_modobs.R")
+if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
+if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
+if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 # modobs_ddf <- plot_modobs_daily(   out_eval_ORG, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
 # modobs_xdf <- plot_modobs_xdaily(  out_eval_ORG, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
-modobs_mdf <- plot_modobs_monthly( out_eval_ORG, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), pattern = "ORG" )
-modobs_mdf <- plot_modobs_monthly( out_eval_BRC, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), pattern = "BRC" )
-modobs_mdf <- plot_modobs_monthly( out_eval_FULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), pattern = "FULL" )
-modobs_mdf <- plot_modobs_monthly( out_eval_NULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), pattern = "NULL" )
+modobs_xdf <- plot_modobs_xdaily( out_eval_ORG,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "ORG" )
+modobs_xdf <- plot_modobs_xdaily( out_eval_BRC,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "BRC" )
+modobs_xdf <- plot_modobs_xdaily( out_eval_FULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "FULL" )
+modobs_xdf <- plot_modobs_xdaily( out_eval_NULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NULL" )
+
+table_rsq <- bind_rows( 
+  bind_cols( Setup = "ORG",  select( getrow_statstable( out_eval_ORG, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "BRC",  select( getrow_statstable( out_eval_BRC, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "FULL", select( getrow_statstable( out_eval_FULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "NULL", select( getrow_statstable( out_eval_NULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) 
+  )
+table_rsq_formatted <- table_rsq %>% mutate_at( vars(-Setup), funs(format(., digits=2)))
+print(table_rsq_formatted)
+
+table_rmse <- bind_rows( 
+  bind_cols( Setup = "ORG",  select( getrow_statstable( out_eval_ORG, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "BRC",  select( getrow_statstable( out_eval_BRC, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "FULL", select( getrow_statstable( out_eval_FULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ),
+  bind_cols( Setup = "NULL", select( getrow_statstable( out_eval_NULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) 
+  )
+table_rmse_formatted <- table_rmse %>% mutate_at( vars(-Setup), funs(format(., digits=3)))
+print(table_rmse_formatted)
+
 ```
 
 ### Daily anomalies
 
 ```{r}
 source("plot_modobs_anomalies_daily.R")
-modobs_anomalies_daily_ORG  <- plot_modobs_anomalies_daily( out_eval_ORG,  makepdf=TRUE, pattern = "ORG" )
-modobs_anomalies_daily_BRC  <- plot_modobs_anomalies_daily( out_eval_ORG,  makepdf=TRUE, pattern = "BRC" )
-modobs_anomalies_daily_FULL <- plot_modobs_anomalies_daily( out_eval_FULL, makepdf=TRUE, pattern = "FULL" )
-modobs_anomalies_daily_NULL <- plot_modobs_anomalies_daily( out_eval_NULL, makepdf=TRUE, pattern = "NULL" )
+source("analyse_modobs_ggplot2.R")
+modobs_anomalies_daily_ORG  <- plot_modobs_anomalies_daily( out_eval_ORG,  makepdf=TRUE, label = "ORG" )
+modobs_anomalies_daily_BRC  <- plot_modobs_anomalies_daily( out_eval_BRC,  makepdf=TRUE, label = "BRC" )
+modobs_anomalies_daily_FULL <- plot_modobs_anomalies_daily( out_eval_FULL, makepdf=TRUE, label = "FULL" )
+modobs_anomalies_daily_NULL <- plot_modobs_anomalies_daily( out_eval_NULL, makepdf=TRUE, label = "NULL" )
+```
+
+
+### Greenness data
+
+Look at seasonality for three zones with alternative greenness data.
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+source("plot_by_doy_allzones.R")
+if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
+if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
+if (!exists("out_eval_FULL_EVI"))    load("data/out_eval_FULL_EVI.Rdata")
+plot_by_doy_allzones( 
+  out_eval_FULL, 
+  out_eval_FULL_FPARitp, 
+  out_eval_FULL_EVI, 
+  makepdf=TRUE, label="greenness", 
+  col2="dodgerblue", col3="springgreen4",
+  lab1="FULL", lab2="FPARitp", lab3="EVI" 
+  )
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+source("plot_modobs_spatial_annual.R")
+plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "FULL" )
+plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
+```
+
+### GPP flux decomposition method
+
+Look at seasonality for three zones with alternative greenness data.
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+if (!exists("out_eval_FULL_NTsub"))  load("data/out_eval_FULL_NTsub.Rdata")
+if (!exists("out_eval_FULL_DT"))     load("data/out_eval_FULL_DT.Rdata")
+if (!exists("out_eval_FULL_Ty"))     load("data/out_eval_FULL_Ty.Rdata")
+
+source("plot_modobs.R")
+modobs_xdf <- plot_modobs_daily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
+modobs_xdf <- plot_modobs_daily( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
+modobs_xdf <- plot_modobs_daily( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
+
+modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
+modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
+modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
+
+modobs_xdf <- plot_modobs_monthly( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
+modobs_xdf <- plot_modobs_monthly( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
+modobs_xdf <- plot_modobs_monthly( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
+
 ```
 
 
@@ -1002,7 +1121,7 @@ In order to improve comparability, ANNs are trained at (P-) modelled and observe
 
 ```{r neuralnet, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
 source("eval_functionalrel.R")
-testdf <- eval_functionalrel( out_eval_FULL$data$ddf, "calib_results/params_opt_FULL.csv", overwrite = TRUE, ndays_agg = NULL, makepdf=FALSE, dir = "./fig/", pattern = "FULL"  )
+testdf <- eval_functionalrel( out_eval_FULL$data$ddf, "calib_results/params_opt_FULL.csv", overwrite = TRUE, ndays_agg = NULL, makepdf=FALSE, dir = "./fig/", label = "FULL"  )
 ```
 
 There are several points here:
@@ -1047,7 +1166,7 @@ df_dday_agg_FULL <- eval_droughtresponse(
   nbins=10, 
   do_norm=TRUE
   )
-plot_dday( df_dday_agg_BRC, df_dday_agg_FULL, before=20, after=79, bias=TRUE )
+plot_dday( df_dday_agg_BRC, df_dday_agg_FULL, before=20, after=79, bias=TRUE, filn="fig/droughtresponse.pdf" )
 ```
 
 
@@ -1068,7 +1187,7 @@ modobs_ddf <- plot_modobs_xdaily( out_eval$data$xdf, makepdf=FALSE, xlim=c(0,20)
 - The fact that the correlation improves when aggregating daily values to 5-daily values might reflect that applying the P-model as a light use efficiency model at the daily time scale violates its basic assumption related to the acclimation time scale. Non-linearities of the light-response curve imply that the ratio of GPP to absorbed light relationship declines with increasing light levels (right?). Day-to-day variations in GPP are mainly driven by light availability (not systematically investigated). Hence, anomalies of daily GPP from its mean seasonal cycle should be larger in the P-model than in the observations. This is the case as the figures below show.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
-modobs_anomalies_daily <- plot_modobs_anomalies_daily( out_eval_ORG$data$idvdf, out_eval_ORG$data$idvdf_stats, pattern = "RED", makepdf=TRUE )
+modobs_anomalies_daily <- plot_modobs_anomalies_daily( out_eval_ORG$data$idvdf, out_eval_ORG$data$idvdf_stats, label = "RED", makepdf=TRUE )
 ```
 Above figure shows the correlation and the distribution of anomalies in daily GPP from the respective mean seasonal cycle in the observations and in simulated values. Note that the blue lines in the first plot are the regression lines of daily anomalies for each site. The fact that their slope is consistently lower than 1, indicates that the day-to-day variability in simulated GPP is higher than in observed GPP. This is also reflected by the histogram in the second plot (note standard deviation values given in the upper left corner).
 
@@ -1109,7 +1228,7 @@ plot_modobs_spatial_annual(
   filter( out_eval_ORG$data$meandf, sitename %in% do.sites),
   lm( gpp_obs ~ gpp_mod, data = filter( out_eval_ORG$data$meandf, sitename %in% do.sites) ),
   filter( out_eval_ORG$data$adf_stats, sitename %in% do.sites),
-  makepdf=TRUE, pattern = "SOILM_GLOBAL", xlim=c(0,3000), ylim=c(0,3000) )
+  makepdf=TRUE, label = "SOILM_GLOBAL", xlim=c(0,3000), ylim=c(0,3000) )
 ```
 
 #### Spatial correlation
@@ -1135,8 +1254,8 @@ $$
 \overline{X_{\text{DOY}}} = \frac{1}{N_y} \sum_y X_{\text{DOY},y}
 $$
 ```{r, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
-modobs_meandoy <- plot_modobs_meandoy( out_eval_ORG$data$meandoydf, out_eval_ORG$data$meandoydf_stats, makepdf=TRUE, pattern = "RED" )
-modobs_meandoy <- plot_modobs_meandoy( out_eval_NULL$data$meandoydf, out_eval_NULL$data$meandoydf_stats, makepdf=TRUE, pattern = "NULL" )
+modobs_meandoy <- plot_modobs_meandoy( out_eval_ORG$data$meandoydf, out_eval_ORG$data$meandoydf_stats, makepdf=TRUE, label = "RED" )
+modobs_meandoy <- plot_modobs_meandoy( out_eval_NULL$data$meandoydf, out_eval_NULL$data$meandoydf_stats, makepdf=TRUE, label = "NULL" )
 ```
 
 

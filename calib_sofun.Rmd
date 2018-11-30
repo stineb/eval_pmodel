@@ -361,7 +361,7 @@ settings_sims$tempstress  = TRUE
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims, 
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -372,8 +372,8 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = FALSE,
-  overwrite_fapar = FALSE,
+  overwrite_csv_fapar = TRUE,
+  overwrite_fapar = TRUE,
   verbose = TRUE
   )
 
@@ -387,6 +387,8 @@ settings_calib_FULL_FPARitp$par = list( kphio       = list( lower=0.01, upper=0.
 settings_calib_FULL_FPARitp$datasource = list( gpp = "fluxnet2015_NT" )
 settings_calib_FULL_FPARitp$filter_temp_min = NA
 settings_calib_FULL_FPARitp$filter_soilm_min = NA
+
+if (!exists("ddf_obs_NT")) load("./data/ddf_obs_NT.Rdata")
 
 settings_calib_FULL_FPARitp <- calib_sofun(
   setup          = setup_sofun,
@@ -407,7 +409,7 @@ settings_sims$tempstress  = TRUE
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims, 
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_EVI_MOD13Q1"
@@ -417,8 +419,8 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = FALSE,
-  overwrite_fapar = FALSE,
+  overwrite_csv_fapar = TRUE,
+  overwrite_fapar = TRUE,
   verbose = TRUE
   )
 
@@ -432,6 +434,8 @@ settings_calib_FULL_EVI$par = list( kphio       = list( lower=0.01, upper=0.4, i
 settings_calib_FULL_EVI$datasource = list( gpp = "fluxnet2015_NT" )
 settings_calib_FULL_EVI$filter_temp_min = NA
 settings_calib_FULL_EVI$filter_soilm_min = NA
+
+if (!exists("ddf_obs_NT")) load("./data/ddf_obs_NT.Rdata")
 
 settings_calib_FULL_EVI <- calib_sofun(
   setup          = setup_sofun,
