@@ -9,8 +9,8 @@ plot_by_doy_allzones <- function( out_eval, out_eval1 = NA, out_eval2 = NA, make
   	as.list(seq(nrow(out_eval$data$meandoydf_byclim_stats))) , 
   	~plot_by_doy_byzone( 
   		out_eval$data$meandoydf_byclim_stats$data[[.]], 
-  		df2 = out_eval1$data$meandoydf_byclim_stats$data[[.]], 
-  		df3 = out_eval2$data$meandoydf_byclim_stats$data[[.]], 
+  		df2 = NA, #out_eval1$data$meandoydf_byclim_stats$data[[.]], 
+  		df3 = NA, #out_eval2$data$meandoydf_byclim_stats$data[[.]], 
   		makepdf = makepdf, label=label, col2=col2, col3=col3, lab1=lab1, lab2=lab2, lab3=lab3 
   		) 
   	)

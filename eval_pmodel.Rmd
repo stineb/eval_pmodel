@@ -657,7 +657,7 @@ settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_N
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_DT.Rdata")){
   obs_eval_DT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
-  obs_eval_DT$ddf <- obs_eval_DT$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
+  # obs_eval_DT$ddf <- obs_eval_DT$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_DT$ddf$gpp_obs))))
   save( obs_eval_DT, file = "data/obs_eval_DT.Rdata")
 } else {
@@ -717,7 +717,7 @@ settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_N
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_NTsub.Rdata")){
   obs_eval_NTsub <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
-  obs_eval_NTsub$ddf <- obs_eval_NTsub$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
+  # obs_eval_NTsub$ddf <- obs_eval_NTsub$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_NTsub$ddf$gpp_obs))))
   save( obs_eval_NTsub, file = "data/obs_eval_NTsub.Rdata")
 } else {
@@ -778,7 +778,7 @@ settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_N
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_Ty.Rdata")){
   obs_eval_Ty <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
-  obs_eval_Ty$ddf <- obs_eval_Ty$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
+  # obs_eval_Ty$ddf <- obs_eval_Ty$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_Ty$ddf$gpp_obs))))
   save( obs_eval_Ty, file = "data/obs_eval_Ty.Rdata")
 } else {
@@ -789,11 +789,14 @@ if (!file.exists("data/obs_eval_Ty.Rdata")){
 Evaluate in two steps, after making sure all data points are available in all setups.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Make sure data is available in all three
-merged <- select( obs_eval_DT$ddf, sitename, date, gpp_DT = gpp_obs ) %>% 
+merged <- select(    obs_eval_DT$ddf,    sitename, date, gpp_DT = gpp_obs ) %>% 
   left_join( select( obs_eval_NTsub$ddf, sitename, date, gpp_NT = gpp_obs ), by = c("sitename", "date") ) %>% 
-  left_join( select( obs_eval_Ty$ddf, sitename, date, gpp_Ty = gpp_obs ),    by = c("sitename", "date") ) %>% 
+  left_join( select( obs_eval_Ty$ddf,    sitename, date, gpp_Ty = gpp_obs_gepisat ), by = c("sitename", "date") ) %>% 
   mutate( use = ifelse( !is.na(gpp_DT) & !is.na(gpp_NT) & !is.na(gpp_Ty), TRUE, FALSE ) ) %>% 
   mutate( gpp_DT = ifelse(use, gpp_DT, NA), gpp_NT = ifelse(use, gpp_NT, NA), gpp_Ty = ifelse(use, gpp_Ty, NA) )
+sum(!is.na(merged$gpp_DT))
+sum(!is.na(merged$gpp_NT))
+sum(!is.na(merged$gpp_Ty))
 
 obs_eval_DT$ddf$gpp_obs    <- merged$gpp_DT
 obs_eval_NTsub$ddf$gpp_obs <- merged$gpp_NT
@@ -812,7 +815,7 @@ rm("mod_FULL_DT")
 
 ## evaluate FULL_NTsub simulations
 if (!file.exists("data/out_eval_FULL_NTsub.Rdataxxx")){
-  out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
+  out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_NTsub, overwrite = TRUE )
   save( out_eval_FULL_NTsub, file = "data/out_eval_FULL_NTsub.Rdata" )
 } else {
   if (!exists("out_eval_FULL_NTsub")) load("data/out_eval_FULL_NTsub.Rdata")
@@ -1069,10 +1072,10 @@ modobs_anomalies_daily_NULL <- plot_modobs_anomalies_daily( out_eval_NULL, makep
 
 Look at seasonality for three zones with alternative greenness data.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
-source("plot_by_doy_allzones.R")
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 if (!exists("out_eval_FULL_EVI"))    load("data/out_eval_FULL_EVI.Rdata")
+source("plot_by_doy_allzones.R")
 plot_by_doy_allzones( 
   out_eval_FULL, 
   out_eval_FULL_FPARitp, 
@@ -1099,8 +1102,8 @@ if (!exists("out_eval_FULL_Ty"))     load("data/out_eval_FULL_Ty.Rdata")
 
 source("plot_modobs.R")
 modobs_xdf <- plot_modobs_daily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
+modobs_xdf <- plot_modobs_daily( out_eval_FULL_DT,     makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "DT" )
+modobs_xdf <- plot_modobs_daily( out_eval_FULL_Ty,     makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "Ty" )
 
 modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
 modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
@@ -1109,6 +1112,23 @@ modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20),
 modobs_xdf <- plot_modobs_monthly( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
 modobs_xdf <- plot_modobs_monthly( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
 modobs_xdf <- plot_modobs_monthly( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
+
+source("plot_by_doy_allzones.R")
+plot_by_doy_allzones( 
+  out_eval_FULL_NTsub, 
+  makepdf=TRUE, label="NT", 
+  lab1="NT"
+  )
+plot_by_doy_allzones( 
+  out_eval_FULL_DT, 
+  makepdf=TRUE, label="DT", 
+  lab1="DT"
+  )
+plot_by_doy_allzones( 
+  out_eval_FULL_Ty, 
+  makepdf=TRUE, label="Ty", 
+  lab1="Ty"
+  )
 
 ```
 
@@ -1121,7 +1141,46 @@ In order to improve comparability, ANNs are trained at (P-) modelled and observe
 
 ```{r neuralnet, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
 source("eval_functionalrel.R")
-testdf <- eval_functionalrel( out_eval_FULL$data$ddf, "calib_results/params_opt_FULL.csv", overwrite = TRUE, ndays_agg = NULL, makepdf=FALSE, dir = "./fig/", label = "FULL"  )
+predictors <- c("temp", "vpd", "soilm")
+
+## Calulate LUE, rename, and and aggregate data to multi-day periods
+df <- out_eval_FULL$data$ddf %>%  mutate( lue_obs = gpp_obs / (fapar * ppfd_fluxnet2015), lue_mod = gpp_mod / (fapar * ppfd_fluxnet2015) ) %>%
+                                  mutate( lue_obs = ifelse( is.nan(lue_obs), NA, lue_obs ), lue_mod = ifelse( is.nan(lue_mod), NA, lue_mod ) ) %>%
+                                  mutate( lue_obs = remove_outliers(lue_obs), lue_mod = remove_outliers(lue_mod) ) %>%
+                                  dplyr::rename( vpd = vpd_fluxnet2015, ppfd = ppfd_fluxnet2015, soilm = soilm_obs_mean ) %>%
+                                  aggregate_mean( 
+                                    ndays_agg = 10, 
+                                    dovars = c("lue_obs", predictors), 
+                                    year_start = 1990, 
+                                    year_end = 2018 
+                                    )
+
+## Apply the P-model over evaluation data and get GAM response from this noisy data
+params_opt <- readr::read_csv( "calib_results/params_opt_FULL.csv" )
+df <- df %>% apply_pmodel( varnam_pmodel="lue", kphio=params_opt$kphio ) %>% rename( lue_mod=varnam_pmodel ) %>% select(-out_pmodel)
+
+## Get functional relationships of 'lue_obs' and 'lue_mod' using GAMs
+dflist_eval_lue_obs <- eval_functionalrel( 
+  df, 
+  nam_target="lue_obs", 
+  predictors=predictors,
+  overwrite = TRUE
+  )
+dflist_eval_lue_mod <- eval_functionalrel( 
+  df, 
+  nam_target="lue_mod", 
+  predictors=predictors,
+  overwrite = TRUE
+  )
+
+## Get functional relationships of P-model directly (apply P-model on the same type of evaluation data used to evaluate the GAMs)
+## get calibrated parameters
+dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df, predictors, nsample = 12 ) ) %>%
+                      purrr::map( ~apply_pmodel(., varnam_pmodel="lue", kphio=params_opt$kphio ) ) %>%
+                      setNames(predictors)
+dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>% 
+  setNames(predictors)
+
 ```
 
 There are several points here:
