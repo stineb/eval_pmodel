@@ -1139,35 +1139,46 @@ Functional relationships seen in the data can be extracted using Artificial Neur
 
 In order to improve comparability, ANNs are trained at (P-) modelled and observed GPP, and functional relationships thus derived for observed and modelled. This improves comparability and is preferred here over evaluating the model directly. As always, observations are in black and modelled in red.
 
-```{r neuralnet, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+```{r functionalrel, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+if (!exists("obs_eval_NTsub")) load("data/obs_eval_NTsub.Rdata")
+if (!exists("obs_eval_DT")) load("data/obs_eval_DT.Rdata")
+if (!exists("obs_eval_Ty")) load("data/obs_eval_Ty.Rdata")
 source("eval_functionalrel.R")
 predictors <- c("temp", "vpd", "soilm")
 
 ## Calulate LUE, rename, and and aggregate data to multi-day periods
-df <- out_eval_FULL$data$ddf %>%  mutate( lue_obs = gpp_obs / (fapar * ppfd_fluxnet2015), lue_mod = gpp_mod / (fapar * ppfd_fluxnet2015) ) %>%
-                                  mutate( lue_obs = ifelse( is.nan(lue_obs), NA, lue_obs ), lue_mod = ifelse( is.nan(lue_mod), NA, lue_mod ) ) %>%
-                                  mutate( lue_obs = remove_outliers(lue_obs), lue_mod = remove_outliers(lue_mod) ) %>%
-                                  dplyr::rename( vpd = vpd_fluxnet2015, ppfd = ppfd_fluxnet2015, soilm = soilm_obs_mean ) %>%
-                                  aggregate_mean( 
-                                    ndays_agg = 10, 
-                                    dovars = c("lue_obs", predictors), 
-                                    year_start = 1990, 
-                                    year_end = 2018 
-                                    )
+df_NT <- obs_eval_NTsub$ddf %>%
+            prepare_data_functionalrel( predictors, ndays_agg = 10, dovars = c("lue_obs", predictors), year_start = 1990, year_end = 2018 )
+df_DT <- obs_eval_DT$ddf %>%
+            prepare_data_functionalrel( predictors, ndays_agg = 10, dovars = c("lue_obs", predictors), year_start = 1990, year_end = 2018 )
+df_Ty <- obs_eval_Ty$ddf %>%
+            prepare_data_functionalrel( predictors, ndays_agg = 10, dovars = c("lue_obs", predictors), year_start = 1990, year_end = 2018 )
 
 ## Apply the P-model over evaluation data and get GAM response from this noisy data
 params_opt <- readr::read_csv( "calib_results/params_opt_FULL.csv" )
-df <- df %>% apply_pmodel( varnam_pmodel="lue", kphio=params_opt$kphio ) %>% rename( lue_mod=varnam_pmodel ) %>% select(-out_pmodel)
+df_NT <- df_NT %>% apply_pmodel( varnam_pmodel="lue", kphio=params_opt$kphio ) %>% rename( lue_mod=varnam_pmodel ) %>% select(-out_pmodel)
 
 ## Get functional relationships of 'lue_obs' and 'lue_mod' using GAMs
-dflist_eval_lue_obs <- eval_functionalrel( 
-  df, 
+dflist_eval_lue_obs_NT <- eval_functionalrel( 
+  df_NT, 
+  nam_target="lue_obs", 
+  predictors=predictors,
+  overwrite = TRUE
+  )
+dflist_eval_lue_obs_DT <- eval_functionalrel( 
+  df_DT, 
+  nam_target="lue_obs", 
+  predictors=predictors,
+  overwrite = TRUE
+  )
+dflist_eval_lue_obs_Ty <- eval_functionalrel( 
+  df_Ty, 
   nam_target="lue_obs", 
   predictors=predictors,
   overwrite = TRUE
   )
 dflist_eval_lue_mod <- eval_functionalrel( 
-  df, 
+  df_NT, 
   nam_target="lue_mod", 
   predictors=predictors,
   overwrite = TRUE
@@ -1175,7 +1186,7 @@ dflist_eval_lue_mod <- eval_functionalrel(
 
 ## Get functional relationships of P-model directly (apply P-model on the same type of evaluation data used to evaluate the GAMs)
 ## get calibrated parameters
-dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df, predictors, nsample = 12 ) ) %>%
+dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df_NT, predictors, nsample = 12 ) ) %>%
                       purrr::map( ~apply_pmodel(., varnam_pmodel="lue", kphio=params_opt$kphio ) ) %>%
                       setNames(predictors)
 dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>% 
@@ -1185,6 +1196,44 @@ save(dflist_eval_lue_obs, file = "data/dflist_eval_lue_obs.Rdata")
 save(dflist_eval_lue_mod, file = "data/dflist_eval_lue_mod.Rdata")
 save(dflist_eval_pmodel, file = "data/dflist_eval_pmodel.Rdata")
 save(dflist_eval_pmodel_stats, file = "data/dflist_eval_pmodel_stats.Rdata")
+
+plot_functionalrel( 
+  dflist_eval_lue_obs_NT[["temp"]], 
+  dflist_eval_lue_obs_DT[["temp"]], 
+  dflist_eval_lue_obs_Ty[["temp"]], 
+  dflist_eval_lue_mod[["temp"]], 
+  evalvar="temp", 
+  col=c("black", "black", "black", "red"),
+  lty=c(1,3,2,1),
+  range=rep(FALSE,4),
+  ylim=c(0,1),
+  filnam="./fig/functionalrel_gam_temp.pdf"
+  )
+
+plot_functionalrel( 
+  dflist_eval_lue_obs_NT[["vpd"]], 
+  dflist_eval_lue_obs_DT[["vpd"]], 
+  dflist_eval_lue_obs_Ty[["vpd"]], 
+  evalvar="vpd", 
+  col=c("black", "black", "black"),
+  lty=c(1,3,2),
+  range=rep(FALSE,3),
+  ylim=c(-0.3,1),
+  filnam="./fig/functionalrel_gam_vpd.pdf"
+  )
+
+plot_functionalrel( 
+  dflist_eval_lue_obs_NT[["soilm"]], 
+  dflist_eval_lue_obs_DT[["soilm"]], 
+  dflist_eval_lue_obs_Ty[["soilm"]], 
+  evalvar="soilm", 
+  col=c("black", "black", "black"),
+  lty=c(1,3,2),
+  range=rep(FALSE,3),
+  ylim=c(-0.3,1),
+  filnam="./fig/functionalrel_gam_soilm.pdf"
+  )
+
 ```
 
 There are several points here:
