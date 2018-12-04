@@ -1181,6 +1181,10 @@ dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df, pre
 dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>% 
   setNames(predictors)
 
+save(dflist_eval_lue_obs, file = "data/dflist_eval_lue_obs.Rdata")
+save(dflist_eval_lue_mod, file = "data/dflist_eval_lue_mod.Rdata")
+save(dflist_eval_pmodel, file = "data/dflist_eval_pmodel.Rdata")
+save(dflist_eval_pmodel_stats, file = "data/dflist_eval_pmodel_stats.Rdata")
 ```
 
 There are several points here:
