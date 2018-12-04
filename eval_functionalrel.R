@@ -192,6 +192,7 @@ eval_response_byvar <- function( evalvar, df, gam, all_predictors, nam_target, n
 }
 
 
+## aggregates to multi-day periods
 aggregate_mean <- function( ddf, ndays_agg, dovars, year_start, year_end ){
 
   if (ndays_agg==1){
@@ -217,9 +218,10 @@ aggregate_mean <- function( ddf, ndays_agg, dovars, year_start, year_end ){
   }  
 }
 
+
+## applies P-model over each row in the data frame where temp, and vpd are separate columns
 apply_pmodel <- function( df, varnam_pmodel, kphio ){
 
-  ## apply P-model over each row in the data frame where temp, and vpd are separate columns
   df <- df %>% 
     mutate( id=1:n() ) %>%
     group_by( id ) %>%
@@ -275,5 +277,15 @@ get_quantiles <- function( df, evalvar, nam_target ){
                               ) %>%
                    mutate( evalvar=evalvar )
   return(df_agg)
+}
+
+prepare_data_functionalrel <- function( df, predictors, ... ){
+
+  df <- df %>%  mutate( lue_obs = gpp_obs / (fapar * ppfd_fluxnet2015) ) %>%
+                mutate( lue_obs = ifelse( is.nan(lue_obs), NA, lue_obs ) ) %>%
+                mutate( lue_obs = remove_outliers(lue_obs) ) %>%
+                dplyr::rename( vpd = vpd_fluxnet2015, ppfd = ppfd_fluxnet2015, soilm = soilm_obs_mean ) %>%
+                aggregate_mean( ... )
+  return(df)  
 }
 
