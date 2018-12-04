@@ -1154,17 +1154,6 @@ df_DT <- obs_eval_DT$ddf %>%
 df_Ty <- obs_eval_Ty$ddf %>%
             prepare_data_functionalrel( predictors, ndays_agg = 10, dovars = c("lue_obs", predictors), year_start = 1990, year_end = 2018 )
 
-# df <- out_eval_FULL$data$ddf %>%  mutate( lue_obs = gpp_obs / (fapar * ppfd_fluxnet2015), lue_mod = gpp_mod / (fapar * ppfd_fluxnet2015) ) %>%
-#                                   mutate( lue_obs = ifelse( is.nan(lue_obs), NA, lue_obs ), lue_mod = ifelse( is.nan(lue_mod), NA, lue_mod ) ) %>%
-#                                   mutate( lue_obs = remove_outliers(lue_obs), lue_mod = remove_outliers(lue_mod) ) %>%
-#                                   dplyr::rename( vpd = vpd_fluxnet2015, ppfd = ppfd_fluxnet2015, soilm = soilm_obs_mean ) %>%
-#                                   aggregate_mean( 
-#                                     ndays_agg = 10, 
-#                                     dovars = c("lue_obs", predictors), 
-#                                     year_start = 1990, 
-#                                     year_end = 2018 
-#                                     )
-
 ## Apply the P-model over evaluation data and get GAM response from this noisy data
 params_opt <- readr::read_csv( "calib_results/params_opt_FULL.csv" )
 df_NT <- df_NT %>% apply_pmodel( varnam_pmodel="lue", kphio=params_opt$kphio ) %>% rename( lue_mod=varnam_pmodel ) %>% select(-out_pmodel)
@@ -1197,7 +1186,7 @@ dflist_eval_lue_mod <- eval_functionalrel(
 
 ## Get functional relationships of P-model directly (apply P-model on the same type of evaluation data used to evaluate the GAMs)
 ## get calibrated parameters
-dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df, predictors, nsample = 12 ) ) %>%
+dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df_NT, predictors, nsample = 12 ) ) %>%
                       purrr::map( ~apply_pmodel(., varnam_pmodel="lue", kphio=params_opt$kphio ) ) %>%
                       setNames(predictors)
 dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>% 
@@ -1207,10 +1196,11 @@ plot_functionalrel(
   dflist_eval_lue_obs_NT[["temp"]], 
   dflist_eval_lue_obs_DT[["temp"]], 
   dflist_eval_lue_obs_Ty[["temp"]], 
+  dflist_eval_lue_mod[["temp"]], 
   evalvar="temp", 
-  col=c("black", "black", "black"),
-  lty=c(1,3,2),
-  range=rep(FALSE,3),
+  col=c("black", "black", "black", "red"),
+  lty=c(1,3,2,1),
+  range=rep(FALSE,4),
   ylim=c(0,1),
   filnam="./fig/functionalrel_gam_temp.pdf"
   )
@@ -1238,8 +1228,6 @@ plot_functionalrel(
   ylim=c(-0.3,1),
   filnam="./fig/functionalrel_gam_soilm.pdf"
   )
-
-
 
 ```
 

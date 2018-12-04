@@ -1,4 +1,4 @@
-plot_functionalrel <- function( df, df2=NULL, df3=NULL, evalvar, range=TRUE, col, lty, filnam=NA,  ... ){
+plot_functionalrel <- function( df, df2=NULL, df3=NULL, df4=NULL, evalvar, range=TRUE, col, lty, filnam=NA,  ... ){
   
   ## plot response in observational and simulated data
   if (!is.na(filnam)) print( paste( "Creating plot", filnam ))
@@ -17,10 +17,18 @@ plot_functionalrel <- function( df, df2=NULL, df3=NULL, evalvar, range=TRUE, col
     }
 
     if (!is.null(df3)){
-      ## GAM 2
+      ## GAM 3
       lines( df3[[paste0(evalvar, "_gam")]], df3$median_gam, col=col[3], lty=lty[3] )
       if (range[3]) polygon( c(df3[[paste0(evalvar, "_gam")]], rev(df3[[paste0(evalvar, "_gam")]])), c(df3$q33_gam, rev(df3$q66_gam)), col=add_alpha(col[3],0.2), border = NA )
     }
+
+    if (!is.null(df4)){
+      ## GAM 3 (from model)
+      lines( df4[[paste0(evalvar, "_gam")]], df4$median_gam, col=col[4], lty=lty[4] )
+      if (range[4]) polygon( c(df4[[paste0(evalvar, "_gam")]], rev(df4[[paste0(evalvar, "_gam")]])), c(df4$q33_gam, rev(df4$q66_gam)), col=add_alpha(col[4],0.2), border = NA )
+    }
+
+
 
     # lines( df[[evalvar]], df$median_mod, col="tomato" )
     # polygon( c(df[[evalvar]], rev(df[[evalvar]])), c(df$q33_mod, rev(df$q66_mod)), col=add_alpha("tomato", 0.2), border = NA )

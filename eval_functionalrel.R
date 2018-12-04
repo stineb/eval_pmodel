@@ -111,7 +111,8 @@ apply_pmodel <- function( df, varnam_pmodel, kphio ){
                                                               kphio = kphio, 
                                                               fapar = NA, 
                                                               ppfd = NA, 
-                                                              method="full"
+                                                              method="full",
+                                                              do_ftemp_kphio=TRUE
                                                               ) ) ) %>%
     mutate( var_pmodel = purrr::map_dbl( out_pmodel, varnam_pmodel ) ) %>%
     unnest( data ) %>%
