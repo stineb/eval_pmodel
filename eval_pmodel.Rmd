@@ -126,6 +126,7 @@ Get additional site meta information (Koeppen-Geiger climate) first from FLUXNET
 siteinfo_eval <- metainfo_Tier1_sites_kgclimate_fluxnet2015
 ``` 
  -->
+ 
 ## Evaluation of different simulation suites
 
 Parameters are calibrated for six different simulation suites and parameter values saved in CSV files. The simulation suites are FLUXNET site-scale simulations with different fAPAR input data, differrent GPP calibration target data, and different model setups. 
@@ -139,6 +140,9 @@ $$
 LUE is a constant and is calibrated, given GPP data (here based on the nighttime decomposition method). fAPAR is splined MODIS FPAR MCD15A3H.
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
+## Define other setup-specific evaluation settings
+settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
+
 if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   save( obs_eval_NT, file = "data/obs_eval_NT.Rdata")
@@ -165,9 +169,6 @@ mod_NULL <- list()
 mod_NULL$daily <- tmp
 rm("tmp")
 save(mod_NULL, file = "data/mod_NULL.Rdata")
-
-## Define other setup-specific evaluation settings
-settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 
 ## evaluate NULL simulations
 if (!file.exists("data/out_eval_NULL.Rdata")){
@@ -1192,7 +1193,9 @@ dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df_NT, 
 dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>% 
   setNames(predictors)
 
-save(dflist_eval_lue_obs, file = "data/dflist_eval_lue_obs.Rdata")
+save(dflist_eval_lue_obs_NT, file = "data/dflist_eval_lue_obs_NT.Rdata")
+save(dflist_eval_lue_obs_DT, file = "data/dflist_eval_lue_obs_DT.Rdata")
+save(dflist_eval_lue_obs_Ty, file = "data/dflist_eval_lue_obs_Ty.Rdata")
 save(dflist_eval_lue_mod, file = "data/dflist_eval_lue_mod.Rdata")
 save(dflist_eval_pmodel, file = "data/dflist_eval_pmodel.Rdata")
 save(dflist_eval_pmodel_stats, file = "data/dflist_eval_pmodel_stats.Rdata")
@@ -1201,11 +1204,12 @@ plot_functionalrel(
   dflist_eval_lue_obs_NT[["temp"]], 
   dflist_eval_lue_obs_DT[["temp"]], 
   dflist_eval_lue_obs_Ty[["temp"]], 
-  dflist_eval_lue_mod[["temp"]], 
+  dflist_eval_lue_mod[["temp"]],
+  dflist_eval_pmodel_stats[["temp"]],
   evalvar="temp", 
-  col=c("black", "black", "black", "red"),
-  lty=c(1,3,2,1),
-  range=rep(FALSE,4),
+  col=c("black", "black", "black", "red","red"),
+  lty=c(1,3,2,2,1),
+  range=rep(FALSE,5),
   ylim=c(0,1),
   filnam="./fig/functionalrel_gam_temp.pdf"
   )
@@ -1214,10 +1218,12 @@ plot_functionalrel(
   dflist_eval_lue_obs_NT[["vpd"]], 
   dflist_eval_lue_obs_DT[["vpd"]], 
   dflist_eval_lue_obs_Ty[["vpd"]], 
+  dflist_eval_lue_mod[["vpd"]],
+  dflist_eval_pmodel_stats[["vpd"]],
   evalvar="vpd", 
-  col=c("black", "black", "black"),
-  lty=c(1,3,2),
-  range=rep(FALSE,3),
+  col=c("black", "black", "black", "red","red"),
+  lty=c(1,3,2,2,1),
+  range=rep(FALSE,5),
   ylim=c(-0.3,1),
   filnam="./fig/functionalrel_gam_vpd.pdf"
   )
@@ -1226,13 +1232,16 @@ plot_functionalrel(
   dflist_eval_lue_obs_NT[["soilm"]], 
   dflist_eval_lue_obs_DT[["soilm"]], 
   dflist_eval_lue_obs_Ty[["soilm"]], 
+  dflist_eval_lue_mod[["soilm"]],
+  dflist_eval_pmodel_stats[["soilm"]],
   evalvar="soilm", 
-  col=c("black", "black", "black"),
-  lty=c(1,3,2),
-  range=rep(FALSE,3),
-  ylim=c(-0.3,1),
+  col=c("black", "black", "black", "red","red"),
+  lty=c(1,3,2,2,1),
+  range=rep(FALSE,5),
+  ylim=c(0,1),
   filnam="./fig/functionalrel_gam_soilm.pdf"
   )
+
 
 ```
 
