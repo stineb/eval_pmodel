@@ -87,6 +87,10 @@ Export table
 ```{r}
 source("create_table_latex.R")
 create_table_latex(siteinfo_table, caption="caption", filn="table.tex")
+```
+
+
+```{r}
 print(paste("Number of sites for calibration: ", length(calibsites)))
 print(paste("Number of sites for evaluation: ", nrow(siteinfo_table)))
 ncalib <- siteinfo %>% dplyr::filter(calib=="Y") %>% summarise( total=sum(ndaily_gpp) )

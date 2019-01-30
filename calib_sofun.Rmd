@@ -145,14 +145,15 @@ Parameters are calibrated for six different simulation suites and parameter valu
 | Output set    | fAPAR data                       | GPP target data | Calibration set | SM limit.  | temp stress | setup name   | parameter file name                 |
 |---------------|----------------------------------|---------------- |-----------------|------------|-------------|--------------|----------------------------------   |
 | s201          | MODIS FPAR MCD15A3H, splined     | NT              | FULL            | no         | no          | ORG          | params_opt_calib_ORG.csv            |
-| s202          | MODIS FPAR MCD15A3H, splined     | NT              | FULL            | yes        | yes         | FULL         | params_opt_calib_FULL.csv           |
-| s203          | MODIS FPAR MCD15A3H, splined     | NT              | FULL            | no         | yes         | BRC          | params_opt_calib_BRC.csv            |
+| s202          | MODIS FPAR MCD15A3H, splined     | NT              | FULL            | no         | yes         | BRC          | params_opt_calib_BRC.csv            |
+| s203          | MODIS FPAR MCD15A3H, splined     | NT              | FULL            | yes        | yes         | FULL         | params_opt_calib_FULL.csv           |
 |---------------|----------------------------------|---------------- |-----------------|------------|-------------|--------------|----------------------------------   |
 | s204          | MODIS FPAR MCD15A3H, interpolated| NT              | FULL            | yes        | yes         | FULL_FPARitp | params_opt_calib_FULL_FPARitp.csv   |
 | s205          | MODIS EVI MOD13Q1, interpolated  | NT              | FULL            | yes        | yes         | FULL_EVI     | params_opt_calib_FULL_EVI.csv       |
 |---------------|----------------------------------|---------------- |-----------------|------------|-------------|--------------|----------------------------------   |
 | s206          | MODIS FPAR MCD15A3H, splined     | DT              | FULL            | yes        | yes         | FULL_DT      | params_opt_calib_FULL_DT.csv        |
-| s207          | MODIS FPAR MCD15A3H, splined     | Ty              | FULL            | yes        | yes         | FULL_Ty      | params_opt_calib_FULL_Ty.csv        |
+| s207          | MODIS FPAR MCD15A3H, splined     | NTsub           | FULL            | yes        | yes         | FULL_NTsub   | params_opt_calib_FULL_NTsub.csv     |
+| s208          | MODIS FPAR MCD15A3H, splined     | Ty              | FULL            | yes        | yes         | FULL_Ty      | params_opt_calib_FULL_Ty.csv        |
 |---------------|----------------------------------|---------------- |-----------------|------------|-------------|--------------|----------------------------------   |
 
 
@@ -187,7 +188,7 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = FALSE, 
+  overwrite_csv_fapar = TRUE, 
   overwrite_fapar = TRUE, 
   verbose = TRUE
   )
@@ -207,6 +208,7 @@ if (!exists("ddf_obs_NT")){
   save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
 }
 
+set.seed(1982)
 settings_calib_ORG <- calib_sofun(
   setup          = setup_sofun,
   settings_calib = settings_calib_ORG,
@@ -241,8 +243,8 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = FALSE, 
-  overwrite_fapar = FALSE, 
+  overwrite_csv_fapar = TRUE, 
+  overwrite_fapar = TRUE, 
   verbose = TRUE
   )
 
@@ -261,6 +263,7 @@ if (!exists("ddf_obs_NT")){
   save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
 }
 
+set.seed(1982)
 settings_calib_BRC <- calib_sofun(
   setup          = setup_sofun,
   settings_calib = settings_calib_BRC,
@@ -296,8 +299,8 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input,
   settings_sims = settings_sims,
   return_data = FALSE,
-  overwrite_csv_fapar = FALSE, # WARNING: ASSUMING "LINEAR" KNITTING 
-  overwrite_fapar = FALSE, # WARNING: ASSUMING "LINEAR" KNITTING 
+  overwrite_csv_fapar = TRUE, # WARNING: ASSUMING "LINEAR" KNITTING 
+  overwrite_fapar = TRUE, # WARNING: ASSUMING "LINEAR" KNITTING 
   verbose = TRUE
   )
 
@@ -320,6 +323,7 @@ if (!exists("ddf_obs_NT")){
 
 
 ## Same observational data as for setup 'RED' (filtering is done afterwards, inside calib_sofun())
+set.seed(1982)
 settings_calib_FULL <- calib_sofun(
   setup          = setup_sofun,
   settings_calib = settings_calib_FULL,
@@ -398,6 +402,7 @@ settings_calib_FULL_FPARitp$filter_soilm_min = NA
 
 if (!exists("ddf_obs_NT")) load("./data/ddf_obs_NT.Rdata")
 
+set.seed(1982)
 settings_calib_FULL_FPARitp <- calib_sofun(
   setup          = setup_sofun,
   settings_calib = settings_calib_FULL_FPARitp,
@@ -482,8 +487,8 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = FALSE, 
-  overwrite_fapar = FALSE, 
+  overwrite_csv_fapar = TRUE, 
+  overwrite_fapar = TRUE, 
   verbose = TRUE
   )
 
@@ -502,7 +507,7 @@ settings_calib_FULL_DT$filter_soilm_min = NA
 ## Get observational data (GPP based on NT method) used as target for calibration
 if (!exists("ddf_obs_DT")){
   ddf_obs_DT <- get_obs_calib( settings_calib_FULL_DT, settings_sims, settings_input ) %>% 
-    ddf_obs_DT %>% filter_days( settings_calib_FULL_DT$filter_days, settings_calib_FULL_DT$path_gepisat )
+    filter_days( settings_calib_FULL_DT$filter_days, settings_calib_FULL_DT$path_gepisat )
   save(ddf_obs_DT, file = "data/ddf_obs_DT.Rdata")
 } else {
   load("data/ddf_obs_DT.Rdata")
@@ -540,8 +545,8 @@ inputdata <- prepare_input_sofun(
   settings_input = settings_input, 
   settings_sims = settings_sims, 
   return_data = FALSE, 
-  overwrite_csv_fapar = FALSE, 
-  overwrite_fapar = FALSE, 
+  overwrite_csv_fapar = TRUE, 
+  overwrite_fapar = TRUE, 
   verbose = TRUE
   )
 
@@ -600,8 +605,8 @@ inputdata <- prepare_input_sofun(
   settings_sims = settings_sims, 
   return_data = FALSE, 
   overwrite_climate = FALSE, 
-  overwrite_csv_fapar = FALSE, 
-  overwrite_fapar = FALSE, 
+  overwrite_csv_fapar = TRUE, 
+  overwrite_fapar = TRUE, 
   verbose = TRUE
   )
 

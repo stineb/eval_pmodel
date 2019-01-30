@@ -1,4 +1,4 @@
-create_table_latex <- function( df, caption, filn="" ){
+create_table_latex <- function( df, caption, filn="", ... ){
 
 	require(xtable)
 
@@ -13,7 +13,7 @@ create_table_latex <- function( df, caption, filn="" ){
 
 	latextable <- xtable( df, caption = caption, align=rep("l", (ncol(df)+1)) )
 
-	print( latextable, hline.after=c(-1, 0), tabular.environment = "longtable", file=filn, include.rownames=FALSE )
+	print( latextable, hline.after=c(-1, 0), file=filn, include.rownames=FALSE, ... )
 
 }
 
