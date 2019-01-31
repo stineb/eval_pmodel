@@ -4,25 +4,30 @@
 #' 
 #' @param df A data frame containing daily observational data as output from function \code{get_obs_eval()}.
 #' @param nam_target A character string specifying the column name of the target variable for which the functional relationships are to be determined.
-#' @param filnam_params A character string specifying the path of the parameter file name for SOFUN.
-#' @param overwrite if \code{TRUE}, the GAM model object is overwritten
-#' @param ndays_agg An integer specifying the level of data aggregation by number of days. If \code{ndays_agg=NULL}, no aggregation is done.
+#' @param predictors A vector of character strings specifying the statistical model predictors by column name in the training data (argument \code{df}).
+#' @param dir A character string specifying the path of the directory into which the GAM model object (named \code{gam.Rdata}) is written. Defaults to \code{"./"} 
+#' @param overwrite If \code{TRUE}, the GAM model object is overwritten
+#' @param nsample_target Length of the equally spaced sequence of values of the target variable given by \code{nam_target}.
+#' @param nsample_predictors Number of randomly drawn values of the predictors, given by \code{predictors}.
 #'
 #' @return A data frame with aggregated data including GAM predictions and P-model results as columns \code{lue_gam} and \code{lue_mod}, respectively.
 #' @export
 #'
-#' @examples eval_response( df, overwrite = TRUE, ndays_agg = 10 )
+#' @examples eval_response( df, overwrite = TRUE )
 #' 
-eval_functionalrel <- function( df, nam_target, predictors, overwrite = FALSE, ... ){
+eval_functionalrel <- function( df, nam_target, predictors, dir = "./", overwrite = FALSE, nsample_target=30, nsample_predictors=30, ... ){
 
-  ## filter out data if any of the variables is NA. Different for gpp_mod and gpp_obs
+  # ## elegantly dropping rows containing NA in nam_target or predictors columns
+  # df_training <- df %>% dplyr::drop_na( c(nam_target, predictors) ) %>% 
+
+  # not-so elegantly dropping NA rows
   df_training <- df %>% dplyr::filter_at( vars(one_of(c(nam_target, predictors))), all_vars(!is.na(.)) ) %>% 
   
     ## filter days with temperature below zero
     dplyr::filter( temp > 0.0 )
 
   ## train the neural network at observed daily GPP
-  if (!file.exists("data/gam.Rdata")||overwrite){
+  if (!file.exists( paste0(dir, "/gam.Rdata"))||overwrite){
     set.seed(1982)
     
     ## create formula with splines for each predictor "s(predictor)"
@@ -34,28 +39,37 @@ eval_functionalrel <- function( df, nam_target, predictors, overwrite = FALSE, .
     # gam.check(gam)
     # summary(gam)
     # plot(gam)
-    save( gam,     file = "data/gam.Rdata" )
+    save( gam, file =  paste0(dir, "/gam.Rdata") )
   } else {
-    load( gam,     file = "data/gam.Rdata" )
+    load( gam, file =  paste0(dir, "/gam.Rdata") )
  }
 
   ## predict values with GAM
-  predicted     <- predict( gam,     df_training )
+  predicted     <- predict( gam, df_training )
 
   ##-------------------------------------
   ## Evaluate GAM and P-model
   ##-------------------------------------
-  df_eval <- purrr::map( as.list(predictors), ~eval_response_byvar(., df_training, gam, all_predictors = predictors, nam_target = nam_target, nsample = 12 ) )
+  df_eval <- purrr::map( 
+    as.list(predictors), 
+    ~eval_response_byvar( ., 
+      df_training, 
+      gam, 
+      all_predictors = predictors, 
+      nam_target = nam_target, 
+      nsample_predictors = nsample_predictors, 
+      nsample_target = nsample_target 
+      ) )
   names(df_eval) <- predictors
 
   return(df_eval)
 
 }
 
-eval_response_byvar <- function( evalvar, df, gam, all_predictors, nam_target, nsample, makepdf=FALSE, ... ){
+eval_response_byvar <- function( evalvar, df, gam, all_predictors, nam_target, nsample_predictors, nsample_target, makepdf=FALSE, ... ){
 
   ## Get evaluation data
-  evaldata <- get_eval_data( evalvar, df, all_predictors, nsample )
+  evaldata <- get_eval_data( evalvar, df, all_predictors, nsample_predictors, nsample_target )
 
   ## predict for GAM with evaluation data
   predicted_eval <- predict( gam, evaldata )
@@ -71,6 +85,7 @@ eval_response_byvar <- function( evalvar, df, gam, all_predictors, nam_target, n
 
 
 ## aggregates to multi-day periods
+#' @param ndays_agg An integer specifying the level of data aggregation by number of days. If \code{ndays_agg=NULL}, no aggregation is done.
 aggregate_mean <- function( ddf, ndays_agg, dovars, year_start, year_end ){
 
   if (ndays_agg==1){
@@ -121,7 +136,7 @@ apply_pmodel <- function( df, varnam_pmodel, kphio ){
   return(df)
 }
 
-get_eval_data <- function( evalvar, df, all_predictors, nsample ){
+get_eval_data <- function( evalvar, df, all_predictors, nsample_predictors, nsample_target ){
 
   if (evalvar %in% all_predictors){
     predictors <- all_predictors[-which(all_predictors==evalvar)]
@@ -133,9 +148,9 @@ get_eval_data <- function( evalvar, df, all_predictors, nsample ){
   varmax <- max( df[[evalvar]], na.rm=TRUE )
 
   ## create synthetic data for predictors, sampling from the observed values independently for each predictor
-  evaldata <- expand.grid(  seq( varmin, varmax, length.out = 30 ),
-                            sample( unlist( df[ predictors[1] ] ), nsample, replace = TRUE ), 
-                            sample( unlist( df[ predictors[2] ] ), nsample, replace = TRUE )
+  evaldata <- expand.grid(  seq( varmin, varmax, length.out = nsample_target ),
+                            sample( unlist( df[ predictors[1] ] ), nsample_predictors, replace = TRUE ), 
+                            sample( unlist( df[ predictors[2] ] ), nsample_predictors, replace = TRUE )
                             ) %>% 
               as_tibble() %>%
               setNames( c( evalvar, predictors ) )

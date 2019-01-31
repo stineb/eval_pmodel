@@ -22,38 +22,39 @@ plot_dday <- function( df_dday_agg, df_dday_agg2=NA, bias=FALSE, before, after, 
     axis( 2, at = seq( ylim[1], ylim[2], by=0.05 ), labels = FALSE, tck=-0.01 )
     axis( 4, labels=FALSE, lwd = 1.5 )
     axis( 4, at = seq( ylim[1], ylim[2], by=0.05 ), labels = FALSE, tck=-0.01 )
-    axis( 1, xlab="days after drought onset", lwd=1.5 )
+    axis( 1, xlab="days after drought onset", lwd = 1.5 )
     axis( 1, at = seq( xlim[1], xlim[2], by=5 ), labels = FALSE, tck=-0.01 )
-    axis( 3, labels=FALSE, lwd=1.5 )
+    axis( 3, labels=FALSE, lwd = 1.5 )
     axis( 3, at = seq( xlim[1], xlim[2], by=5 ), labels = FALSE, tck=-0.01 )
 
-    axis(1,lwd=1.5);  axis(1,at=seq(xlim[1],xlim[2],by=20),labels=F,tck=-0.01)
+    axis(1,lwd = 1.5);  axis(1,at=seq(xlim[1],xlim[2],by=20),labels=F,tck=-0.01)
     rect( 0, -99, after, 99, col=colorRampPalette( c("wheat3", "white") )( 5 )[2], border=NA )  # rgb(0,0,0,0.2)
 
-    box( lwd=1.5 )
+    box( lwd = 1.5 )
 
-    abline( h=0.0, col='grey40', lwd=0.5 )
+    abline( h=0.0, col='grey40', lwd = 0.5 )
 
     if (bias){
         ## bias
         with( df_dday_agg, polygon( c(dday, rev(dday)), c(bias_gpp_q33, rev(bias_gpp_q66)), col=add_alpha("black", 0.2), border = NA ) )
-        with( df_dday_agg, lines( dday, bias_gpp_median, col="black", lwd=2 ) )
+        with( df_dday_agg, lines( dday, bias_gpp_median, col="black", lwd = 1.75 ) )
 
         if (!identical(NA, df_dday_agg2)){
           with( df_dday_agg2, polygon( c(dday, rev(dday)), c(bias_gpp_q33, rev(bias_gpp_q66)), col=add_alpha("royalblue", 0.2), border = NA ) )
-          with( df_dday_agg2, lines( dday, bias_gpp_median, col="royalblue", lwd=2 ) )
+          with( df_dday_agg2, lines( dday, bias_gpp_median, col="royalblue", lwd = 1.75 ) )
         }
 
     } else {
         ## obs
         with( df_dday_agg, polygon( c(dday, rev(dday)), c(gpp_obs_q33, rev(gpp_obs_q66)), col=add_alpha("black", 0.3), border = NA ) )
-        with( df_dday_agg, lines( dday, gpp_obs_median, col="black", lwd=2 ) )        
+        with( df_dday_agg, lines( dday, gpp_obs_median, col="black", lwd = 1.75 ) )        
 
         ## mod
         with( df_dday_agg, polygon( c(dday, rev(dday)), c(gpp_mod_q33, rev(gpp_mod_q66)), col=add_alpha("tomato3", 0.3), border = NA ) )
-        with( df_dday_agg, lines( dday, gpp_mod_median, col="tomato3", lwd=2 ) )        
+        with( df_dday_agg, lines( dday, gpp_mod_median, col="tomato3", lwd = 1.75 ) )        
     }
 
+    legend("topleft", c("BRC", "FULL"), col=c("black", "royalblue"), lty = 1, lwd = 1.75, bty = "n" )
 
   if (!is.na(filn)) dev.off()
 

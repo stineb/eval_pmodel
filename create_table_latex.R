@@ -1,4 +1,4 @@
-create_table_latex <- function( table, caption ){
+create_table_latex <- function( df, caption, filn="", ... ){
 
 	require(xtable)
 
@@ -11,9 +11,9 @@ create_table_latex <- function( table, caption ){
 	# 						dplyr::rename( Site=sitename, Lon.=lon, Lat.=lat, Elevation=elv, Veg.=classid, Clim.=koeppen_code, N = ndailygpp ) %>%
 	# 						dplyr::select( Site, Lon., Lat., Period, Veg., Clim., N, Reference )
 
-	latextable <- xtable( table, caption = caption )
+	latextable <- xtable( df, caption = caption, align=rep("l", (ncol(df)+1)) )
 
-	print( latextable, hline.after=c(-1, 0), tabular.environment = "longtable")
+	print( latextable, hline.after=c(-1, 0), file=filn, include.rownames=FALSE, ... )
 
 }
 

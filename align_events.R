@@ -2,29 +2,34 @@
 #'
 #' Uses a vectory specifying whether data falls into an event to reshape data, aligning by the onset of the event
 #' 
-#' @param df A data frame containing all data continuously along time, required column named \code{site, date}. 
+#' @param df A data frame containing all data continuously along time, required columns: \code{"site", "date"}. 
 #' @param df_isevent A data frame \code{nrow(df_isevent)==nrow(df)} specifying whether respective dates 
-#' (matching dates in \code{df}), fall satisfy a condition that is used to define events. Events are 
-#' consecutive dates, where this condition is satisfied (minimum length for defining an event is given by 
-#' \code{leng_threshold}). Required columns \code{site, date}
-#' @param dovars A vector of character strings specifying which columns of \code{df} to re-arrange.
+#' (matching dates in \code{df}), satisfy a condition that is used to define events. Events are then derived by 
+#' this function as consecutive dates where this condition is satisfied (the minimum length for defining an event 
+#' is given by argument \code{leng_threshold}). Required columns in both \code{df} and \code{df_isevent}: \code{"site", "date"}
+#' @param dovars A vector of character strings specifying which columns (by column name) of \code{df} to re-arrange.
+#' @param leng_threshold An integer specifying the minum number of consecutive dates required to define an event. 
+#' All events of length lower than \code{leng_threshold} are dropped.
 #' @param before An integer specifying the number of days before the event onset to be retained in re-arranged data 
-#' @param after An integer specifying the number of days after the event onset to be retained in re-arranged data 
-#' @param do_norm A logical specifying whether re-arranged data is to be normalised by its value before the drought onset
-#' @param normbin
+#' @param after An integer specifying the number of days after the event onset to be retained in re-arranged data
+#' @param do_norm A logical specifying whether re-arranged data is to be normalised by the median value of the bin 
+#' (number of bins given by argument \code{nbins}) before the event onset, given by argument \code{normbin}. Defaults to \code{FALSE}.
+#' @param nbins An integer, specifying the number of bins used to determine median values before event onset. Only used when code{do_norm=TRUE}. Defaults to 6.
+#' @param normbin An integer, specifying the bin number just before the event onset, used for normalisation. Only used when code{do_norm=TRUE}. Defaults to 2.
 #'
-#' @return An aligned data frame
+#' @return A named list of data frames (\code{list( "df_dday", "df_dday_aggbydday")}) containing data from all events and \code{before + after} 
+#' dates (relative to event onset) with additional columns named \code{"inst"}, defining the event number (instance), and \code{"dday"}, defining 
+#' the date relative to the respective event onset. The data frame \code{"df_dday"} contains rearranged, but otherwise unchanged data (unless 
+#' \code{do_norm}=TRUE). The data frame \code{"df_dday_aggbydday"} containes data aggregated across events with the mean and quantiles given for each 
+#' \code{"dday"}.
 #' @export
 #'
 #' @examples df_alg <- align_events( df, truefalse, before=30, after=300 )
 #' 
-align_events <- function( df, df_isevent, dovars, leng_threshold, before, after, nbins, do_norm=FALSE, normbin=2 ){
+align_events <- function( df, df_isevent, dovars, leng_threshold, before, after, do_norm=FALSE, nbins=6, normbin=2 ){
 
   require( dplyr )
   require( tidyr )
-
-  ## Bins for different variables
-  bins  <- seq( from=-before, to=after, by=(after+before+1)/nbins )
 
   ## merge df_isevent into df
   df <- df %>% left_join( df_isevent, by=c("site", "date")) %>% mutate( idx_df = 1:n() )
@@ -64,6 +69,9 @@ align_events <- function( df, df_isevent, dovars, leng_threshold, before, after,
     ## Normalise re-arranged data relative to a certain bin's median
     ##--------------------------------------------------------
     if (do_norm){
+      ## Bins for different variables
+      bins  <- seq( from=-before, to=after, by=(after+before+1)/nbins )
+
       ## add bin information based on dday to expanded df
       df_dday <- df_dday %>% mutate( inbin  = cut( as.numeric(dday), breaks = bins ) )
       
