@@ -1059,12 +1059,17 @@ print(table_rmse_formatted)
 ### Daily anomalies
 
 ```{r}
-source("plot_modobs_anomalies_daily.R")
-source("analyse_modobs_ggplot2.R")
+source("plot_modobs_anomalies.R")
+# source("analyse_modobs_ggplot2.R")
 modobs_anomalies_daily_ORG  <- plot_modobs_anomalies_daily( out_eval_ORG,  makepdf=TRUE, label = "ORG" )
 modobs_anomalies_daily_BRC  <- plot_modobs_anomalies_daily( out_eval_BRC,  makepdf=TRUE, label = "BRC" )
 modobs_anomalies_daily_FULL <- plot_modobs_anomalies_daily( out_eval_FULL, makepdf=TRUE, label = "FULL" )
 modobs_anomalies_daily_NULL <- plot_modobs_anomalies_daily( out_eval_NULL, makepdf=TRUE, label = "NULL" )
+
+modobs_anomalies_annual_ORG  <- plot_modobs_anomalies_annual( out_eval_ORG,  makepdf=TRUE, label = "ORG" )
+modobs_anomalies_annual_BRC  <- plot_modobs_anomalies_annual( out_eval_BRC,  makepdf=TRUE, label = "BRC" )
+modobs_anomalies_annual_FULL <- plot_modobs_anomalies_annual( out_eval_FULL, makepdf=TRUE, label = "FULL" )
+modobs_anomalies_annual_NULL <- plot_modobs_anomalies_annual( out_eval_NULL, makepdf=TRUE, label = "NULL" )
 ```
 
 

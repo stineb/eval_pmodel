@@ -35,3 +35,26 @@ plot_modobs_anomalies_daily <- function( out_eval, label="", makepdf = FALSE ){
   return(modobs_anomalies_daily)
 
 }   
+
+##------------------------------------------------------------
+## Mod. vs. obs. of IAV correlation: x_(y,i) - mean_y( x_(y,i) )
+##------------------------------------------------------------
+plot_modobs_anomalies_annual <- function( out_eval, label="", makepdf = FALSE ){   # using iavdf, iavdf_stats
+    dir_figs <- "./fig/"
+    if (makepdf && !dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
+    if (makepdf) filn <- paste0( dir_figs, "/modobs_anomalies_annual_", label, ".pdf" )
+    if (makepdf) print( paste( "Plotting to file:", filn ) )
+    if (makepdf) pdf( filn )
+    par(las=1)
+    modobs_anomalies_annual <- with( out_eval$data$iavdf, analyse_modobs(gpp_mod, 
+      gpp_obs, 
+      heat = FALSE,
+      ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
+      xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ),
+      plot.title = "IAV correlation"
+     ))
+    out <- out_eval$data$iavdf_stats %>%  mutate( purrr::map( data, ~lines( fitted ~ gpp_mod, data = ., col=rgb(0,0,1,0.3) ) ) )  # to have it sorted: %>% mutate( data = purrr::map( data, ~arrange( ., gpp_mod ) ) )
+  if(makepdf) dev.off()
+  return(modobs_anomalies_annual)
+}
+
