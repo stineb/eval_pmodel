@@ -950,7 +950,9 @@ table_rsq <- bind_rows(
   bind_cols( Setup = "FULL", dplyr::select( getrow_statstable( out_eval_FULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
     rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
   bind_cols( Setup = "NULL", dplyr::select( getrow_statstable( out_eval_NULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-  rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var") 
+    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
+  bind_cols( Setup = "NULLpft", dplyr::select( getrow_statstable( out_eval_NULLpft, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
+    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var") 
   ) %>% 
 create_table_latex( caption = "Caption text", filn = "table_rsq.tex" )
 
@@ -962,7 +964,9 @@ table_rmse <- bind_rows(
   bind_cols( Setup = "FULL", dplyr::select( getrow_statstable( out_eval_FULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
     rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
   bind_cols( Setup = "NULL", dplyr::select( getrow_statstable( out_eval_NULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-  rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var") 
+    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
+  bind_cols( Setup = "NULLpft", dplyr::select( getrow_statstable( out_eval_NULLpft, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
+    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var")
   ) %>% 
 create_table_latex( caption = "Caption text", filn = "table_rmse.tex" )
 ```
@@ -974,10 +978,6 @@ This shows the same as in the SI of our submitted manuscript: Figures S14 and S1
 ```{r, echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 ## Use customized plotting
 source("plot_modobs_spatial_annual.R")
-if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
-if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
-if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
-if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
 plot_modobs_spatial_annual( out_eval_ORG, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "ORG" )
 plot_modobs_spatial_annual( out_eval_BRC, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "BRC" )
 plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "FULL" )
