@@ -38,7 +38,7 @@ plot_by_doy_byzone <- function( df, df2 = NA, df3 = NA, makepdf = FALSE, label="
       polygon( c(df$doy, rev(df$doy)), c(df$mod_min, rev(df$mod_max)), border = NA, col = rgb(1,0,0,0.3)  )
       title( df$climatezone[1] )
       mtext( bquote( italic(N) == .( df$nsites[1])), side=3, line=1, cex=1.0, adj=1.0 )
-      legend("topright", c(lab1, lab2, lab3), col=c("red", col2, col3), lwd = c(1.75,1.75,1.75), bty = "n" )
+      # legend("topright", c(lab1, lab2, lab3), col=c("red", col2, col3), lwd = c(1.75,1.75,1.75), bty = "n" )
     if (makepdf) dev.off()
   } else {
     rlang::warn( paste0("plot_by_doy_byzone(): Number of sites below 5 for climate zone ", df$climatezone[1] ) )

@@ -2,12 +2,20 @@ plot_functionalrel <- function( df, df2=NULL, df3=NULL, df4=NULL, df5=NULL, eval
   
   ## plot response in observational and simulated data
   if (!is.na(filnam)) print( paste( "Creating plot", filnam ))
-  if (!is.na(filnam)) pdf( filnam )
+  if (!is.na(filnam)) pdf( filnam, width = 5, height = 5 )
 
-    par(las=0)
+    par(las=1)
+
+    if (evalvar=="temp"){
+      xlab = expression( paste( 'Temperature (',degree~C,')')) # bquote("Temperature ("*degree~C, ")" )
+    } else if (evalvar=="vpd"){
+      xlab = "VPD (Pa)"
+    } else if (evalvar=="soilm"){
+      xlab = "soil moisture (relative)"
+    }
 
     ## GAM 1
-    plot( df[[paste0(evalvar, "_gam")]], df$median_gam, type = "l", col=col[1], lty=lty[1], xlab = evalvar, ... )
+    plot( df[[paste0(evalvar, "_gam")]], df$median_gam, type = "l", col=col[1], lty=lty[1], xlab = xlab, ylab="Value", ... )
     if (range[1]) polygon( c(df[[paste0(evalvar, "_gam")]], rev(df[[paste0(evalvar, "_gam")]])), c(df$q33_gam, rev(df$q66_gam)), col=add_alpha(col[1],0.2), border = NA )
 
     if (!is.null(df2)){
@@ -37,7 +45,7 @@ plot_functionalrel <- function( df, df2=NULL, df3=NULL, df4=NULL, df5=NULL, eval
     # lines( df[[evalvar]], df$median_mod, col="tomato" )
     # polygon( c(df[[evalvar]], rev(df[[evalvar]])), c(df$q33_mod, rev(df$q66_mod)), col=add_alpha("tomato", 0.2), border = NA )
 
-    legend("topleft", c("NT", "DT", "Ty", "P-model, GAM", "P-model"), col = col, lty = lty, bty = "n" )
+    legend("topleft", c("NT", "DT", "Ty", "P-model"), col = col, lty = lty, bty = "n" )
 
   if (!is.na(filnam)) dev.off()
 

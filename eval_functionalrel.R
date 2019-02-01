@@ -28,6 +28,7 @@ eval_functionalrel <- function( df, nam_target, predictors, dir = "./", overwrit
 
   ## train the neural network at observed daily GPP
   if (!file.exists( paste0(dir, "/gam.Rdata"))||overwrite){
+
     set.seed(1982)
     
     ## create formula with splines for each predictor "s(predictor)"
@@ -113,7 +114,7 @@ aggregate_mean <- function( ddf, ndays_agg, dovars, year_start, year_end ){
 
 
 ## applies P-model over each row in the data frame where temp, and vpd are separate columns
-apply_pmodel <- function( df, varnam_pmodel, kphio ){
+apply_pmodel <- function( df, returnvar, kphio ){
 
   df <- df %>% 
     mutate( id=1:n() ) %>%
@@ -126,12 +127,11 @@ apply_pmodel <- function( df, varnam_pmodel, kphio ){
                                                               kphio = kphio, 
                                                               fapar = NA, 
                                                               ppfd = NA, 
-                                                              method="full",
                                                               do_ftemp_kphio=TRUE
                                                               ) ) ) %>%
-    mutate( var_pmodel = purrr::map_dbl( out_pmodel, varnam_pmodel ) ) %>%
+    mutate( var_pmodel = purrr::map_dbl( out_pmodel, returnvar ) ) %>%
     unnest( data ) %>%
-    rename( varnam_pmodel = var_pmodel )
+    rename( returnvar = var_pmodel )
 
   return(df)
 }
@@ -175,11 +175,28 @@ get_quantiles <- function( df, evalvar, nam_target ){
 
 prepare_data_functionalrel <- function( df, predictors, ... ){
 
+  # ## get CO2 data
+  # df_co2 <- readr::read_table( co2file, col_names = c("year", "co2") ) %>%
+  #             filter( year>999 ) %>%
+  #             mutate( date = ymd(paste0( as.character(year), "-01-01" ))  ) %%
+  #             mutate( year = year(date) ) %>%
+  #             dplyr::select(-date)
+
+  # ## get elevation data
+  # df_elv <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
+  #             dplyr::select(sitename, elv)
+
   df <- df %>%  mutate( lue_obs = gpp_obs / (fapar * ppfd_fluxnet2015) ) %>%
+                mutate( lue_mod = gpp_mod / (fapar * ppfd_fluxnet2015) ) %>%
                 mutate( lue_obs = ifelse( is.nan(lue_obs), NA, lue_obs ) ) %>%
+                mutate( lue_mod = ifelse( is.nan(lue_mod), NA, lue_mod ) ) %>%
                 mutate( lue_obs = remove_outliers(lue_obs) ) %>%
+                mutate( lue_mod = remove_outliers(lue_mod) ) %>%
                 dplyr::rename( vpd = vpd_fluxnet2015, ppfd = ppfd_fluxnet2015, soilm = soilm_obs_mean ) %>%
+                mutate( year = year(date) ) %>%
                 aggregate_mean( ... )
+                # left_join( df_co2, by="year" ) %>%
+                # left_join( df_elv, by="sitename" )
   return(df)  
 }
 
