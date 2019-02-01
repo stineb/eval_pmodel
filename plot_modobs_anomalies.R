@@ -1,7 +1,7 @@
 ##------------------------------------------------------------
 ## Mod. vs. obs. of IDV (interday variability) correlation: x_(d,i) - mean_d( x_(d,i) )
 ##------------------------------------------------------------
-plot_modobs_anomalies_daily <- function( out_eval, label="", makepdf = FALSE ){
+plot_modobs_anomalies_daily <- function( out_eval, label="", makepdf = FALSE, ... ){
   dir_figs <- "./fig/"
   if (makepdf && !dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
   if (makepdf) filn <- paste0( dir_figs, "/modobs_anomalies_daily_", label, ".pdf" )
@@ -10,9 +10,9 @@ plot_modobs_anomalies_daily <- function( out_eval, label="", makepdf = FALSE ){
     modobs_anomalies_daily <- with( out_eval$data$idvdf, rsofun::analyse_modobs(
       gpp_mod,
       gpp_obs,
-      col=rgb(0,0,0,0.05),
       ylab = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
-      xlab = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) )
+      xlab = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ),
+      ...
       ))
     out <- out_eval$data$idvdf_stats %>%  mutate( purrr::map( data, ~lines( fitted ~ gpp_mod, data = ., col=rgb(0,0,1,0.05) ) ) )  # to have it sorted: %>% mutate( data = purrr::map( data, ~arrange( ., gpp_mod ) ) )
     title( label )
@@ -46,12 +46,13 @@ plot_modobs_anomalies_annual <- function( out_eval, label="", makepdf = FALSE ){
     if (makepdf) print( paste( "Plotting to file:", filn ) )
     if (makepdf) pdf( filn )
     par(las=1)
-    modobs_anomalies_annual <- with( out_eval$data$iavdf, analyse_modobs(gpp_mod, 
+    modobs_anomalies_annual <- with( out_eval$data$iavdf, rsofun::analyse_modobs(
+      gpp_mod, 
       gpp_obs, 
-      heat = FALSE,
       ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
       xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ),
-      plot.title = "IAV correlation"
+      plot.title = "IAV correlation",
+      ...
      ))
     out <- out_eval$data$iavdf_stats %>%  mutate( purrr::map( data, ~lines( fitted ~ gpp_mod, data = ., col=rgb(0,0,1,0.3) ) ) )  # to have it sorted: %>% mutate( data = purrr::map( data, ~arrange( ., gpp_mod ) ) )
   if(makepdf) dev.off()
