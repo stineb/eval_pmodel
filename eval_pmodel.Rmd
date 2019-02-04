@@ -96,7 +96,7 @@ mylist <- readr::read_csv("ext/myselect_fluxnet2015.csv") %>% dplyr::filter( use
 settings_eval <- list(
   sitenames = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) & classid != "CRO" )$sitename,
   sitenames_siteplots = mylist,
-  agg = 5,
+  agg = c(5, 10),
   path_fluxnet2015_d = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_w = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
   path_fluxnet2015_m = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
@@ -935,7 +935,7 @@ if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
 if (!exists("out_eval_NULLpft")) load("data/out_eval_NULL.Rdata")
-```
+``` 
 
 ### Metrics table
 
@@ -943,32 +943,34 @@ Create a latex table for $R^2$ and RMSE:
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
 source("create_table_latex.R")
 table_rsq <- bind_rows( 
-  bind_cols( Setup = "ORG",  dplyr::select( getrow_statstable( out_eval_ORG, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "BRC",  dplyr::select( getrow_statstable( out_eval_BRC, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "FULL", dplyr::select( getrow_statstable( out_eval_FULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "NULL", dplyr::select( getrow_statstable( out_eval_NULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "NULLpft", dplyr::select( getrow_statstable( out_eval_NULLpft, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var") 
+  bind_cols( Setup = "ORG",          dplyr::select( getrow_statstable( out_eval_ORG, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "BRC",          dplyr::select( getrow_statstable( out_eval_BRC, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL",         dplyr::select( getrow_statstable( out_eval_FULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "NULL",         dplyr::select( getrow_statstable( out_eval_NULL, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "NULLpft",      dplyr::select( getrow_statstable( out_eval_NULLpft, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_FPARitp", dplyr::select( getrow_statstable( out_eval_FULL_FPARitp, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_EVI",     dplyr::select( getrow_statstable( out_eval_FULL_EVI, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_DT",      dplyr::select( getrow_statstable( out_eval_FULL_DT, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_NTsub",   dplyr::select( getrow_statstable( out_eval_FULL_NTsub, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_Ty",      dplyr::select( getrow_statstable( out_eval_FULL_Ty, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
   ) %>% 
-create_table_latex( caption = "Caption text", filn = "table_rsq.tex" )
+  rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var", "var(annual)"="annual_var") %>%
+  create_table_latex( caption = "Caption text", filn = "table_rsq.tex" )
 
 table_rmse <- bind_rows( 
-  bind_cols( Setup = "ORG",  dplyr::select( getrow_statstable( out_eval_ORG, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "BRC",  dplyr::select( getrow_statstable( out_eval_BRC, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "FULL", dplyr::select( getrow_statstable( out_eval_FULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "NULL", dplyr::select( getrow_statstable( out_eval_NULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var"),
-  bind_cols( Setup = "NULLpft", dplyr::select( getrow_statstable( out_eval_NULLpft, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var ) ) %>%
-    rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var")
+  bind_cols( Setup = "ORG",          dplyr::select( getrow_statstable( out_eval_ORG, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "BRC",          dplyr::select( getrow_statstable( out_eval_BRC, stat = "rmse" ),  xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL",         dplyr::select( getrow_statstable( out_eval_FULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "NULL",         dplyr::select( getrow_statstable( out_eval_NULL, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "NULLpft",      dplyr::select( getrow_statstable( out_eval_NULLpft, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_FPARitp", dplyr::select( getrow_statstable( out_eval_FULL_FPARitp, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_EVI",     dplyr::select( getrow_statstable( out_eval_FULL_EVI, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_DT",      dplyr::select( getrow_statstable( out_eval_FULL_DT, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_NTsub",   dplyr::select( getrow_statstable( out_eval_FULL_NTsub, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_Ty",      dplyr::select( getrow_statstable( out_eval_FULL_Ty, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
   ) %>% 
-create_table_latex( caption = "Caption text", filn = "table_rmse.tex" )
+  rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var", "var(annual)"="annual_var") %>%
+  create_table_latex( caption = "Caption text", filn = "table_rmse.tex" )
 ```
 
 ### Variability versus aggregation
