@@ -94,7 +94,7 @@ Define common model evaluation settings as a list.
 ```{r, message=FALSE}
 mylist <- readr::read_csv("ext/myselect_fluxnet2015.csv") %>% dplyr::filter( use==1 ) %>% dplyr::select( -use ) %>% unlist()
 settings_eval <- list(
-  sitenames = dplyr::filter( metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) )$sitename,
+  sitenames = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) & classid != "CRO" )$sitename,
   sitenames_siteplots = mylist,
   agg = 5,
   path_fluxnet2015_d = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
@@ -106,8 +106,8 @@ settings_eval <- list(
 
 ## WARNING----------------------------------
 ## This is circular, but works only like this without restructuring the whole document. Sorry.
-if (!exists("mod_NULL")) load("data/old/mod_NULL.Rdata")
-if (!exists("mod_ORG")) load("data/old/mod_ORG.Rdata")
+if (!exists("mod_NULL")) load("data/mod_NULL.Rdata")
+if (!exists("mod_ORG")) load("data/mod_ORG.Rdata")
 sitenames_NULL <- mod_NULL$daily %>% names()
 sitenames_ORG  <- mod_ORG$daily  %>% names()
 settings_eval$sitenames <- sitenames_NULL[ sitenames_NULL %in% sitenames_ORG ]
@@ -260,7 +260,7 @@ row_rsqtable_NULLpft <- bind_cols( Setup = "NULLpft", getrow_statstable( out_eva
 ```
 
 
-### Original setup (`ORG`)
+### ORG: Original setup
 
 Without soil moisture stress and with constant quantum yield effiency. Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
@@ -344,7 +344,7 @@ rm("mod_ORG")
 # modobs_ddf_ORG <- plot_modobs_daily( out_eval_ORG$data$ddf, subtitle = "ORG, FPARspl, NT", dir = "./fig", makepdf = TRUE )
 ```
 
-### Temperature-dependent quantum yield efficiency (`BRC`)
+### BRC: Temperature-dependent quantum yield efficiency
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
@@ -418,7 +418,7 @@ rm("mod_BRC")
 # modobs_ddf_BRC <- plot_modobs_daily( out_eval_BRC$data$ddf, subtitle = "BRC, FPARspl, NT", dir = "./fig", makepdf = TRUE )
 ```
 
-### Full simulations, including soil moisture and temperature stress (`FULL`)
+### FULL: Full simulations, including soil moisture and temperature stress
 
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
@@ -489,7 +489,7 @@ rm("mod_FULL")
 ```
 
 
-### Sensitivity to greenness data with interpolated FPAR data (`FULL_FPARitp`)
+### FULL_FPARitp: Sensitivity to greenness data with interpolated FPAR data
 
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
@@ -559,7 +559,7 @@ rm("mod_FULL_FPARitp")
 ```
 
 
-### Sensitivity to greenness data with interpolated EVI data (`FULL_EVI`)
+### FULL_EVI: Sensitivity to greenness data with interpolated EVI data
 
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
@@ -631,7 +631,7 @@ rm("mod_FULL_EVI")
 ```
 
 
-### Sensitivity to GPP data with DT (`FULL_DT`)
+### FULL_DT: Sensitivity to GPP data with DT
 
 Calibrating and evaluating SOFUN against GPP data based on the daytime decomposition method.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
@@ -693,7 +693,7 @@ if (!file.exists("data/obs_eval_DT.Rdata")){
 }
 ```
 
-### Sensitivity to GPP data xxx (`FULL_NTsub`)
+### FULL_NTsub: Sensitivity to GPP data
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
@@ -754,7 +754,7 @@ if (!file.exists("data/obs_eval_NTsub.Rdata")){
 }
 ```
 
-### Sensitivity to GPP data with Ty (`FULL_Ty`)
+### FULL_Ty: Sensitivity to GPP data with Ty
 
 Calibrating and evaluating SOFUN against GPP data based on the alternative flux decomposition method by Tyler's method (GePiSaT data).
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
@@ -971,6 +971,16 @@ table_rmse <- bind_rows(
 create_table_latex( caption = "Caption text", filn = "table_rmse.tex" )
 ```
 
+### Variability versus aggregation
+
+```{r}
+source("eval_ixv_sofun.R")
+var_vs_agg <- purrr::map( as.list(c(2,5,10,20,30)), ~eval_ixv_sofun( ., mod_FULL, settings_eval, settings_sims, obs_eval_NT$ddf ) )
+var_vs_agg[[1]]$stats_bysite$slope %>% density( na.rm=T ) %>% plot()
+purrr::map(as.list(2:5), ~lines( density( var_vs_agg[[.]]$stats_bysite$slope, na.rm=TRUE ) ) )
+```
+
+
 ### Combined spatial/annual
 
 This shows the same as in the SI of our submitted manuscript: Figures S14 and S15 [here](http://rpubs.com/stineb/si_soilm_global).
@@ -985,7 +995,7 @@ plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), m
 plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
 ```
 
-#### Seasonal cycle by climate zones
+### Seasonal cycle by climate zones
 
 More insights are provided by looking at the seasonal cycle explicitly. Plots for each site are given in the Appendix. Aggregating across multiple sites doesn't make much sense. However, I aggregated across climate zones and distinguishing between respective zones on the northern and southern hemisphere.
 
@@ -994,24 +1004,24 @@ The classification of sites into Koeppen-Geiger climate zones is based on Falge 
 koeppen_legend %>% knitr::kable(caption = "Koeppen-Geiger climate zones.")
 ```
 
-## Mean seasonality by climate zone
-
 Plot only for climate zones where data from at least five different sites are available. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( out_eval_FULL, out_eval_BRC, out_eval_ORG, makepdf=TRUE, lab1="FULL", lab2="BRC", lab3="ORG", label="FULL" )
-plot_by_doy_allzones( out_eval_NULL, makepdf=TRUE, label="NULL", lab1="NULL" )
+plot_by_doy_allzones( 
+  out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
+  makepdf=TRUE, label="",
+  lab1="FULL", lab2="BRC", lab3="ORG", lab4="NULL"
+  )
 
 metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
-  group_by( koeppen_code, hemisphere ) %>% 
+  group_by( koeppen_code, hemisphere ) %>%
   summarise( nsites = n() ) %>% 
   left_join( dplyr::rename( koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>% 
   arrange( -nsites ) %>%
   xtable::xtable( caption = "Caption text", auto = TRUE ) %>%
   print( hline.after=c(-1, 0), file = "tab/table_nsites_kgclimate.tex" )
-
 ```
 
 Insights from seasonality analysis by climate zones (results see below, red is the model, black the observations, discussing only climate zones with data from more than three sites):
@@ -1024,6 +1034,16 @@ Insights from seasonality analysis by climate zones (results see below, red is t
 
 In brief, there is room for improvement by reducing GPP at low temperatures (sort of found before, but we never dealt with a temperature ramp, and why should we?) and low soil moisture (of course). fAPAR data in the tropics needs to be examined, otherwise, it looks like we have a problem with the Aw sites.
 
+### Seasonal cycle by sites
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+source("plot_by_doy_allsites.R")
+plot_by_doy_allsites( 
+  out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
+  makepdf=TRUE, label="",
+  lab1="FULL", lab2="BRC", lab3="ORG", lab4="NULL"
+  )
+```
 
 ### X-daily values
 
@@ -1374,7 +1394,7 @@ plot_modobs_spatial_annual(
   makepdf=TRUE, label = "SOILM_GLOBAL", xlim=c(0,3000), ylim=c(0,3000) )
 ```
 
-#### Spatial correlation
+### Spatial correlation
 
 Comparing the multi-annual mean per site in simulated and observed GPP ($\overline{X}_i$) yields a "spatial correlation".
 
@@ -1382,7 +1402,7 @@ Comparing the multi-annual mean per site in simulated and observed GPP ($\overli
 modobs_spatial <- plot_modobs_spatial( out_eval$data$meandf, makepdf=FALSE )
 ```
 
-#### Annual GPP anomalies
+### Annual GPP anomalies
 
 Comparing annual anomalies ($X'_{i,t}$) yields insight into whether the model accurately simulates interannual variability.
 
@@ -1398,7 +1418,8 @@ $$
 $$
 ```{r, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 modobs_meandoy <- plot_modobs_meandoy( out_eval_ORG$data$meandoydf, out_eval_ORG$data$meandoydf_stats, makepdf=TRUE, label = "RED" )
-modobs_meandoy <- plot_modobs_meandoy( out_eval_NULL$data$meandoydf, out_eval_NULL$data$meandoydf_stats, makepdf=TRUE, label = "NULL" )
+
+modobs_meandoy <- plot_modobs_meandoy( out_eval_NULL$data$meandoydf, out_eval_NULL$data$meandoydf_stats, makepdf=TRUE, label = "NULL", lab1="NULL" )
 ```
 
 
