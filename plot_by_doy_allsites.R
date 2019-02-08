@@ -53,24 +53,27 @@ plot_by_doy_allsites <- function( out_eval, out_eval2 = NA, out_eval3 = NA, out_
     left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
     dplyr::filter( kghcode %in% df_zones$kghcode )
   
-  df4 <- out_eval4$data$meandoydf_stats %>% 
-    left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
-    dplyr::filter( kghcode %in% df_zones$kghcode )
+  # df4 <- out_eval4$data$meandoydf_stats %>% 
+  #   left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
+  #   dplyr::filter( kghcode %in% df_zones$kghcode )
 
+  list_ndata <- purrr::map(as.list(seq(nrow(df))), ~nrow(filter(out_eval$data$ddf, sitename==df$sitename[[.]])) ) 
+  
   # tmp <- purrr::map( out_eval$data$meandoydf_byclim_stats$data, ~plot_by_doy_byzone(., out_eval2 = out_eval2, makepdf = makepdf, pattern = pattern ) )
   tmp <- purrr::map( 
-    as.list(seq(nrow(df))) , 
+    as.list(seq(nrow(df))), 
     ~plot_by_doy_bysite( 
       df$data[[.]], 
       df2 = df2$data[[.]], 
       df3 = df3$data[[.]],
-      df4 = df4$data[[.]],
+      # df4 = df4$data[[.]],
       zone = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename==df$sitename[[.]] ) %>%
              dplyr::select( koeppen_code ),
       classid = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename==df$sitename[[.]] ) %>%
-        dplyr::select( classid ),
+                dplyr::select( classid ),
+      ndata = list_ndata[[.]],
       lab1=lab1, lab2=lab2, lab3=lab3, lab4=lab4,
-      makepdf = makepdf, label=label, 
+      makepdf=makepdf, label=label, 
       ...
       ) 
     )
@@ -80,7 +83,7 @@ plot_by_doy_allsites <- function( out_eval, out_eval2 = NA, out_eval3 = NA, out_
 ## Mean seasonality (daily) for one site
 ##------------------------------------------------------------
 plot_by_doy_bysite <- function( df, df2 = NA, df3 = NA, df4 = NA, 
-  zone = "", classid = "", makepdf = FALSE , label="", 
+  zone = "", classid = "", ndata = NA, makepdf = FALSE , label="", 
   col2="royalblue", col3="darkgoldenrod", col4=rbeni::add_alpha("springgreen3", 0.5), 
   lab1="", lab2="", lab3="", lab4="" 
   ){
@@ -89,13 +92,13 @@ plot_by_doy_bysite <- function( df, df2 = NA, df3 = NA, df4 = NA,
   col3 <- "darkgoldenrod"
   col4 <- rbeni::add_alpha("springgreen3", 0.5)
 
-  dir_figs <- paste0( "./fig/meandoy_bysite/", zone, "/" )
+  dir_figs <- paste0( "./fig/meandoy_bysite", label, "/", zone, "/" )
   if (makepdf && !dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs ) )
   if (makepdf) pdf( paste0( dir_figs, "/meandoy_bysite_", df$site[1], ".pdf" ) )
     par(las=1)
-    yrange <- range( df$mod_min, df$mod_max, df$obs_min, df$obs_max, na.rm = TRUE )
-
-    # obs    
+    yrange <- range( c(df$mod_min, df$mod_max, df$obs_min, df$obs_max), na.rm = TRUE )
+    
+    # obs
     plot(  df$doy, df$obs_mean, type="l", ylim = yrange, ylab = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), xlab = "DOY" )
     # polygon( c(df$doy, rev(df$doy)), c(df$obs_min, rev(df$obs_max)), border = NA, col = rgb(0,0,0,0.3)  )
     
@@ -109,14 +112,16 @@ plot_by_doy_bysite <- function( df, df2 = NA, df3 = NA, df4 = NA,
     # mod 3
     if (!identical(NA,df3)) lines( df3$doy, df3$mod_mean, col=col3, lwd=1.75, lty=1 )
 
-    # mod4
-    if (!identical(NA,df4)) lines( df4$doy, df4$mod_mean, col=col4, lwd=1.75, lty=1 )
+    # # mod4
+    # if (!identical(NA,df4)) lines( df4$doy, df4$mod_mean, col=col4, lwd=1.75, lty=1 )
 
     title( df$climatezone[1] )
     
-    mtext( bquote( italic(N) == .( df$nsites[1])), side=3, line=1, cex=1.0, adj=1.0 )
-    legend("topright", c(lab1, lab2, lab3, lab4), col=c("red", col2, col3, col4), lwd = 1.75, bty = "n" )
-
+    mtext( bquote( italic(N) == .(ndata) ), side=3, line=1, cex=1.0, adj=1.0 )
+    
+    # legend("topright", c(lab1, lab2, lab3, lab4), col=c("red", col2, col3, col4), lwd = 1.75, bty = "n" )
+    legend("topright", c(lab1, lab2, lab3), col=c("red", col2, col3), lwd = 1.75, bty = "n" )
+    
     title( paste( df$site[1], " (", zone, classid, ")" ) )
 
   if (makepdf) dev.off()

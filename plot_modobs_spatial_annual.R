@@ -6,22 +6,23 @@ plot_modobs_spatial_annual <- function( out_eval, annual_pooled_stats = NA, spat
     if (makepdf && !dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
     if (makepdf) filn <- paste0( dir_figs, "/modobs_spatial_annual_", label, ".pdf" )
     if (makepdf) print( paste( "Plotting to file:", filn ) )
-    if (makepdf) pdf( filn )
+    if (makepdf) pdf( filn, width = 5, height = 5 )
     
     par(las=1, mar=c(4,4.5,4,1))
     
     ## set up plotting and add linear regression line for means by site
-    with( out_eval$data$meandf, plot( gpp_mod, gpp_obs, 
-        pch=16, col=rgb(0,0,0,0.5), type = "n", 
-        ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
-        xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ),
-        main = label,
-        ... ) )
+    with( out_eval$data$meandf, 
+        plot( gpp_mod, gpp_obs, 
+            pch=16, col=rgb(0,0,0,0.5), type = "n", 
+            ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
+            xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ),
+            main = label,
+            ... ) )
     abline( out_eval$data$linmod_meandf, col="red")
     lines(c(-9999,9999), c(-9999,9999), lty=3)
     
     ## plot black regression lines of annual values within sites
-    out <- out_eval$data$adf_stats %>%  mutate( purrr::map( data, ~lines( fitted ~ gpp_mod, data = . ) ) )  # to have it sorted: %>% mutate( data = purrr::map( data, ~arrange( ., gpp_mod ) ) )
+    out <- out_eval$data$adf_stats %>% mutate( purrr::map( data, ~lines( fitted ~ gpp_mod, data = . ) ) )  # to have it sorted: %>% mutate( data = purrr::map( data, ~arrange( ., gpp_mod ) ) )
         
     ## Add annotations for statistics of annual values (pooled)
     if (!identical(NA, out_eval$metrics$gpp$fluxnet2015$annual_pooled)) mtext( bquote( italic(R)^2 == .(format( out_eval$metrics$gpp$fluxnet2015$annual_pooled$rsq,  digits = 2) ) ), adj = 1, cex = 0.8, line=2 )
@@ -33,7 +34,10 @@ plot_modobs_spatial_annual <- function( out_eval, annual_pooled_stats = NA, spat
     # if (!identical(NA, out_eval$metrics$gpp$fluxnet2015$spatial))       mtext( paste0( "slope = ",      format( out_eval$metrics$gpp$fluxnet2015$spatial$meanslope, digits = 3 ) ),  adj = 0, cex = 0.8, col="red" )
     
     if (makepdf) dev.off()
-    
+
+
+    ## And for each site individually
+
     # ## Histogram of slopes
     # ##------------------------------------------------------------
     # ## (Uncomment to plot as inset in spatial-IAV plot) 

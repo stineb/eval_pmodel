@@ -22,6 +22,7 @@ bibliography: bibliography.bib
 require(knitr)
 library(captioner)
 library(rsofun)
+library(rbeni)
 source("filter_days.R")
 load_dependencies_rsofun()
 tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
@@ -94,23 +95,15 @@ Define common model evaluation settings as a list.
 ```{r, message=FALSE}
 mylist <- readr::read_csv("ext/myselect_fluxnet2015.csv") %>% dplyr::filter( use==1 ) %>% dplyr::select( -use ) %>% unlist()
 settings_eval <- list(
-  sitenames = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) & classid != "CRO" )$sitename,
+  sitenames = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" )$sitename,
   sitenames_siteplots = mylist,
-  agg = c(5, 10),
+  agg = 10,
   path_fluxnet2015_d = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_w = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
   path_fluxnet2015_m = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
   path_fluxnet2015_y = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1y/original/unpacked/",
   path_gepisat_d     = "/alphadata01/bstocker/data/gepisat/v3_fluxnet2015/daily_gpp/"
   )
-
-## WARNING----------------------------------
-## This is circular, but works only like this without restructuring the whole document. Sorry.
-if (!exists("mod_NULL")) load("data/mod_NULL.Rdata")
-if (!exists("mod_ORG")) load("data/mod_ORG.Rdata")
-sitenames_NULL <- mod_NULL$daily %>% names()
-sitenames_ORG  <- mod_ORG$daily  %>% names()
-settings_eval$sitenames <- sitenames_NULL[ sitenames_NULL %in% sitenames_ORG ]
 ##------------------------------------------
 
 # ## XXX TEST: Calibration sites for TerraP, excluding CA-Obs
@@ -120,6 +113,23 @@ settings_eval$sitenames <- sitenames_NULL[ sitenames_NULL %in% sitenames_ORG ]
 ```
 
 - `benchmark`: Named list of character strings with data source identifiers for each calibration target variable. The list is named corresponding to variable names defined by 'targetvars'. The identifier triggers certain functions to be used for reading and processing observational data. Use, e.g., `datasource = list( gpp = "fluxnet2015_NT" )` to specify that observational data for the target variable `"gpp"` comes from FLUXNET 2015 dataset with GPP data based on the night-time flux decomposition method (`"NT"`). Alternatively, use GPP data based on the daytime method (`"fluxnet2015_NT"`) or Tyler Davis' new method (unpublished) (`"fluxnet2015_Ty"`). If multiple data sources are selected (e.g., `datasource = list( gpp = c("fluxnet2015_NT", "fluxnet2015_DT") )`), their mean is used for calibration.
+
+### Check evaluation site selection
+
+... and overwrite...
+```{r}
+## WARNING----------------------------------
+## This is circular, but works only like this without restructuring the whole document. Sorry.
+if (!exists("mod_ORG")) load("data/mod_ORG.Rdata")
+sitenames_ORG  <- mod_ORG$daily  %>% names()
+settings_eval$sitenames <- settings_eval$sitenames[ settings_eval$sitenames %in% sitenames_ORG ]
+
+## Test: are croplands still in there?
+tibble( sitename=settings_eval$sitenames ) %>% 
+  dplyr::filter( sitename %in% sitenames_ORG ) %>%
+  left_join( select( metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename, classid), by="sitename") %>% 
+  arrange(classid)
+```
 
 <!-- ## Get additional site meta information
 
@@ -150,7 +160,7 @@ Output is stored as follows:
 
 Parameters are calibrated for six different simulation suites and parameter values saved in CSV files. The simulation suites are FLUXNET site-scale simulations with different fAPAR input data, differrent GPP calibration target data, and different model setups. 
 
-### Null model of constant LUE (`NULL`)
+### NULL: Null model of constant LUE
 
 Assume that light use efficiency (LUE) is constant and GPP is calculated as:
 $$
@@ -199,10 +209,17 @@ if (!file.exists("data/out_eval_NULL.Rdata")){
 
 row_rsqtable_NULL <- bind_cols( Setup = "NULL", getrow_statstable( out_eval_NULL, stat = "rsq" ) )
 # rm("out_eval_NULL")
+
+# ## Test: are croplands still in there?
+# out_eval_FULL$data$xdf %>% 
+#   select(sitename) %>% 
+#   unique() %>% 
+#   left_join( select( metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename, classid), by="sitename") %>% 
+#   arrange(classid)
 ```
 
 
-### Null model of constant LUE by PFT (`NULLpft`)
+### NULLpft: Null model of constant LUE by PFT
 
 Here, assume a different constant LUE for each PFT, or vegetation type.
 LUE is a constant and is calibrated, given GPP data (here based on the nighttime decomposition method). fAPAR is splined MODIS FPAR MCD15A3H.
@@ -248,7 +265,7 @@ rm("tmp")
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 
 ## evaluate NULL simulations
-if (!file.exists("data/out_eval_NULLpft.RdataXXX")){
+if (!file.exists("data/out_eval_NULLpft.Rdata")){
   out_eval_NULLpft <- eval_sofun( mod_NULLpft, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
   save( out_eval_NULLpft, file = "data/out_eval_NULLpft.Rdata" )
 } else {
@@ -833,7 +850,7 @@ obs_eval_NTsub$ddf$gpp_obs <- merged$gpp_NT
 obs_eval_Ty$ddf$gpp_obs    <- merged$gpp_Ty
 
 ## evaluate FULL_DT simulations
-if (!file.exists("data/out_eval_FULL_DT.Rdataxxx")){
+if (!file.exists("data/out_eval_FULL_DT.Rdata")){
   out_eval_FULL_DT <- eval_sofun( mod_FULL_DT, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
   save( out_eval_FULL_DT, file = "data/out_eval_FULL_DT.Rdata" )
 } else {
@@ -844,7 +861,7 @@ row_rsqtable_FULL_DT <- bind_cols( Setup = "FULL_DT", getrow_statstable( out_eva
 rm("mod_FULL_DT")
 
 ## evaluate FULL_NTsub simulations
-if (!file.exists("data/out_eval_FULL_NTsub.Rdataxxx")){
+if (!file.exists("data/out_eval_FULL_NTsub.Rdata")){
   out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_NTsub, overwrite = TRUE )
   save( out_eval_FULL_NTsub, file = "data/out_eval_FULL_NTsub.Rdata" )
 } else {
@@ -855,7 +872,7 @@ row_rsqtable_FULL_NTsub <- bind_cols( Setup = "FULL_NTsub", getrow_statstable( o
 rm("mod_FULL_NTsub")
 
 ## evaluate FULL_Ty simulations
-if (!file.exists("data/out_eval_FULL_Ty.Rdataxxx")){
+if (!file.exists("data/out_eval_FULL_Ty.Rdata")){
   out_eval_FULL_Ty <- eval_sofun( mod_FULL_Ty, settings_eval, settings_sims, obs_eval = obs_eval_Ty, overwrite = TRUE )
   save( out_eval_FULL_Ty, file = "data/out_eval_FULL_Ty.Rdata" )
 } else {
@@ -871,7 +888,7 @@ rm("mod_FULL_Ty")
 
 Sites used for the model evaluation are shown on the map below. An overview table is in the Appendix (last section of this document).
 
-```{r siteoverview_fig, echo=FALSE, warning=FALSE, message=FALSE}
+```{r siteoverview_fig, echo=FALSE, warning=FALSE, message=FALSE, eval=FALSE}
 require(ncdf4, quietly = TRUE)
 ncfiln <- "../data/greve/ep_over_p_cru_ncep.nc"
 if (!file.exists(ncfiln)) {
@@ -881,7 +898,10 @@ if (!file.exists(ncfiln)) {
   epop <- ncvar_get( nc, varid="EP_OVER_P_CRU_NCEP" )
 }
 source("plot_map_siteoverview.R")
-plot_map_siteoverview( dplyr::filter( metainfo_Tier1_sites_kgclimate_fluxnet2015, mysitename %in% settings_eval$sitenames ), 1/epop ) # , plotfiln="fig/map_sites.pdf"
+sites_used_ddf <- out_eval_FULL$data$ddf$sitename %>% unique()
+identical( settings_eval$sitenames, sites_used_ddf )
+siteinfo <- dplyr::filter( metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename %in% sites_used_ddf )
+plot_map_siteoverview( siteinfo, 1/epop, plotfiln="./fig/map_sites.pdf" ) # , 
 cap_siteoverview_fig <- fig_nums( "siteoverview_fig", caption=" Geographical distribution of sites selected for the bias evaluation. Sites listed in Table S1 as group 1 are in green, sites of group 2 are in black. The color of land area represents aridity, quantified as the ratio of potential evapotranspiration over precipitation from xxx" )
 ```
 
@@ -934,7 +954,12 @@ if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
 if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
-if (!exists("out_eval_NULLpft")) load("data/out_eval_NULL.Rdata")
+if (!exists("out_eval_NULLpft")) load("data/out_eval_NULLpft.Rdata")
+if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
+if (!exists("out_eval_FULL_EVI")) load("data/out_eval_FULL_EVI.Rdata")
+if (!exists("out_eval_FULL_DT")) load("data/out_eval_FULL_DT.Rdata")
+if (!exists("out_eval_FULL_NTsub")) load("data/out_eval_FULL_NTsub.Rdata")
+if (!exists("out_eval_FULL_Ty")) load("data/out_eval_FULL_Ty.Rdata")
 ``` 
 
 ### Metrics table
@@ -952,7 +977,7 @@ table_rsq <- bind_rows(
   bind_cols( Setup = "FULL_EVI",     dplyr::select( getrow_statstable( out_eval_FULL_EVI, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
   bind_cols( Setup = "FULL_DT",      dplyr::select( getrow_statstable( out_eval_FULL_DT, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
   bind_cols( Setup = "FULL_NTsub",   dplyr::select( getrow_statstable( out_eval_FULL_NTsub, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
-  bind_cols( Setup = "FULL_Ty",      dplyr::select( getrow_statstable( out_eval_FULL_Ty, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_Ty",      dplyr::select( getrow_statstable( out_eval_FULL_Ty, stat = "rsq" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) )
   ) %>% 
   rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var", "var(annual)"="annual_var") %>%
   create_table_latex( caption = "Caption text", filn = "table_rsq.tex" )
@@ -967,7 +992,7 @@ table_rmse <- bind_rows(
   bind_cols( Setup = "FULL_EVI",     dplyr::select( getrow_statstable( out_eval_FULL_EVI, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
   bind_cols( Setup = "FULL_DT",      dplyr::select( getrow_statstable( out_eval_FULL_DT, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
   bind_cols( Setup = "FULL_NTsub",   dplyr::select( getrow_statstable( out_eval_FULL_NTsub, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
-  bind_cols( Setup = "FULL_Ty",      dplyr::select( getrow_statstable( out_eval_FULL_Ty, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
+  bind_cols( Setup = "FULL_Ty",      dplyr::select( getrow_statstable( out_eval_FULL_Ty, stat = "rmse" ), xdaily, spatial, annual, seasonal, daily_var, annual_var ) )
   ) %>% 
   rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var", "var(annual)"="annual_var") %>%
   create_table_latex( caption = "Caption text", filn = "table_rmse.tex" )
@@ -977,13 +1002,14 @@ table_rmse <- bind_rows(
 
 ```{r}
 source("eval_ixv_sofun.R")
+load("data/mod_FULL.Rdata")
 var_vs_agg <- purrr::map( as.list(c(2,5,10,20,30)), ~eval_ixv_sofun( ., mod_FULL, settings_eval, settings_sims, obs_eval_NT$ddf ) )
 var_vs_agg[[1]]$stats_bysite$slope %>% density( na.rm=T ) %>% plot()
 purrr::map(as.list(2:5), ~lines( density( var_vs_agg[[.]]$stats_bysite$slope, na.rm=TRUE ) ) )
 ```
 
 
-### Combined spatial/annual
+### Spatial/annual
 
 This shows the same as in the SI of our submitted manuscript: Figures S14 and S15 [here](http://rpubs.com/stineb/si_soilm_global).
 
@@ -997,6 +1023,40 @@ plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), m
 plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
 ```
 
+And for individual sites:
+```{r}
+plot_linmod <- function( df, sitename, fitted, ... ){
+  pdf( paste0("fig/spatial_annual_bysite/plot_spatial_annual_", sitename, ".pdf"), width=5, height=5 )
+  par(las=1)
+  xlim <- range(c(df$gpp_mod,df$gpp_obs), na.rm=TRUE)
+  ylim <- xlim
+  plot( df$gpp_mod, df$gpp_obs, 
+        pch=16, 
+        xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ),
+        ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
+        ... )
+  # linmod <- lm( df$gpp_obs ~ df$gpp_mod )
+  df_fitted <- tibble( gpp_mod=df$gpp_mod, fitted=fitted ) %>%
+    arrange( gpp_mod )
+  lines( df_fitted$gpp_mod, df_fitted$fitted, col="red" )
+  # abline( linmod, col="red" )
+  lines(c(-9999,9999), c(-9999,9999), lty=3)
+  title(sitename)
+  dev.off()
+} 
+
+purrr::map( 
+  as.list(seq(nrow(out_eval_FULL$data$adf_stats))),
+  ~plot_linmod( 
+    out_eval_FULL$data$adf_stats$data[.][[1]], 
+    xlim = c(0,4000), ylim = c(0,4000),
+    sitename = out_eval_FULL$data$adf_stats$sitename[.],
+    fitted = out_eval_FULL$data$adf_stats$linmod[.][[1]]$fitted.values
+    )
+)
+```
+
+
 ### Seasonal cycle by climate zones
 
 More insights are provided by looking at the seasonal cycle explicitly. Plots for each site are given in the Appendix. Aggregating across multiple sites doesn't make much sense. However, I aggregated across climate zones and distinguishing between respective zones on the northern and southern hemisphere.
@@ -1008,7 +1068,7 @@ koeppen_legend %>% knitr::kable(caption = "Koeppen-Geiger climate zones.")
 
 Plot only for climate zones where data from at least five different sites are available. 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE}
 source("plot_by_doy_allzones.R")
 plot_by_doy_allzones( 
   out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
@@ -1016,7 +1076,9 @@ plot_by_doy_allzones(
   lab1="FULL", lab2="BRC", lab3="ORG", lab4="NULL"
   )
 
-metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+sites_used <- out_eval_FULL$data$ddf$sitename %>% unique()
+rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+  dplyr::filter( sitename %in% sites_used ) %>% 
   mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
   group_by( koeppen_code, hemisphere ) %>%
   summarise( nsites = n() ) %>% 
@@ -1038,7 +1100,7 @@ In brief, there is room for improvement by reducing GPP at low temperatures (sor
 
 ### Seasonal cycle by sites
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 source("plot_by_doy_allsites.R")
 plot_by_doy_allsites( 
   out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
@@ -1094,17 +1156,21 @@ modobs_anomalies_annual_NULL <- plot_modobs_anomalies_annual( out_eval_NULL, mak
 ### Greenness data
 
 Look at seasonality for three zones with alternative greenness data.
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 if (!exists("out_eval_FULL_EVI"))    load("data/out_eval_FULL_EVI.Rdata")
 source("plot_by_doy_allzones.R")
 plot_by_doy_allzones( 
-  out_eval_FULL, 
-  out_eval_FULL_FPARitp, 
-  out_eval_FULL_EVI, 
-  makepdf=TRUE, label="greenness", 
-  col2="dodgerblue", col3="springgreen4",
+  out_eval_FULL, out_eval_FULL_FPARitp, out_eval_FULL_EVI, 
+  makepdf=TRUE, label="greenness",
+  lab1="FULL", lab2="FPARitp", lab3="EVI" 
+  )
+
+source("plot_by_doy_allsites.R")
+plot_by_doy_allsites( 
+  out_eval_FULL, out_eval_FULL_FPARitp, out_eval_FULL_EVI, 
+  makepdf=TRUE, label="greenness",
   lab1="FULL", lab2="FPARitp", lab3="EVI" 
   )
 ```
