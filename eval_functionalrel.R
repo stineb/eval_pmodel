@@ -33,8 +33,10 @@ eval_functionalrel <- function( df, nam_target, predictors, dir = "./", overwrit
     
     ## create formula with splines for each predictor "s(predictor)"
     forml  <- as.formula(  paste0( nam_target, " ~ s(", paste( predictors, collapse=") + s(" ), ")" ) )
+    # forml  <- as.formula(  paste0( nam_target, " ~ s(", paste( predictors, collapse=") + s(" ), ") + s(sitename, bs='re')" ) )
     
     ## train model
+    print("training...")
     gam <- mgcv::gam( forml, data = df_training, method = "REML" )
 
     # gam.check(gam)
@@ -51,6 +53,7 @@ eval_functionalrel <- function( df, nam_target, predictors, dir = "./", overwrit
   ##-------------------------------------
   ## Evaluate GAM and P-model
   ##-------------------------------------
+  print("evaluating....")
   df_eval <- purrr::map( 
     as.list(predictors), 
     ~eval_response_byvar( ., 
@@ -69,6 +72,8 @@ eval_functionalrel <- function( df, nam_target, predictors, dir = "./", overwrit
 
 eval_response_byvar <- function( evalvar, df, gam, all_predictors, nam_target, nsample_predictors, nsample_target, makepdf=FALSE, ... ){
 
+  print(evalvar)
+  
   ## Get evaluation data
   evaldata <- get_eval_data( evalvar, df, all_predictors, nsample_predictors, nsample_target )
 
@@ -76,7 +81,7 @@ eval_response_byvar <- function( evalvar, df, gam, all_predictors, nam_target, n
   predicted_eval <- predict( gam, evaldata )
   evaldata <- evaldata %>% mutate( var_gam = predicted_eval )
 
-  ## summarise by temperature steps
+  ## summarise by steps in the evaluation variable
   eval_sum <- evaldata %>% get_quantiles( evalvar, nam_target = "var_gam" )
   names(eval_sum) <- paste0( names(eval_sum), "_gam" )
 
@@ -107,6 +112,7 @@ aggregate_mean <- function( ddf, ndays_agg, dovars, year_start, year_end ){
       mutate( date = ymd(as.character(inbin)) ) %>%
       dplyr::select( -inbin ) %>%
       ungroup()
+    
     return(ddf_agg)
   
   }  
@@ -147,13 +153,30 @@ get_eval_data <- function( evalvar, df, all_predictors, nsample_predictors, nsam
   varmin <- min( df[[evalvar]], na.rm=TRUE )
   varmax <- max( df[[evalvar]], na.rm=TRUE )
 
-  ## create synthetic data for predictors, sampling from the observed values independently for each predictor
-  evaldata <- expand.grid(  seq( varmin, varmax, length.out = nsample_target ),
-                            sample( unlist( df[ predictors[1] ] ), nsample_predictors, replace = TRUE ), 
-                            sample( unlist( df[ predictors[2] ] ), nsample_predictors, replace = TRUE )
-                            ) %>% 
-              as_tibble() %>%
-              setNames( c( evalvar, predictors ) )
+  # ## create synthetic data for predictors, sampling from the observed values independently for each predictor
+  # evaldata <- expand.grid(  seq( varmin, varmax, length.out = nsample_target ),
+  #                           sample( unlist( df[ predictors[1] ] ), nsample_predictors, replace = TRUE ), 
+  #                           sample( unlist( df[ predictors[2] ] ), nsample_predictors, replace = TRUE ),
+  #                           sample( unlist( df[ predictors[3] ] ), nsample_predictors, replace = TRUE ), 
+  #                           sample( unlist( df[ predictors[4] ] ), nsample_predictors, replace = TRUE )
+  #                         ) %>% 
+  #             as_tibble() %>%
+  #             setNames( c( evalvar, predictors ) )
+
+  ## alternative, not repeating values, not
+  df_predictors <- tibble( predictor1 = sample( unlist( df[ predictors[1] ] ), nsample_predictors, replace = TRUE ),
+                           predictor2 = sample( unlist( df[ predictors[2] ] ), nsample_predictors, replace = TRUE ),
+                           predictor3 = sample( unlist( df[ predictors[3] ] ), nsample_predictors, replace = TRUE ),
+                           predictor4 = sample( unlist( df[ predictors[4] ] ), nsample_predictors, replace = TRUE )
+                          )
+  
+  evaldata <- purrr::map(
+    as.list( seq( varmin, varmax, length.out = nsample_target ) ),
+    ~bind_cols( evalvar = tibble( evalvar = rep( ., nsample_predictors ) ), df_predictors ) 
+    ) %>% 
+    bind_rows() %>%
+    setNames( c( evalvar, predictors ) )
+  
 
   return(evaldata)
 }
@@ -193,8 +216,15 @@ prepare_data_functionalrel <- function( df, predictors, ... ){
                 mutate( lue_obs = remove_outliers(lue_obs) ) %>%
                 mutate( lue_mod = remove_outliers(lue_mod) ) %>%
                 dplyr::rename( vpd = vpd_fluxnet2015, ppfd = ppfd_fluxnet2015, soilm = soilm_obs_mean ) %>%
-                mutate( year = year(date) ) %>%
-                aggregate_mean( ... )
+                mutate( year = year(date) )
+  
+  # take only main season, i.e. where GPP is above the 5% quantile per site
+  df <- df %>% group_by( sitename ) %>% 
+               summarise( gpp_obs_q05 = quantile( gpp_obs, 0.05, na.rm=TRUE ) ) %>% 
+               right_join( df, by="sitename" ) %>% 
+               mutate( gpp_obs = ifelse( gpp_obs < gpp_obs_q05, NA, gpp_obs ) ) %>% 
+               aggregate_mean( ... )
+  
                 # left_join( df_co2, by="year" ) %>%
                 # left_join( df_elv, by="sitename" )
   return(df)  

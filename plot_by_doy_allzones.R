@@ -11,8 +11,8 @@ plot_by_doy_allzones <- function( out_eval, out_eval2 = NA, out_eval3 = NA, out_
   	as.list(seq(nrow(out_eval$data$meandoydf_byclim_stats))) , 
   	~plot_by_doy_byzone( 
   		out_eval$data$meandoydf_byclim_stats$data[[.]], 
-  		df2 = out_eval2$data$meandoydf_byclim_stats$data[[.]], 
-  		df3 = out_eval3$data$meandoydf_byclim_stats$data[[.]], 
+  		#df2 = out_eval2$data$meandoydf_byclim_stats$data[[.]], 
+  		#df3 = out_eval3$data$meandoydf_byclim_stats$data[[.]], 
       # df4 = out_eval4$data$meandoydf_byclim_stats$data[[.]],
       lab1=lab1, lab2=lab2, lab3=lab3, lab4=lab4,
       makepdf = makepdf, label=label, 
@@ -53,18 +53,19 @@ plot_by_doy_byzone <- function( df, df2 = NA, df3 = NA, df4 = NA,
       # # mod4
       # if (!identical(NA,df4)) lines( df4$doy, df4$mod_mean, col=col4, lwd=1.75, lty=1 )
 
-      # mod 3
-      if (!identical(NA,df3)) lines( df3$doy, df3$mod_mean, col=col3, lwd=1.75, lty=1 )
-      
-      # mod 2
-      if (!identical(NA,df2)) lines( df2$doy, df2$mod_mean, col=col2, lwd=1.75, lty=1 )
+      # # mod 3
+      # if (!identical(NA,df3)) lines( df3$doy, df3$mod_mean, col=col3, lwd=1.75, lty=1 )
+      # 
+      # # mod 2
+      # if (!identical(NA,df2)) lines( df2$doy, df2$mod_mean, col=col2, lwd=1.75, lty=1 )
 
       title( df$climatezone[1] )
       
       mtext( bquote( italic(N) == .( df$nsites[1])), side=3, line=1, cex=1.0, adj=1.0 )
       
       # legend("topright", c(lab1, lab2, lab3, lab4), col=c("red", col2, col3, col4), lwd = 1.75, bty = "n" )
-      legend("topright", c(lab1, lab2, lab3), col=c("red", col2, col3), lwd = 1.75, bty = "n" )
+      #legend("topright", c(lab1, lab2, lab3), col=c("red", col2, col3), lwd = 1.75, bty = "n" )
+      legend("topright", lab1, col="red", lwd = 1.75, bty = "n" )
       
     if (makepdf) dev.off()
   } else {
