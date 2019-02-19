@@ -500,9 +500,7 @@ if (!file.exists("data/out_eval_FULL.Rdata")){
 }
 
 row_rsqtable_FULL <- bind_cols( Setup = "FULL", getrow_statstable( out_eval_FULL, stat = "rsq" ) )
-# rm("out_eval_FULL")
 rm("mod_FULL")
-
 ```
 
 
@@ -1453,13 +1451,31 @@ df_dday_agg_FULL <- eval_droughtresponse(
   nbins=10, 
   do_norm=TRUE
   )
+
 plot_dday( df_dday_agg_BRC, df_dday_agg_FULL, before=20, after=79, bias=TRUE, filn="fig/droughtresponse.pdf" )
 ```
 
 
+### Soil temperature: reason for bias?
 
+No clear pattern here.
+```{r}
+## with daily data
+ddf <- out_eval_FULL$data$ddf %>% 
+  left_join( dplyr::select( metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename, lat, koeppen_code ), by = "sitename" ) %>%
+	mutate( hemisphere = ifelse( lat>0, "north", "south" ),
+	        bias = gpp_mod - gpp_obs ) %>% 
+  dplyr::filter( koeppen_code %in% c("Cfb", "Dfb") )   # "Dfb"  "Cfb"
 
+with( ddf, LSD::heatscatter( soiltemp_obs_mean, bias ) )
+abline( h=0, lty=3 )
 
+## with mean season cycle data
+doydf <- out_eval_FULL$data$meandoydf_byclim %>% 
+	mutate( bias = mod_mean - obs_mean ) %>% 
+  dplyr::filter( koeppen_code %in% c( "Dfb") )   # "Dfb"  "Cfb"
+
+```
 
 
 ### Values aggregated to X days
