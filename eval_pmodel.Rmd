@@ -1141,15 +1141,11 @@ modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_Ty, makepdf=TRUE, xlim=c(0,20), 
 ```{r}
 source("plot_modobs_anomalies.R")
 # source("analyse_modobs_ggplot2.R")
-modobs_anomalies_daily_ORG  <- plot_modobs_anomalies_daily( out_eval_ORG,  makepdf=TRUE, label = "ORG", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_daily_BRC  <- plot_modobs_anomalies_daily( out_eval_BRC,  makepdf=TRUE, label = "BRC", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_daily_FULL <- plot_modobs_anomalies_daily( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_daily_NULL <- plot_modobs_anomalies_daily( out_eval_NULL, makepdf=TRUE, label = "NULL", heat=TRUE, greyscale=TRUE )
+modobs_anomalies_daily_FULL  <- plot_modobs_anomalies_daily(  out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
+modobs_anomalies_xdaily_FULL <- plot_modobs_anomalies_xdaily( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
 
-modobs_anomalies_annual_ORG  <- plot_modobs_anomalies_annual( out_eval_ORG,  makepdf=TRUE, label = "ORG", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_annual_BRC  <- plot_modobs_anomalies_annual( out_eval_BRC,  makepdf=TRUE, label = "BRC", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_annual_FULL <- plot_modobs_anomalies_annual( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_annual_NULL <- plot_modobs_anomalies_annual( out_eval_NULL, makepdf=TRUE, label = "NULL", heat=TRUE, greyscale=TRUE )
+hist_anomalies_daily_FULL  <- plot_hist_anomalies_daily(  out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
+hist_anomalies_xdaily_FULL <- plot_hist_anomalies_xdaily( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
 ```
 
 
