@@ -500,9 +500,7 @@ if (!file.exists("data/out_eval_FULL.Rdata")){
 }
 
 row_rsqtable_FULL <- bind_cols( Setup = "FULL", getrow_statstable( out_eval_FULL, stat = "rsq" ) )
-# rm("out_eval_FULL")
 rm("mod_FULL")
-
 ```
 
 
@@ -700,7 +698,7 @@ settings_eval$benchmark <- list( gpp = c("fluxnet2015_DT") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("data/obs_eval_DT.Rdata")){
+if (!file.exists("data/obs_eval_DT.RdataXXX")){
   obs_eval_DT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   # obs_eval_DT$ddf <- obs_eval_DT$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_DT$ddf$gpp_obs))))
@@ -761,7 +759,7 @@ settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("data/obs_eval_NTsub.Rdata")){
+if (!file.exists("data/obs_eval_NTsub.RdataXXX")){
   obs_eval_NTsub <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   # obs_eval_NTsub$ddf <- obs_eval_NTsub$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_NTsub$ddf$gpp_obs))))
@@ -823,7 +821,7 @@ settings_eval$benchmark <- list( gpp = c("fluxnet2015_Ty") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("data/obs_eval_Ty.Rdata")){
+if (!file.exists("data/obs_eval_Ty.RdataXXX")){
   obs_eval_Ty <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   # obs_eval_Ty$ddf <- obs_eval_Ty$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_Ty$ddf$gpp_obs))))
@@ -836,11 +834,13 @@ if (!file.exists("data/obs_eval_Ty.Rdata")){
 Evaluate in two steps, after making sure all data points are available in all setups.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Make sure data is available in all three
+# daily
 merged <- select(    obs_eval_DT$ddf,    sitename, date, gpp_DT = gpp_obs ) %>% 
   left_join( select( obs_eval_NTsub$ddf, sitename, date, gpp_NT = gpp_obs ), by = c("sitename", "date") ) %>% 
-  left_join( select( obs_eval_Ty$ddf,    sitename, date, gpp_Ty = gpp_obs_gepisat ), by = c("sitename", "date") ) %>% 
+  left_join( select( obs_eval_Ty$ddf,    sitename, date, gpp_Ty = gpp_obs ), by = c("sitename", "date") ) %>% 
   mutate( use = ifelse( !is.na(gpp_DT) & !is.na(gpp_NT) & !is.na(gpp_Ty), TRUE, FALSE ) ) %>% 
   mutate( gpp_DT = ifelse(use, gpp_DT, NA), gpp_NT = ifelse(use, gpp_NT, NA), gpp_Ty = ifelse(use, gpp_Ty, NA) )
+
 sum(!is.na(merged$gpp_DT))
 sum(!is.na(merged$gpp_NT))
 sum(!is.na(merged$gpp_Ty))
@@ -849,8 +849,23 @@ obs_eval_DT$ddf$gpp_obs    <- merged$gpp_DT
 obs_eval_NTsub$ddf$gpp_obs <- merged$gpp_NT
 obs_eval_Ty$ddf$gpp_obs    <- merged$gpp_Ty
 
+# x-daily
+merged <- select(    obs_eval_DT$xdf,    sitename, inbin, gpp_DT = gpp_obs ) %>% 
+  left_join( select( obs_eval_NTsub$xdf, sitename, inbin, gpp_NT = gpp_obs ), by = c("sitename", "inbin") ) %>% 
+  left_join( select( obs_eval_Ty$xdf,    sitename, inbin, gpp_Ty = gpp_obs ), by = c("sitename", "inbin") ) %>% 
+  mutate( use = ifelse( !is.na(gpp_DT) & !is.na(gpp_NT) & !is.na(gpp_Ty), TRUE, FALSE ) ) %>% 
+  mutate( gpp_DT = ifelse(use, gpp_DT, NA), gpp_NT = ifelse(use, gpp_NT, NA), gpp_Ty = ifelse(use, gpp_Ty, NA) )
+
+sum(!is.na(merged$gpp_DT))
+sum(!is.na(merged$gpp_NT))
+sum(!is.na(merged$gpp_Ty))
+
+obs_eval_DT$xdf$gpp_obs    <- merged$gpp_DT
+obs_eval_NTsub$xdf$gpp_obs <- merged$gpp_NT
+obs_eval_Ty$xdf$gpp_obs    <- merged$gpp_Ty
+
 ## evaluate FULL_DT simulations
-if (!file.exists("data/out_eval_FULL_DT.Rdata")){
+if (!file.exists("data/out_eval_FULL_DT.RdataXXX")){
   out_eval_FULL_DT <- eval_sofun( mod_FULL_DT, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
   save( out_eval_FULL_DT, file = "data/out_eval_FULL_DT.Rdata" )
 } else {
@@ -861,7 +876,7 @@ row_rsqtable_FULL_DT <- bind_cols( Setup = "FULL_DT", getrow_statstable( out_eva
 rm("mod_FULL_DT")
 
 ## evaluate FULL_NTsub simulations
-if (!file.exists("data/out_eval_FULL_NTsub.Rdata")){
+if (!file.exists("data/out_eval_FULL_NTsub.RdataXXX")){
   out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_NTsub, overwrite = TRUE )
   save( out_eval_FULL_NTsub, file = "data/out_eval_FULL_NTsub.Rdata" )
 } else {
@@ -872,7 +887,7 @@ row_rsqtable_FULL_NTsub <- bind_cols( Setup = "FULL_NTsub", getrow_statstable( o
 rm("mod_FULL_NTsub")
 
 ## evaluate FULL_Ty simulations
-if (!file.exists("data/out_eval_FULL_Ty.Rdata")){
+if (!file.exists("data/out_eval_FULL_Ty.RdataXXX")){
   out_eval_FULL_Ty <- eval_sofun( mod_FULL_Ty, settings_eval, settings_sims, obs_eval = obs_eval_Ty, overwrite = TRUE )
   save( out_eval_FULL_Ty, file = "data/out_eval_FULL_Ty.Rdata" )
 } else {
@@ -1025,34 +1040,35 @@ plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000
 
 And for individual sites:
 ```{r}
-plot_linmod <- function( df, sitename, fitted, ... ){
-  pdf( paste0("fig/spatial_annual_bysite/plot_spatial_annual_", sitename, ".pdf"), width=5, height=5 )
-  par(las=1)
-  xlim <- range(c(df$gpp_mod,df$gpp_obs), na.rm=TRUE)
-  ylim <- xlim
-  plot( df$gpp_mod, df$gpp_obs, 
-        pch=16, 
-        xlab = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) ),
-        ylab = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
-        ... )
-  # linmod <- lm( df$gpp_obs ~ df$gpp_mod )
-  df_fitted <- tibble( gpp_mod=df$gpp_mod, fitted=fitted ) %>%
-    arrange( gpp_mod )
-  lines( df_fitted$gpp_mod, df_fitted$fitted, col="red" )
-  # abline( linmod, col="red" )
-  lines(c(-9999,9999), c(-9999,9999), lty=3)
-  title(sitename)
-  dev.off()
-} 
+source("plot_linmod.R")
 
-purrr::map( 
-  as.list(seq(nrow(out_eval_FULL$data$adf_stats))),
-  ~plot_linmod( 
-    out_eval_FULL$data$adf_stats$data[.][[1]], 
+## different GPP data (NT, DT)
+purrr::map(
+  as.list(out_eval_FULL_DT$data$adf_stats$sitename),
+  ~plot_linmod(
+    out_eval_FULL_DT$data$adf_stats$data[ which(out_eval_FULL_DT$data$adf_stats$sitename==.) ][[1]],
+    df2 = out_eval_FULL_NTsub$data$adf_stats$data[ which(out_eval_FULL_NTsub$data$adf_stats$sitename==.) ][[1]],
+    df3 = NULL, #out_eval_FULL_Ty$data$adf_stats$data[ which(out_eval_FULL_Ty$data$adf_stats$sitename==.) ][[1]],
     xlim = c(0,4000), ylim = c(0,4000),
-    sitename = out_eval_FULL$data$adf_stats$sitename[.],
-    fitted = out_eval_FULL$data$adf_stats$linmod[.][[1]]$fitted.values
-    )
+    sitename = .,
+    fitted = NA,
+    label = "DT_NT"
+  )
+)
+
+## different greenness data
+purrr::map(
+  as.list(out_eval_FULL$data$adf_stats$sitename),
+  ~plot_linmod(
+    out_eval_FULL$data$adf_stats$data[ which(out_eval_FULL$data$adf_stats$sitename==.) ][[1]],
+    df2 = out_eval_FULL_EVI$data$adf_stats$data[ which(out_eval_FULL_EVI$data$adf_stats$sitename==.) ][[1]],
+    df3 = NULL, #out_eval_FULL_Ty$data$adf_stats$data[ which(out_eval_FULL_Ty$data$adf_stats$sitename==.) ][[1]],
+    xlim = c(0,4000), ylim = c(0,4000),
+    sitename = .,
+    fitted = NA,
+    label = "greenness",
+    lab_legend = c("MODIS FPAR, spl.", "MODIS EVI")
+  )
 )
 ```
 
@@ -1156,6 +1172,7 @@ Look at seasonality for three zones with alternative greenness data.
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 if (!exists("out_eval_FULL_EVI"))    load("data/out_eval_FULL_EVI.Rdata")
+
 source("plot_by_doy_allzones.R")
 plot_by_doy_allzones( 
   out_eval_FULL, out_eval_FULL_FPARitp, out_eval_FULL_EVI, 
@@ -1214,7 +1231,6 @@ plot_by_doy_allzones(
   makepdf=TRUE, label="Ty", 
   lab1="Ty"
   )
-
 ```
 
 
@@ -1228,35 +1244,40 @@ In order to improve comparability, ANNs are trained at (P-) modelled and observe
 if (!exists("obs_eval_NTsub")) load("data/obs_eval_NTsub.Rdata")
 if (!exists("obs_eval_DT")) load("data/obs_eval_DT.Rdata")
 if (!exists("obs_eval_Ty")) load("data/obs_eval_Ty.Rdata")
+
 source("eval_functionalrel.R")
 source("plot_functionalrel.R")
-predictors <- c("temp", "vpd", "soilm")
+
+predictors <- c("temp", "vpd", "soilm", "ppfd", "fapar")
 
 ## Calulate LUE, rename, and and aggregate data to multi-day periods
-df_NT <- out_eval_FULL$data$ddf %>%
+df_NT <- out_eval_FULL_NTsub$data$ddf %>%
             prepare_data_functionalrel( predictors, 
               ndays_agg = 10, 
-              dovars = c("lue_obs", 
-              predictors, 
-              "lue_mod"), 
+              dovars = c(
+                "gpp_obs", 
+                predictors, 
+                "gpp_mod"), 
               year_start = 2000, 
               year_end = 2018
               )
 df_DT <- out_eval_FULL_DT$data$ddf %>%
             prepare_data_functionalrel( predictors, 
               ndays_agg = 10, 
-              dovars = c("lue_obs", 
-              predictors, 
-              "lue_mod"), 
+              dovars = c(
+                "gpp_obs", 
+                predictors, 
+                "gpp_mod"), 
               year_start = 2000, 
               year_end = 2018 
               )
 df_Ty <- out_eval_FULL_Ty$data$ddf %>%
             prepare_data_functionalrel( predictors, 
               ndays_agg = 10, 
-              dovars = c("lue_obs", 
-              predictors, 
-              "lue_mod"), 
+              dovars = c(
+                "gpp_obs", 
+                predictors, 
+                "gpp_mod"), 
               year_start = 2000, 
               year_end = 2018
               )
@@ -1265,87 +1286,120 @@ df_Ty <- out_eval_FULL_Ty$data$ddf %>%
 # params_opt <- readr::read_csv( "calib_results/params_opt_BRC.csv" )
 # df_NT <- df_NT %>% apply_pmodel( returnvar="lue", kphio=params_opt$kphio ) %>% rename( lue_mod=varnam_pmodel ) %>% select(-out_pmodel)
 
-## Get functional relationships of 'lue_obs' and 'lue_mod' using GAMs
-dflist_eval_lue_obs_NT <- eval_functionalrel( 
+## Get functional relationships of 'gpp_obs' and 'lue_mod' using GAMs
+dflist_eval_gpp_obs_NT <- eval_functionalrel( 
   df_NT, 
-  nam_target="lue_obs", 
+  nam_target="gpp_obs", 
   predictors=predictors,
+  nsample_target=100, nsample_predictors=300,
   overwrite = TRUE
   )
-dflist_eval_lue_obs_DT <- eval_functionalrel( 
+dflist_eval_gpp_obs_DT <- eval_functionalrel( 
   df_DT, 
-  nam_target="lue_obs", 
+  nam_target="gpp_obs", 
   predictors=predictors,
+  nsample_target=100, nsample_predictors=300,
   overwrite = TRUE
   )
-dflist_eval_lue_obs_Ty <- eval_functionalrel( 
+dflist_eval_gpp_obs_Ty <- eval_functionalrel( 
   df_Ty, 
-  nam_target="lue_obs", 
+  nam_target="gpp_obs", 
   predictors=predictors,
+  nsample_target=100, nsample_predictors=300,
   overwrite = TRUE
   )
-dflist_eval_lue_mod <- eval_functionalrel( 
+dflist_eval_gpp_mod <- eval_functionalrel( 
   df_NT, 
-  nam_target="lue_mod", 
+  nam_target="gpp_mod", 
   predictors=predictors,
+  nsample_target=100, nsample_predictors=300,
   overwrite = TRUE
   )
 
-## Get functional relationships of P-model directly (apply P-model on the same type of evaluation data used to evaluate the GAMs)
-## get calibrated parameters
-dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df_NT, predictors, nsample = 12 ) ) %>%
-                      purrr::map( ~apply_pmodel(., varnam_pmodel="lue", kphio=params_opt$kphio ) ) %>%
-                      setNames(predictors)
-dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>%
-  setNames(predictors)
+# ## Get functional relationships of P-model directly (apply P-model on the same type of evaluation data used to evaluate the GAMs)
+# ## get calibrated parameters
+# dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df_NT, predictors, nsample = 12 ) ) %>%
+#                       purrr::map( ~apply_pmodel(., varnam_pmodel="lue", kphio=params_opt$kphio ) ) %>%
+#                       setNames(predictors)
+# dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>%
+#   setNames(predictors)
 
-save(dflist_eval_lue_obs_NT, file = "data/dflist_eval_lue_obs_NT.Rdata")
-save(dflist_eval_lue_obs_DT, file = "data/dflist_eval_lue_obs_DT.Rdata")
-save(dflist_eval_lue_obs_Ty, file = "data/dflist_eval_lue_obs_Ty.Rdata")
-save(dflist_eval_lue_mod, file = "data/dflist_eval_lue_mod.Rdata")
-save(dflist_eval_pmodel, file = "data/dflist_eval_pmodel.Rdata")
-save(dflist_eval_pmodel_stats, file = "data/dflist_eval_pmodel_stats.Rdata")
+save(dflist_eval_gpp_obs_NT, file = "data/dflist_eval_gpp_obs_NT.Rdata")
+save(dflist_eval_gpp_obs_DT, file = "data/dflist_eval_gpp_obs_DT.Rdata")
+save(dflist_eval_gpp_obs_Ty, file = "data/dflist_eval_gpp_obs_Ty.Rdata")
+save(dflist_eval_gpp_mod, file = "data/dflist_eval_gpp_mod.Rdata")
+# save(dflist_eval_pmodel, file = "data/dflist_eval_pmodel.Rdata")
+# save(dflist_eval_pmodel_stats, file = "data/dflist_eval_pmodel_stats.Rdata")
 
+## temperature
 plot_functionalrel( 
-  df  = dflist_eval_lue_obs_NT[["temp"]], 
-  df2 = dflist_eval_lue_obs_DT[["temp"]], 
-  df3 = dflist_eval_lue_obs_Ty[["temp"]], 
-  df4 = dflist_eval_lue_mod[["temp"]],
+  df  = dflist_eval_gpp_obs_NT[["temp"]], 
+  df2 = dflist_eval_gpp_obs_DT[["temp"]], 
+  df3 = dflist_eval_gpp_obs_Ty[["temp"]], 
+  df4 = dflist_eval_gpp_mod[["temp"]],
   df5 = NULL, #dflist_eval_pmodel_stats[["temp"]],
   evalvar="temp", 
-  col=c("black", "black", "black", "red","red"),
+  col=c("black", "black", "black", "red", "red"),
   lty=c(1,3,2,1,1),
   range=rep(FALSE,5),
-  ylim=c(0,1),
+  ylim=c(0,8),
   filnam="./fig/functionalrel_gam_temp.pdf"
   )
 
 plot_functionalrel( 
-  df  = dflist_eval_lue_obs_NT[["vpd"]], 
-  df2 = dflist_eval_lue_obs_DT[["vpd"]], 
-  df3 = dflist_eval_lue_obs_Ty[["vpd"]], 
-  df4 = dflist_eval_lue_mod[["vpd"]],
+  df  = dflist_eval_gpp_obs_NT[["vpd"]], 
+  df2 = dflist_eval_gpp_obs_DT[["vpd"]], 
+  df3 = dflist_eval_gpp_obs_Ty[["vpd"]], 
+  df4 = dflist_eval_gpp_mod[["vpd"]],
   df5 = NULL, #dflist_eval_pmodel_stats[["vpd"]],
   evalvar="vpd", 
   col=c("black", "black", "black", "red","red"),
   lty=c(1,3,2,1,1),
   range=rep(FALSE,5),
-  ylim=c(-0.3,1),
+  ylim=c(-0.3,8),
   filnam="./fig/functionalrel_gam_vpd.pdf"
   )
 
 plot_functionalrel( 
-  df  = dflist_eval_lue_obs_NT[["soilm"]], 
-  df2 = dflist_eval_lue_obs_DT[["soilm"]], 
-  df3 = dflist_eval_lue_obs_Ty[["soilm"]], 
-  df4 = dflist_eval_lue_mod[["soilm"]],
+  df  = dflist_eval_gpp_obs_NT[["soilm"]], 
+  df2 = dflist_eval_gpp_obs_DT[["soilm"]], 
+  df3 = dflist_eval_gpp_obs_Ty[["soilm"]], 
+  df4 = dflist_eval_gpp_mod[["soilm"]],
   df5 = NULL, #dflist_eval_pmodel_stats[["soilm"]],
   evalvar="soilm", 
   col=c("black", "black", "black", "red","red"),
   lty=c(1,3,2,1,1),
   range=rep(FALSE,5),
-  ylim=c(0,1),
+  ylim=c(0,8),
   filnam="./fig/functionalrel_gam_soilm.pdf"
+  )
+
+plot_functionalrel( 
+  df  = dflist_eval_gpp_obs_NT[["fapar"]], 
+  df2 = dflist_eval_gpp_obs_DT[["fapar"]], 
+  df3 = dflist_eval_gpp_obs_Ty[["fapar"]], 
+  df4 = dflist_eval_gpp_mod[["fapar"]],
+  df5 = NULL, #dflist_eval_pmodel_stats[["fapar"]],
+  evalvar="fapar", 
+  col=c("black", "black", "black", "red","red"),
+  lty=c(1,3,2,1,1),
+  range=rep(FALSE,5),
+  ylim=c(0,10),
+  filnam="./fig/functionalrel_gam_fapar.pdf"
+  )
+
+plot_functionalrel( 
+  df  = dflist_eval_gpp_obs_NT[["ppfd"]], 
+  df2 = dflist_eval_gpp_obs_DT[["ppfd"]], 
+  df3 = dflist_eval_gpp_obs_Ty[["ppfd"]], 
+  df4 = dflist_eval_gpp_mod[["ppfd"]],
+  df5 = NULL, #dflist_eval_pmodel_stats[["ppfd"]],
+  evalvar="ppfd", 
+  col=c("black", "black", "black", "red","red"),
+  lty=c(1,3,2,1,1),
+  range=rep(FALSE,5),
+  ylim=c(0,10),
+  filnam="./fig/functionalrel_gam_ppfd.pdf"
   )
 
 
@@ -1393,13 +1447,31 @@ df_dday_agg_FULL <- eval_droughtresponse(
   nbins=10, 
   do_norm=TRUE
   )
+
 plot_dday( df_dday_agg_BRC, df_dday_agg_FULL, before=20, after=79, bias=TRUE, filn="fig/droughtresponse.pdf" )
 ```
 
 
+### Soil temperature: reason for bias?
 
+No clear pattern here.
+```{r}
+## with daily data
+ddf <- out_eval_FULL$data$ddf %>% 
+  left_join( dplyr::select( metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename, lat, koeppen_code ), by = "sitename" ) %>%
+	mutate( hemisphere = ifelse( lat>0, "north", "south" ),
+	        bias = gpp_mod - gpp_obs ) %>% 
+  dplyr::filter( koeppen_code %in% c("Cfb", "Dfb") )   # "Dfb"  "Cfb"
 
+with( ddf, LSD::heatscatter( soiltemp_obs_mean, bias ) )
+abline( h=0, lty=3 )
 
+## with mean season cycle data
+doydf <- out_eval_FULL$data$meandoydf_byclim %>% 
+	mutate( bias = mod_mean - obs_mean ) %>% 
+  dplyr::filter( koeppen_code %in% c( "Dfb") )   # "Dfb"  "Cfb"
+
+```
 
 
 ### Values aggregated to X days

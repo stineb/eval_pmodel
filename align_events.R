@@ -35,7 +35,7 @@ align_events <- function( df, df_isevent, dovars, leng_threshold, before, after,
   df <- df %>% left_join( df_isevent, by=c("site", "date")) %>% mutate( idx_df = 1:n() )
 
   ##--------------------------------------------------------
-  ## Identify events ()
+  ## Identify events
   ##--------------------------------------------------------
   events <- get_consecutive( 
               df$isevent, 

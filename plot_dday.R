@@ -1,4 +1,4 @@
-plot_dday <- function( df_dday_agg, df_dday_agg2=NA, bias=FALSE, before, after, filn=NA ){
+plot_dday <- function( df_dday_agg, df_dday_agg2=NA, df_dday_agg3=NA, bias=FALSE, before, after, filn=NA ){
 
   # with( df_dday_agg, plot( dday, bias_gpp_median, type="l", ylim=range( c( bias_gpp_q33, bias_gpp_q66, na.rm=TRUE ) ) ) )
   # with( df_dday_agg, polygon( c(dday, rev(dday)), c(bias_gpp_q33, rev(bias_gpp_q66)), col=rgb(0,0,0,0.3), border = NA ) )
@@ -45,24 +45,28 @@ plot_dday <- function( df_dday_agg, df_dday_agg2=NA, bias=FALSE, before, after, 
     if (bias){
         ## bias
         with( df_dday_agg, polygon( c(dday, rev(dday)), c(bias_gpp_q33, rev(bias_gpp_q66)), col=add_alpha("black", 0.2), border = NA ) )
-        with( df_dday_agg, lines( dday, bias_gpp_median, col="black", lwd = 1.75 ) )
+        with( df_dday_agg, lines( dday, bias_gpp_median, col="black", lwd = 2 ) )
 
         if (!identical(NA, df_dday_agg2)){
           with( df_dday_agg2, polygon( c(dday, rev(dday)), c(bias_gpp_q33, rev(bias_gpp_q66)), col=add_alpha("royalblue", 0.2), border = NA ) )
-          with( df_dday_agg2, lines( dday, bias_gpp_median, col="royalblue", lwd = 1.75 ) )
+          with( df_dday_agg2, lines( dday, bias_gpp_median, col="royalblue", lwd = 2 ) )
         }
 
+        if (!identical(NA, df_dday_agg3)){
+          with( df_dday_agg3, lines( dday, bias_gpp_median, col="royalblue", lwd = 2, lty=2 ) )
+        }
+        
     } else {
         ## obs
         with( df_dday_agg, polygon( c(dday, rev(dday)), c(gpp_obs_q33, rev(gpp_obs_q66)), col=add_alpha("black", 0.3), border = NA ) )
-        with( df_dday_agg, lines( dday, gpp_obs_median, col="black", lwd = 1.75 ) )        
+        with( df_dday_agg, lines( dday, gpp_obs_median, col="black", lwd = 2 ) )        
 
         ## mod
         with( df_dday_agg, polygon( c(dday, rev(dday)), c(gpp_mod_q33, rev(gpp_mod_q66)), col=add_alpha("tomato3", 0.3), border = NA ) )
-        with( df_dday_agg, lines( dday, gpp_mod_median, col="tomato3", lwd = 1.75 ) )        
+        with( df_dday_agg, lines( dday, gpp_mod_median, col="tomato3", lwd = 2 ) )        
     }
 
-    legend("topleft", c("BRC", "FULL"), col=c("black", "royalblue"), lty = 1, lwd = 1.75, bty = "n" )
+    legend("topleft", c("BRC", "FULL"), col=c("black", "royalblue"), lty = c(1,1), lwd = 2, bty = "n" )
 
   if (!is.na(filn)) dev.off()
 

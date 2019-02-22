@@ -28,9 +28,7 @@ cp ./fig/hist_anomalies_daily_FULL.pdf ~/Dropbox/projects/eval_pmodel/overleaf/f
 cp ./fig/hist_anomalies_daily_NULL.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
 
 cp fig/meandoy_byzone/meandoy_byzone_Dfb_north_greenness.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
-cp fig/meandoy_byzone/meandoy_byzone_Dfc_north_greenness.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
-cp fig/meandoy_byzone/meandoy_byzone_Cfb_north_greenness.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
-cp fig/meandoy_byzone/meandoy_byzone_Aw_south_greenness.pdf  ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
+cp fig/meandoy_byzone/meandoy_byzone_BSk_north_greenness.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
 
 cp fig/functionalrel_gam_soilm.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
 cp fig/functionalrel_gam_temp.pdf  ~/Dropbox/projects/eval_pmodel/overleaf/fig/
@@ -46,3 +44,7 @@ cp ./fig/functionalrel_gam_soilm.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig
 cp fig/droughtresponse.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
 
 cp fig/map_sites.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
+
+cp ./fig/meandoy_byzone/meandoy_byzone_Cfb_north_Ty.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
+cp ./fig/meandoy_byzone/meandoy_byzone_Cfb_north_DT.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
+cp ./fig/meandoy_byzone/meandoy_byzone_Cfb_north_NT.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 

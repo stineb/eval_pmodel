@@ -12,6 +12,10 @@ plot_functionalrel <- function( df, df2=NULL, df3=NULL, df4=NULL, df5=NULL, eval
       xlab = "VPD (Pa)"
     } else if (evalvar=="soilm"){
       xlab = "soil moisture (relative)"
+    } else if (evalvar=="ppfd"){
+      xlab = expression( paste( "PPFD (mol d"^{-1}, " m"^{-2}, ")" ) )
+    } else if (evalvar=="fapar"){
+      xlab = "fAPAR (unitless)"
     }
 
     ## GAM 1
