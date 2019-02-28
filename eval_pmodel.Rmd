@@ -97,7 +97,7 @@ mylist <- readr::read_csv("ext/myselect_fluxnet2015.csv") %>% dplyr::filter( use
 settings_eval <- list(
   sitenames = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" )$sitename,
   sitenames_siteplots = mylist,
-  agg = 10,
+  agg = 8,
   path_fluxnet2015_d = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_w = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
   path_fluxnet2015_m = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
@@ -698,7 +698,7 @@ settings_eval$benchmark <- list( gpp = c("fluxnet2015_DT") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("data/obs_eval_DT.RdataXXX")){
+if (!file.exists("data/obs_eval_DT.Rdata")){
   obs_eval_DT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   # obs_eval_DT$ddf <- obs_eval_DT$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_DT$ddf$gpp_obs))))
@@ -759,7 +759,7 @@ settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
 
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("data/obs_eval_NTsub.RdataXXX")){
+if (!file.exists("data/obs_eval_NTsub.Rdata")){
   obs_eval_NTsub <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   # obs_eval_NTsub$ddf <- obs_eval_NTsub$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_NTsub$ddf$gpp_obs))))
@@ -980,7 +980,7 @@ if (!exists("out_eval_FULL_Ty")) load("data/out_eval_FULL_Ty.Rdata")
 ### Metrics table
 
 Create a latex table for $R^2$ and RMSE:
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+```{r, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
 source("create_table_latex.R")
 table_rsq <- bind_rows( 
   bind_cols( Setup = "ORG",          dplyr::select( getrow_statstable( out_eval_ORG, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
@@ -1135,7 +1135,7 @@ Here, $LUE(m|d)$ is the monthly varying light use efficiency simulated by the P-
 
 The correlation is still quite good...
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+```{r, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
 source("plot_modobs.R")
 if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
 if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
@@ -1470,10 +1470,14 @@ ddf <- out_eval_FULL$data$ddf %>%
 with( ddf, LSD::heatscatter( soiltemp_obs_mean, bias ) )
 abline( h=0, lty=3 )
 
+with( dplyr::filter(ddf, sitename %in% c("IT-Col", "US-MMS", "DE-Hai", "IT-Ro2", "US-UMB", "CA-Qfo", "FI-Hyy") ),
+      LSD::heatscatter( temp_fluxnet2015 - soiltemp_obs_mean, bias ) )
+abline( h=0, lty=3 )
+
 ## with mean season cycle data
-doydf <- out_eval_FULL$data$meandoydf_byclim %>% 
-	mutate( bias = mod_mean - obs_mean ) %>% 
-  dplyr::filter( koeppen_code %in% c( "Dfb") )   # "Dfb"  "Cfb"
+#doydf <- out_eval_FULL$data$meandoydf_byclim %>% 
+# 	mutate( bias = mod_mean - obs_mean ) %>% 
+#   dplyr::filter( koeppen_code %in% c( "Dfb") )   # "Dfb"  "Cfb"
 
 ```
 
@@ -1509,7 +1513,14 @@ Would it be worth exploring this in more detail, e.g. quantifying the relationsh
 
 
 
+# Preparing data for sharing
 
+```{r}
+## This is what I sent to Paula, 19.2.2019
+ddf_DT_fluxnet <- obs_eval_DT$ddf %>% 
+                  rename( fpar_modis_spl = fapar )
+save(ddf_DT_fluxnet, file = "data/ddf_DT_fluxnet.Rdata")
+```
 
 
 
