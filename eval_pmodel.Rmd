@@ -1173,7 +1173,7 @@ df_meandoy_byclim <- out_eval_FULL$data$meandoydf_byclim_stats$data %>%
 
 df_meandoy_byclim$setup <- factor(df_meandoy_byclim$setup, levels = c("NULL", "ORG", "BRC", "Observed", "FULL"))
 
-## new try
+## plot
 df_meandoy_byclim %>% 
   ggplot() +
   geom_ribbon(
@@ -1240,6 +1240,8 @@ if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
 ## Figure 3
   dir_figs <- "./fig/"
   if (!dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
+  
+  ## get stats and plot
   modobs_xdf_FULL <- analyse_modobs2(
     out_eval_FULL$data$xdf,
     "gpp_mod",
@@ -1252,6 +1254,8 @@ if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
     "gpp_obs",
     type = "heat"
     )  
+  
+  ## print plot
   gg_FULL <- modobs_xdf_FULL$gg +
     labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
          y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
@@ -1265,33 +1269,74 @@ if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
     xlim(0, 20) +
     ylim(0, 20)
 
+  ## arrange
   library(cowplot)
   plot_grid(gg_FULL, gg_NULL, labels = "auto", label_size = 12)
   
   filn <- paste0( dir_figs, "/modobs_xdaily.pdf" )
   ggsave(filn, width=10, height=5)  
-
-
-
-modobs_xdf <- plot_modobs_xdaily( out_eval_ORG,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "ORG" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_BRC,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "BRC" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "FULL" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_NULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NULL" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_DT, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "DT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_NTsub, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_Ty, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "Ty" )
 ```
 
 ### Daily anomalies
 
 ```{r}
-source("plot_modobs_anomalies.R")
-# source("analyse_modobs_ggplot2.R")
-modobs_anomalies_daily_FULL  <- plot_modobs_anomalies_daily(  out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_xdaily_FULL <- plot_modobs_anomalies_xdaily( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
+ddf <- out_eval_FULL$data$idvdf %>% 
+  tidyr::drop_na(gpp_obs) %>% 
+  select(gpp_mod, gpp_obs) %>%
+  tidyr::gather(source, anom, c(gpp_obs, gpp_mod))
 
-hist_anomalies_daily_FULL  <- plot_hist_anomalies_daily(  out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
-hist_anomalies_xdaily_FULL <- plot_hist_anomalies_xdaily( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
+xdf <- out_eval_FULL$data$ixvdf %>% 
+  tidyr::drop_na(gpp_obs) %>% 
+  select(gpp_mod, gpp_obs) %>%
+  tidyr::gather(source, anom, c(gpp_obs, gpp_mod))
+
+gg_ddf <- ddf %>% 
+  ggplot() +
+  geom_histogram(
+    aes(x = anom, y = ..density.., fill = source), 
+    color = "black", alpha = 0.3, binwidth = 0.5, 
+    position="identity") +
+  scale_fill_manual(name = "", values = c("black", "red"), labels = c("Observed", "Modelled")) +
+  annotate( 
+    "text", x = 5, y = 0.8, 
+    label = paste("sigma[obs] == ", 
+                  format( sd(out_eval_FULL$data$idvdf$gpp_obs, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  annotate( 
+    "text", x = 5, y = 0.76, 
+    label = paste("sigma[mod] == ", 
+                  format( sd(out_eval_FULL$data$idvdf$gpp_mod, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  xlim(-10,10) + ylim(0, 0.8) +
+  theme(legend.position=c(0.05, 0.95), 
+        plot.title = element_text(hjust = 0)) +
+  labs( y = "Density", x =  expression( paste("GPP anomaly (gC m"^-2, " d"^-1, ")" ) ),
+        title = "Daily")
+
+gg_xdf <- xdf %>% 
+  ggplot() +
+  geom_histogram(
+    aes(x = anom, y = ..density.., fill = source), 
+    color = "black", alpha = 0.3, binwidth = 0.5, 
+    position="identity") +
+  scale_fill_manual(name = "", values = c("black", "red"), labels = c("Observed", "Modelled"), guide=FALSE) +
+  annotate( 
+    "text", x = 4, y = 0.8, 
+    label = paste("sigma[obs] == ", 
+                  format( sd(out_eval_FULL$data$ixvdf$gpp_obs, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  annotate( 
+    "text", x = 4, y = 0.76, 
+    label = paste("sigma[mod] == ", 
+                  format( sd(out_eval_FULL$data$ixvdf$gpp_mod, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  xlim(-10,10) + ylim(0, 0.8) +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs( y = "Density", x =  expression( paste("GPP anomaly (gC m"^-2, " d"^-1, ")" ) ),
+        title = "8-daily")
+
+cowplot::plot_grid(gg_ddf, gg_xdf, nrow = 1, labels = "auto", label_size = 12)
+ggsave("fig/hist_anomalies.pdf", width = 7, height = 4)
 ```
 
 
@@ -1365,35 +1410,101 @@ if (!exists("out_eval_FULL_NTsub"))  load("data/out_eval_FULL_NTsub.Rdata")
 if (!exists("out_eval_FULL_DT"))     load("data/out_eval_FULL_DT.Rdata")
 if (!exists("out_eval_FULL_Ty"))     load("data/out_eval_FULL_Ty.Rdata")
 
-source("plot_modobs.R")
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_DT,     makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "DT" )
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_Ty,     makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "Ty" )
+## MEAN SEASONALITY
+## NT
+gg_NT <- out_eval_FULL_NTsub$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>% 
+  filter(climatezone == "Cfb north") %>% 
+  ggplot() +
+  geom_ribbon(aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3) +
+  geom_line(aes(x = doy, y = obs_mean), size = 0.4) +
+  geom_line(aes(x = doy, y = mod_mean), size = 0.4, color = "red") +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY", title = "NT") +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "NT" = "red")
+    ) 
 
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
+gg_DT <- out_eval_FULL_DT$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>% 
+  filter(climatezone == "Cfb north") %>% 
+  ggplot() +
+  geom_ribbon(aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3) +
+  geom_line(aes(x = doy, y = obs_mean), size = 0.4) +
+  geom_line(aes(x = doy, y = mod_mean), size = 0.4, color = "red") +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY", title = "DT") +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "DT" = "red")
+    ) 
 
-modobs_xdf <- plot_modobs_monthly( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_monthly( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
-modobs_xdf <- plot_modobs_monthly( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
+gg_Ty <- out_eval_FULL_Ty$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>% 
+  filter(climatezone == "Cfb north") %>% 
+  ggplot() +
+  geom_ribbon(aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3) +
+  geom_line(aes(x = doy, y = obs_mean), size = 0.4) +
+  geom_line(aes(x = doy, y = mod_mean), size = 0.4, color = "red") +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY", title = "Ty") +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "Ty" = "red")
+    ) 
 
-source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( 
-  out_eval_FULL_NTsub, 
-  makepdf=TRUE, label="NT", 
-  lab1="NT"
-  )
-plot_by_doy_allzones( 
-  out_eval_FULL_DT, 
-  makepdf=TRUE, label="DT", 
-  lab1="DT"
-  )
-plot_by_doy_allzones( 
-  out_eval_FULL_Ty, 
-  makepdf=TRUE, label="Ty", 
-  lab1="Ty"
-  )
+## SCATTER PLOT
+  ## get stats and plot
+  modobs_xdf_NT <- analyse_modobs2(
+    out_eval_FULL_NTsub$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )
+  modobs_xdf_DT <- analyse_modobs2(
+    out_eval_FULL_DT$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )  
+  modobs_xdf_Ty <- analyse_modobs2(
+    out_eval_FULL_Ty$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )  
+  
+  ## print plot
+  gg_modobs_NT <- modobs_xdf_NT$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "NT") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  gg_modobs_DT <- modobs_xdf_DT$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "DT") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  gg_modobs_Ty <- modobs_xdf_Ty$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "Ty") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  
+## arrange and save
+cowplot::plot_grid(gg_NT, gg_DT, gg_Ty, gg_modobs_NT, gg_modobs_DT, gg_modobs_Ty, nrow = 2, labels = "auto", label_size = 12, rel_heights = c(1, 1.2))
+filn <- paste0( dir_figs, "meandoy_modobs_gpp_data.pdf" )
+ggsave(filn, width=10, height=7)  
 ```
 
 
@@ -1584,34 +1695,62 @@ Colin has shown some plots at the ICDC that apparently Trevor produced. They sho
 
 Load fLUE data to use their definition of soil moisture droughts.
 ```{r}
+library(readr)
 source("align_events.R")
 source("eval_droughtresponse.R")
 source("plot_dday.R")
+
 load("data/obs_eval_NT.Rdata")
 load("data/mod_FULL.Rdata")
 load("data/mod_BRC.Rdata")
+
 df_dday_agg_BRC <- eval_droughtresponse( 
   mod = mod_BRC$daily, 
   obs = obs_eval_NT$ddf, 
   path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
   before=20, 
-  after=79,
-  leng_threshold = 10, 
-  nbins=10, 
-  do_norm=TRUE
-  )
-df_dday_agg_FULL <- eval_droughtresponse( 
-  mod = mod_FULL$daily, 
-  obs = obs_eval_NT$ddf, 
-  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
-  before=20, 
-  after=79,
+  after=105,
   leng_threshold = 10, 
   nbins=10, 
   do_norm=TRUE
   )
 
-plot_dday( df_dday_agg_BRC, df_dday_agg_FULL, before=20, after=79, bias=TRUE, filn="fig/droughtresponse.pdf" )
+df_dday_agg_FULL <- eval_droughtresponse( 
+  mod = mod_FULL$daily, 
+  obs = obs_eval_NT$ddf, 
+  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
+  before=20, 
+  after=105,
+  leng_threshold = 10, 
+  nbins=10, 
+  do_norm=TRUE
+  )
+
+df_dday_agg <- df_dday_agg_BRC %>% 
+  mutate(setup = "BRC") %>% 
+  bind_rows(
+    mutate( df_dday_agg_FULL, setup = "FULL")
+    )
+
+usecol = colorRampPalette( c("wheat3", "white") )( 5 )[2]
+
+df_dday_agg %>% 
+  ggplot() +
+  # annotate("rect", xmin = 0, xmax = 105, ymin = -1.2, ymax = 2.2, alpha = .8, fill = usecol) + 
+  geom_hline(yintercept = 0, color = "black", linetype = "dotted") +
+  geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
+  geom_line(
+    aes(x = dday, y = bias_gpp_median, color = setup)) +
+  geom_ribbon(
+    aes(x = dday, ymin = bias_gpp_q33, ymax = bias_gpp_q66, fill = setup), 
+    alpha = 0.3) +
+  scale_color_manual(values = c("BRC" = "black", "FULL" = "royalblue"), name = "Setup") +
+  scale_fill_manual(values = c("BRC" = "black", "FULL" = "royalblue"), name = "Setup") +
+  ylim(-1.2, 2.2) + xlim(-20, 105) +
+  scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Days after drought onset", y = expression( paste( "Bias (g C m"^{-1}, " d"^{-1}, ")")) )
+
+ggsave("fig/droughtresponse.pdf", width = 6, height = 4)
 ```
 
 
