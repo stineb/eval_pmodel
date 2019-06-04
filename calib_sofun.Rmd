@@ -69,12 +69,12 @@ settings_input <-  list(
   ppfd                     = "fluxnet2015",
   netrad                   = NA,
   cloudcover               = "cru",
-  path_watch_wfdei         = "~/data/watch_wfdei/",
-  path_cru                 = "~/data/cru/ts_4.01/",
-  path_MODIS_EVI_MOD13Q1   = "~/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
-  path_MODIS_FPAR_MCD15A3H = "~/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
-  path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
-  path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_watch_wfdei         = "/alphadata01/bstocker/data/watch_wfdei/",
+  path_cru                 = "/alphadata01/bstocker/data/cru/ts_4.01/",
+  path_MODIS_EVI_MOD13Q1   = "/alphadata01/bstocker/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
+  path_MODIS_FPAR_MCD15A3H = "/alphadata01/bstocker/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
+  path_co2                 = "/alphadata01/bstocker/data/co2/cCO2_rcp85_const850-1765.dat",
+  path_fluxnet2015         = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   get_from_remote          = FALSE
   )
 
@@ -91,7 +91,7 @@ Then define the calibration settings as.
 ## Use only sites for calibration for which ANN method by Stocker et al. (2018) worked fine,
 ## and exclude sites where C4 vegetation is present.
 siteinfo <- read_csv( settings_sims$path_siteinfo )
-calibsites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
+calibsites <- readr::read_csv( "/alphadata01/bstocker/data/flue/flue_stocker18nphyt.csv" ) %>%
               dplyr::filter( !is.na(cluster) ) %>%
               dplyr::select( site ) %>%
               distinct() %>%
@@ -113,8 +113,8 @@ settings_calib <- list(
   method           = "gensa",
   targetvars       = c("gpp"),
   timescale        = list( gpp = "d" ),
-  path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
-  path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
+  path_fluxnet2015 = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_gepisat     = "/alphadata01/bstocker/data/gepisat/v3_fluxnet2015/daily_gpp/",
   maxit            = 10, # (5 for gensa) (30 for optimr)    #
   sitenames        = calibsites,  # dplyr::filter(siteinfo$light, c4 %in% c(FALSE, NA) )$mysitename, # calibrate for non-C4 sites
   filter_temp_max  = 35.0,

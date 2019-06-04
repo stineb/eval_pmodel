@@ -25,8 +25,8 @@ library(rsofun)
 library(rbeni)
 source("filter_days.R")
 load_dependencies_rsofun()
-tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
-fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
+# tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
+# fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
 systr <- "''"    # for Mac
 options( list( rsofun.dir.sofun="/alphadata01/bstocker/sofun/trunk/" ))
 ```
@@ -185,6 +185,7 @@ mod_NULL <- obs_eval_NT$ddf %>%
 
 ## to fit constant LUE, fit linear model with zero intercept and just use its coefficient (slope)
 linmod <- lm( gpp_obs ~ 0 + apar, data = mod_NULL )
+save(linmod, file="data/linmod_NULL.RData")
 
 mod_NULL <- mod_NULL %>% 
   dplyr::select( sitename, date, apar ) %>%
@@ -1030,12 +1031,38 @@ This shows the same as in the SI of our submitted manuscript: Figures S14 and S1
 
 ```{r, echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 ## Use customized plotting
-source("plot_modobs_spatial_annual.R")
-plot_modobs_spatial_annual( out_eval_ORG, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "ORG" )
-plot_modobs_spatial_annual( out_eval_BRC, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "BRC" )
-plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "FULL" )
-plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "NULL" )
-plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
+source("plot_modobs_spatial_annual2.R")
+
+gg_FULL <- plot_modobs_spatial_annual2(out_eval_FULL)
+gg_NULL <- plot_modobs_spatial_annual2(out_eval_NULL)
+gg_FULL_EVI <- plot_modobs_spatial_annual2(out_eval_FULL_EVI)
+
+gg_FULL <- gg_FULL +
+  labs(title = "FULL", 
+       y = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
+       x = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) )
+      ) +
+  xlim(0, 4000) + ylim(0, 4000)
+  
+gg_NULL <- gg_NULL +
+  labs(title = "NULL", 
+       x = expression( paste("observed GPP (gC m"^-2, " yr"^-1, ")" ) ), 
+       y = expression( paste("simulated GPP (gC m"^-2, " yr"^-1, ")" ) )
+      ) +
+  xlim(0, 4000) + ylim(0, 4000)
+
+gg_FULL_EVI <- gg_FULL_EVI +
+  labs(title = "FULL_EVI", 
+       x = expression( paste("observed GPP (gC m"^-2, " yr"^-1, ")" ) ), 
+       y = expression( paste("simulated GPP (gC m"^-2, " yr"^-1, ")" ) )
+      ) +
+  xlim(0, 4000) + ylim(0, 4000)
+
+library(cowplot)
+plot_grid(gg_FULL, gg_NULL, gg_FULL_EVI, labels = "auto", label_size = 12)
+  
+filn <- paste0( dir_figs, "modobs_spatial_annual.pdf" )
+ggsave(filn, width=10, height=10)  
 ```
 
 And for individual sites:
@@ -1085,21 +1112,89 @@ koeppen_legend %>% knitr::kable(caption = "Koeppen-Geiger climate zones.")
 Plot only for climate zones where data from at least five different sites are available. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE}
-source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( 
-  out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
-  makepdf=TRUE, label="",
-  lab1="FULL", lab2="BRC", lab3="ORG", lab4="NULL"
-  )
-
+## determine which zones to plot
 sites_used <- out_eval_FULL$data$ddf$sitename %>% unique()
-rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+df_zones_used <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   dplyr::filter( sitename %in% sites_used ) %>% 
   mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
   group_by( koeppen_code, hemisphere ) %>%
   summarise( nsites = n() ) %>% 
-  left_join( dplyr::rename( koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>% 
-  arrange( -nsites ) %>%
+  filter(nsites >= 4) %>% 
+  left_join( dplyr::rename( rsofun::koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>%
+  arrange( -nsites ) %>% 
+  mutate(climatezone = paste(koeppen_code, hemisphere)) %>% 
+  filter(!(koeppen_code=="ET"))
+
+df_rosetta <- tibble(
+  climatezone = c("Aw south", "BSk north", "Cfa north", "Cfb north", "Cfb south", "Csa north", "Csb north", "Dfb north", "Dfc north", "ET"),
+  label = c("Tropical savannah, dry winter, SH", "Arid steppe, cold", "Warm tem., fully humid, hot summer", "Warm tem., fully humid, warm summer",
+    "Warm tem., fully humid, warm summer, SH", "Warm tem., dry and hot summer", "Warm tem., dry and warm summer", "Cold, fully humid, warm summer", 
+    "Cold, fully humid, cold summer", "Polar tundra" )  )
+
+save(df_rosetta, file = "./data/df_rosetta.Rdata")
+
+getname_climatezone <- function(climatezone){
+  load("./data/df_rosetta.Rdata")
+  df_rosetta %>% 
+    filter(climatezone==climatezone) %>% 
+    select(label) %>% 
+    unlist()
+}
+
+## combine data
+df_meandoy_byclim <- out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>%
+  mutate( mod_mean = obs_mean) %>% 
+  mutate(setup = "Observed") %>% 
+  bind_rows(
+    out_eval_NULL$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "NULL")
+  ) %>% 
+  bind_rows(
+    out_eval_ORG$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "ORG")
+  ) %>% 
+  bind_rows(
+    out_eval_BRC$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "BRC")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL")
+  ) %>% 
+  filter(climatezone %in% df_zones_used$climatezone) %>% 
+  # mutate(setup = factor(setup, levels = c("Observed", "FULL", "BRC", "ORG", "NULL"))) %>% 
+  left_join(select(df_zones_used, climatezone, Climate), by = "climatezone")
+
+
+df_meandoy_byclim$setup <- factor(df_meandoy_byclim$setup, levels = c("NULL", "ORG", "BRC", "Observed", "FULL"))
+
+## new try
+df_meandoy_byclim %>% 
+  ggplot() +
+  geom_ribbon(
+    data = dplyr::filter(df_meandoy_byclim, setup=="Observed"), 
+    aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3
+    ) +
+  geom_line(aes(x = doy, y = mod_mean, color = setup), size = 0.4) +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY") +
+  facet_wrap( ~climatezone, labeller = labeller(climatezone = getname_climatezone) ) +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    # values=c("black", "red", "royalblue", "#E69F00", "darkseagreen3")
+    values=c("Observed" = "black",  "FULL" = "red", "BRC" = "royalblue", "ORG" = "#E69F00", "NULL" = "darkseagreen3")
+    ) 
+
+ggsave("fig/meandoy_byzone.pdf", width=8, height=8)
+
+df_zones_used %>% 
   xtable::xtable( caption = "Caption text", auto = TRUE ) %>%
   print( hline.after=c(-1, 0), file = "tab/table_nsites_kgclimate.tex" )
 ```
@@ -1140,8 +1235,43 @@ source("plot_modobs.R")
 if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
 if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
-# modobs_ddf <- plot_modobs_daily(   out_eval_ORG, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
-# modobs_xdf <- plot_modobs_xdaily(  out_eval_ORG, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
+if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
+
+## Figure 3
+  dir_figs <- "./fig/"
+  if (!dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
+  modobs_xdf_FULL <- analyse_modobs2(
+    out_eval_FULL$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )
+  modobs_xdf_NULL <- analyse_modobs2(
+    out_eval_NULL$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )  
+  gg_FULL <- modobs_xdf_FULL$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "FULL") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  gg_NULL <- modobs_xdf_NULL$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "NULL") +
+    xlim(0, 20) +
+    ylim(0, 20)
+
+  library(cowplot)
+  plot_grid(gg_FULL, gg_NULL, labels = "auto", label_size = 12)
+  
+  filn <- paste0( dir_figs, "/modobs_xdaily.pdf" )
+  ggsave(filn, width=10, height=5)  
+
+
 
 modobs_xdf <- plot_modobs_xdaily( out_eval_ORG,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "ORG" )
 modobs_xdf <- plot_modobs_xdaily( out_eval_BRC,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "BRC" )
@@ -1173,19 +1303,52 @@ if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 if (!exists("out_eval_FULL_EVI"))    load("data/out_eval_FULL_EVI.Rdata")
 
-source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( 
-  out_eval_FULL, out_eval_FULL_FPARitp, out_eval_FULL_EVI, 
-  makepdf=TRUE, label="greenness",
-  lab1="FULL", lab2="FPARitp", lab3="EVI" 
-  )
+## combine data
+df_meandoy_byclim <- out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>%
+  mutate( mod_mean = obs_mean) %>% 
+  mutate(setup = "Observed") %>% 
+  bind_rows(
+    out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL_FPARitp$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL_FPARitp")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL_EVI$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL_EVI")
+  ) %>% 
+  filter(climatezone %in% c("Dfb north", "BSk north")) %>% 
+  # mutate(setup = factor(setup, levels = c("Observed", "FULL", "BRC", "ORG", "NULL"))) %>% 
+  left_join(select(df_zones_used, climatezone, Climate), by = "climatezone")
 
-source("plot_by_doy_allsites.R")
-plot_by_doy_allsites( 
-  out_eval_FULL, out_eval_FULL_FPARitp, out_eval_FULL_EVI, 
-  makepdf=TRUE, label="greenness",
-  lab1="FULL", lab2="FPARitp", lab3="EVI" 
-  )
+
+df_meandoy_byclim$setup <- factor(df_meandoy_byclim$setup, levels = c("FULL_EVI", "FULL_FPARitp", "Observed", "FULL"))
+
+## new try
+df_meandoy_byclim %>% 
+  ggplot() +
+  geom_ribbon(
+    data = dplyr::filter(df_meandoy_byclim, setup=="Observed"), 
+    aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3
+    ) +
+  geom_line(aes(x = doy, y = mod_mean, color = setup), size = 0.4) +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY") +
+  facet_wrap( ~climatezone, labeller = labeller(climatezone = getname_climatezone) ) +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "FULL" = "red", "FULL_FPARitp" = "royalblue", "FULL_EVI" = "#E69F00")
+    ) 
+
+ggsave("fig/meandoy_byzone_greenness.pdf", width=6, height=3.5)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
