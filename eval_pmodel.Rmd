@@ -978,6 +978,24 @@ if (!exists("out_eval_FULL_NTsub")) load("data/out_eval_FULL_NTsub.Rdata")
 if (!exists("out_eval_FULL_Ty")) load("data/out_eval_FULL_Ty.Rdata")
 ``` 
 
+### Save flat tables
+
+Save flat tables of daily data as CSV files.
+```{r}
+write_csv(dplyr::select(out_eval_ORG$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_ORG.csv")
+write_csv(dplyr::select(out_eval_BRC$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_BRC.csv")
+write_csv(dplyr::select(out_eval_FULL$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL.csv")
+write_csv(dplyr::select(out_eval_NULL$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_NULL.csv")
+write_csv(dplyr::select(out_eval_NULLpft$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_NULLpft.csv")
+write_csv(dplyr::select(out_eval_FULL_EVI$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_EVI.csv")
+write_csv(dplyr::select(out_eval_FULL_FPARitp$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_FPARitp.csv")
+write_csv(dplyr::select(out_eval_FULL_DT$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_DT.csv")
+write_csv(dplyr::select(out_eval_FULL_NTsub$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_NTsub.csv")
+write_csv(dplyr::select(out_eval_FULL_Ty$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_Ty.csv")
+```
+
+
+
 ### Metrics table
 
 Create a latex table for $R^2$ and RMSE:
@@ -1130,14 +1148,25 @@ df_rosetta <- tibble(
   label = c("Tropical savannah, dry winter, SH", "Arid steppe, cold", "Warm tem., fully humid, hot summer", "Warm tem., fully humid, warm summer",
     "Warm tem., fully humid, warm summer, SH", "Warm tem., dry and hot summer", "Warm tem., dry and warm summer", "Cold, fully humid, warm summer", 
     "Cold, fully humid, cold summer", "Polar tundra" )  )
-
 save(df_rosetta, file = "./data/df_rosetta.Rdata")
 
-getname_climatezone <- function(climatezone){
+list_rosetta <- c(
+  "Aw south"  = "Tropical savannah, dry winter, SH", 
+  "BSk north" = "Arid steppe, cold", 
+  "Cfa north" = "Warm tem., fully humid, hot summer", 
+  "Cfb north" = "Warm tem., fully humid, warm summer",
+  "Cfb south" = "Warm tem., fully humid, warm summer, SH", 
+  "Csa north" = "Warm tem., dry and hot summer", 
+  "Csb north" = "Warm tem., dry and warm summer", 
+  "Dfb north" = "Cold, fully humid, warm summer", 
+  "Dfc north" = "Cold, fully humid, cold summer", 
+  "ET"        = "Polar tundra")
+
+getname_climatezone <- function(myclimatezone){
   load("./data/df_rosetta.Rdata")
   df_rosetta %>% 
-    filter(climatezone==climatezone) %>% 
-    select(label) %>% 
+    dplyr::filter(climatezone==myclimatezone) %>% 
+    dplyr::select(label) %>% 
     unlist()
 }
 
@@ -1183,7 +1212,7 @@ df_meandoy_byclim %>%
   geom_line(aes(x = doy, y = mod_mean, color = setup), size = 0.4) +
   labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
        x = "DOY") +
-  facet_wrap( ~climatezone, labeller = labeller(climatezone = getname_climatezone) ) +
+  facet_wrap( ~climatezone, labeller = labeller(climatezone = list_rosetta) ) +
   theme_gray() +
   theme(legend.position = "bottom") +
   scale_color_manual(
@@ -1385,7 +1414,7 @@ df_meandoy_byclim %>%
   geom_line(aes(x = doy, y = mod_mean, color = setup), size = 0.4) +
   labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
        x = "DOY") +
-  facet_wrap( ~climatezone, labeller = labeller(climatezone = getname_climatezone) ) +
+  facet_wrap( ~climatezone, labeller = labeller(climatezone = list_rosetta) ) +
   theme_gray() +
   theme(legend.position = "bottom") +
   scale_color_manual(

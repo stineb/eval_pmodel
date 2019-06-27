@@ -42,3 +42,5 @@ cp ./fig/meandoy_byzone/meandoy_byzone_Cfb_north_NT.pdf ~/Dropbox/projects/eval_
 cp ./fig/modobs_lue_bysite_classid.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
 cp ./fig/modobs_lue_monthly.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
 cp ./fig/boxplot_lue_bysite_classid.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
+
+cp ./fig/modobs_lue.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/ 
