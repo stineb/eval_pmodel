@@ -27,7 +27,7 @@ systr <- "''"    # for Mac
 options( list( rsofun.dir.sofun="~/sofun/trunk/" ))
 ```
 
-## Calibration settings
+## Simulation settings
 
 First, load simulation and input settings defined outside (e.g. as shown in `vignette_rsofun.Rmd`).
 ```{r message=FALSE}
@@ -41,6 +41,7 @@ siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   dplyr::filter(!(sitename %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
   dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
+  dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>% 
   write_csv(path = path_siteinfo)
 
 settings_sims <- list(
@@ -67,7 +68,10 @@ settings_sims <- list(
   loutdpet        = TRUE,
   loutdalpha      = TRUE
   )
+```
 
+## Input settings
+```{r}
 settings_input <-  list(
   data                     = NA,
   temperature              = "fluxnet2015",
@@ -92,7 +96,10 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     )
   )
+```
 
+## Model setup
+```{r}
 setup_sofun <- list(
   model      = "pmodel",
   dir        = "~/sofun",
@@ -101,26 +108,23 @@ setup_sofun <- list(
   )
 ```
 
-Then define the calibration settings as.
+## Calibration settings
 ```{r}
 ## Use only sites for calibration for which ANN method by Stocker et al. (2018) worked fine,
 ## and exclude sites where C4 vegetation is present.
-calibsites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
-              dplyr::filter( !is.na(cluster) ) %>%
-              dplyr::filter( !(site %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
-              dplyr::filter(!(site %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
-              dplyr::filter( site != "FI-Sod" ) %>%  # excluded because some temperature data is missing
-              dplyr::select( site ) %>%
-              distinct() %>%
+flue_sites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
+              dplyr::filter( !is.na(cluster) ) %>% 
+              distinct(site) %>% 
+              pull(site)
 
-              ## additionally exclude C4
-              dplyr::filter( !(site %in% dplyr::filter(siteinfo, c4 )$mysitename) ) %>%
+calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+  dplyr::filter(!(sitename %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
+  dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
+  dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
+  dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>%
+  dplyr::filter( sitename %in% flue_sites ) %>%
+  pull(sitename)
 
-              dplyr::select( site ) %>%
-              unlist()
-
-# ## Calibration sites test ("5sites")
-# calibsites <- c("AU-Tum", "FR-Pue", "IT-Cpz", "FI-Hyy", "NL-Loo" )
 
 # ## Calibration sites for TerraP, excluding CA-Obs
 # calibsites <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
@@ -175,7 +179,9 @@ Parameters are calibrated for six different simulation suites and parameter valu
 |---------------|----------------------------------|---------------- |-----------------|------------|-------------|--------------|----------------------------------   |
 
 
-### Setup `ORG`
+## Setup `ORG`
+
+### Calibrate
 
 Define settings, prepare setup and input data and do the calibration for the setup `ORG`. This calibrates only `kphio`. `settings_calib()` returns calibration settings, now including calibrated parameters inside the list (`settings_calib$par[[param_name]]$opt`). Calibrated parameters are also written to a CSV file `"params_opt_ORG.csv"`.
 
@@ -206,11 +212,11 @@ settings_input$splined_fapar = TRUE
 #   settings_input = settings_input,
 #   settings_sims = settings_sims,
 #   return_data = FALSE,
-#   overwrite_climate = TRUE,
-#   overwrite_fapar = TRUE,
-#   verbose = TRUE,
 #   overwrite_csv_climate = FALSE,
-#   overwrite_csv_fapar = TRUE
+#   overwrite_climate = FALSE,
+#   overwrite_csv_fapar = TRUE,
+#   overwrite_fapar = TRUE,
+#   verbose = TRUE
 #   )
 
 ## Additional setup-specific calibration-settings
@@ -243,8 +249,52 @@ settings_calib_ORG <- calib_sofun(
   )
 ```
 
+### Evaluate (quickly)
+```{r}
+mylist <- readr::read_csv("./myselect_fluxnet2015.csv") %>% dplyr::filter( use==1 ) %>% dplyr::pull( Site )
+settings_eval <- list(
+  sitenames = settings_sims$sitenames,
+  sitenames_siteplots = mylist,
+  agg = 8,
+  path_fluxnet2015_d = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_fluxnet2015_w = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
+  path_fluxnet2015_m = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
+  path_fluxnet2015_y = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1y/original/unpacked/",
+  path_gepisat_d     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
+  benchmark = list( gpp = c("fluxnet2015_NT") ),
+  remove_premodis = TRUE
+  )
 
-### Setup `BRC`
+## update files containing parameter values read by model
+params_opt <- readr::read_csv( "calib_results/params_opt_ORG.csv" )
+nothing <- update_params( params_opt, settings_sims$dir_sofun )
+
+## Prepare the model setup for this calibration set
+settings_sims$loutdgpp    = TRUE
+# settings_sims <- prepare_setup_sofun(
+#   settings = settings_sims,
+#   setup = setup_sofun,
+#   write_paramfils = FALSE
+#   )
+
+settings_sims$sitenames <- settings_calib_ORG$sitenames
+mod_ORG <- runread_sofun( 
+    settings = settings_sims, 
+    setup = setup_sofun 
+    )
+  
+obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE, light = TRUE )
+  
+out_eval_ORG <- eval_sofun( mod_ORG, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE, light = TRUE )
+save(out_eval_ORG, file = "data/test.Rdata")
+
+out <- out_eval_ORG$gpp$fluxnet2015$data$xdf %>% 
+  rbeni::analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
+out$gg
+```
+
+
+## Setup `BRC`
 
 The setup `BRC` is different from `ORG` in that it implements the temperature dependence of the quantum yield efficiency parameter after Bernacchi et al., 2003 PCE (included by setting `settings_sims$tempstress  = TRUE`)
 
