@@ -21,8 +21,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(captioner)
 library(rsofun)
 load_dependencies_rsofun()
-tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
-fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
+# tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
+# fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
 systr <- "''"    # for Mac
 options( list( rsofun.dir.sofun="~/sofun/trunk/" ))
 ```
@@ -36,15 +36,22 @@ library(readr)
 library(rsofun)
 source("filter_days.R")
 
+path_siteinfo <- "~/eval_pmodel/siteinfo_pet_fluxnet2015.csv"
+siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+  dplyr::filter(!(sitename %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
+  dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
+  dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
+  write_csv(path = path_siteinfo)
+
 settings_sims <- list(
-  path_siteinfo   = "./ext/siteinfo_fluxnet2015.csv",
+  siteinfo        = path_siteinfo,
   ensemble        = TRUE,
   setup           = "site",
   name            = "fluxnet2015",
-  dir_sofun       = "~/sofun/trunk/",
-  path_output     = "~/sofun/output_fluxnet2015_sofun/201/",
-  path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s201/",
-  path_input      = "~/sofun/input_fluxnet2015_sofun_TEST/",
+  dir_sofun       = "~/sofun/",
+  path_output     = "~/sofun_outputs/output_fluxnet2015_sofun/202/",
+  path_output_nc  = "~/sofun_outputs/output_nc_fluxnet2015_sofun/s202/",
+  path_input      = "~/sofun_inputs/input_fluxnet2015_sofun/",
   grid            = NA,
   implementation  = "fortran",
   in_ppfd         = TRUE,
@@ -67,20 +74,28 @@ settings_input <-  list(
   precipitation            = "fluxnet2015",
   vpd                      = "fluxnet2015",
   ppfd                     = "fluxnet2015",
+  netrad                   = "fluxnet2015",  #  c("fluxnet2015", "watch_wfdei"),
+  patm                     = "fluxnet2015",
   netrad                   = NA,
   cloudcover               = "cru",
-  path_watch_wfdei         = "/alphadata01/bstocker/data/watch_wfdei/",
-  path_cru                 = "/alphadata01/bstocker/data/cru/ts_4.01/",
-  path_MODIS_EVI_MOD13Q1   = "/alphadata01/bstocker/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
-  path_MODIS_FPAR_MCD15A3H = "/alphadata01/bstocker/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
-  path_co2                 = "/alphadata01/bstocker/data/co2/cCO2_rcp85_const850-1765.dat",
-  path_fluxnet2015         = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
-  get_from_remote          = FALSE
+  path_watch_wfdei         = "~/data/watch_wfdei/",
+  path_cru                 = "~/data/cru/ts_4.01/",
+  path_MODIS_FPAR_MCD15A3H = "~/data/fluxnet_subsets/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
+  path_MODIS_EVI_MOD13Q1   = "~/data/fluxnet_subsets/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
+  path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
+  path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_fluxnet2015_hh      = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
+  get_from_remote          = FALSE,
+  settings_gee             = get_settings_gee( 
+    bundle = "fpar", 
+    python_path = "/Users/benjaminstocker/Library/Enthought/Canopy_64bit/User/bin/python",
+    gee_path = "~/gee_subset/gee_subset/"
+    )
   )
 
 setup_sofun <- list(
   model      = "pmodel",
-  dir        = "~/sofun/trunk",
+  dir        = "~/sofun",
   do_compile = FALSE,
   simsuite   = FALSE
   )
@@ -90,9 +105,11 @@ Then define the calibration settings as.
 ```{r}
 ## Use only sites for calibration for which ANN method by Stocker et al. (2018) worked fine,
 ## and exclude sites where C4 vegetation is present.
-siteinfo <- read_csv( settings_sims$path_siteinfo )
-calibsites <- readr::read_csv( "/alphadata01/bstocker/data/flue/flue_stocker18nphyt.csv" ) %>%
+calibsites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
               dplyr::filter( !is.na(cluster) ) %>%
+              dplyr::filter( !(site %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
+              dplyr::filter(!(site %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
+              dplyr::filter( site != "FI-Sod" ) %>%  # excluded because some temperature data is missing
               dplyr::select( site ) %>%
               distinct() %>%
 
@@ -113,14 +130,15 @@ settings_calib <- list(
   method           = "gensa",
   targetvars       = c("gpp"),
   timescale        = list( gpp = "d" ),
-  path_fluxnet2015 = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
-  path_gepisat     = "/alphadata01/bstocker/data/gepisat/v3_fluxnet2015/daily_gpp/",
-  maxit            = 10, # (5 for gensa) (30 for optimr)    #
-  sitenames        = calibsites,  # dplyr::filter(siteinfo$light, c4 %in% c(FALSE, NA) )$mysitename, # calibrate for non-C4 sites
+  path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_fluxnet2015_hh= "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
+  path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
+  maxit            = 4, # (5 for gensa) (30 for optimr)    #
+  sitenames        = calibsites,  # XXX debug dplyr::filter(siteinfo$light, c4 %in% c(FALSE, NA) )$mysitename, # calibrate for non-C4 sites
   filter_temp_max  = 35.0,
   filter_drought   = FALSE,
   metric           = "rmse",
-  dir_results      = "/Users/benjaminstocker/eval_pmodel/calib_results"
+  dir_results      = "~/eval_pmodel/calib_results"
  )
 ```
 
@@ -177,21 +195,23 @@ settings_sims$loutdalpha  = FALSE
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = TRUE
 
-inputdata <- prepare_input_sofun( 
-  settings_input = settings_input, 
-  settings_sims = settings_sims, 
-  return_data = FALSE, 
-  overwrite_csv_fapar = TRUE, 
-  overwrite_fapar = TRUE, 
-  verbose = TRUE
-  )
+# inputdata <- prepare_input_sofun(
+#   settings_input = settings_input,
+#   settings_sims = settings_sims,
+#   return_data = FALSE,
+#   overwrite_climate = TRUE,
+#   overwrite_fapar = TRUE,
+#   verbose = TRUE,
+#   overwrite_csv_climate = FALSE,
+#   overwrite_csv_fapar = TRUE
+#   )
 
 ## Additional setup-specific calibration-settings
 ## Specify data source for observations to which model is calibrated
@@ -203,9 +223,14 @@ settings_calib_ORG$filter_temp_min = NA
 settings_calib_ORG$filter_soilm_min = NA
 
 ## Get observational data (GPP based on NT method) used as target for calibration
+filn <- "./data/ddf_obs_NT.Rdata"
 if (!exists("ddf_obs_NT")){
-  ddf_obs_NT <- get_obs_calib( settings_calib_ORG, settings_sims, settings_input )
-  save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
+  if (!file.exists(filn)){
+    ddf_obs_NT <- get_obs_calib( settings_calib_ORG, settings_sims, settings_input )
+    save( ddf_obs_NT, file = filn )
+  } else {
+    load(filn)
+  }
 }
 
 set.seed(1982)

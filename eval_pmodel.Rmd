@@ -1836,7 +1836,76 @@ modobs_anomalies_xdaily <- plot_modobs_anomalies_xdaily( out_eval$data$ixvdf, ou
 Would it be worth exploring this in more detail, e.g. quantifying the relationship between some metric and aggregation level, and 'some metric' being e.g. the standard deviation of anomalies, the *R*$^2$ of obs. vs. mod., or ... ?
 
 
+### Linear trend
 
+Get linear trend (model, coefficients, and their standard errors).
+```{r}
+load("data/out_eval_NULL.Rdata")
+
+extract_fitvals <- function(model, nam_predictor){
+  tmp <- jtools::summ(model, robust = TRUE) # , confint = TRUE
+  # df <- tibble( pval = tmp$coeftable[nam_predictor,]["p"],
+  #              estimate = tmp$coeftable[nam_predictor,]["Est."],
+  #              estimate_upper = tmp$coeftable[nam_predictor,]["97.5%"],
+  #              estimate_lower = tmp$coeftable[nam_predictor,]["2.5%"])
+  df <- tibble( pval    = tmp$coeftable[nam_predictor,]["p"],
+               estimate = tmp$coeftable[nam_predictor,]["Est."],
+               se       = tmp$coeftable[nam_predictor,]["S.E."]) %>% 
+        mutate( estimate_upper = estimate + se, estimate_lower = estimate - se )
+  return(df)
+}
+
+adf_trend <- out_eval_NULL$data$adf %>% 
+  ungroup() %>% 
+  mutate( validpoint = ifelse( is.na(gpp_obs) | is.na(gpp_mod), FALSE, TRUE ) ) %>% 
+  group_by( sitename ) %>% 
+  nest() %>%
+  mutate( npoints = purrr::map( data, ~sum( .$validpoint ) ) ) %>%
+  unnest( npoints ) %>%
+  filter( npoints > 4 ) %>%
+  mutate( trend_obs = purrr::map( data, ~lm( gpp_obs ~ year, data = . ) ),
+          trend_mod = purrr::map( data, ~lm( gpp_mod ~ year, data = . ) ) ) %>% 
+  mutate( fitvals_obs = purrr::map( trend_obs, ~extract_fitvals(., "year")),
+          fitvals_mod = purrr::map( trend_mod, ~extract_fitvals(., "year")) ) %>% 
+  unnest( fitvals_obs, names_sep = "_" ) %>% 
+  unnest( fitvals_mod, names_sep = "_" )
+```
+
+Plot modelled versus observed trend estimates.
+```{r}
+gg_trend_scatter <- adf_trend %>% 
+  ggplot(aes(x = fitvals_obs_estimate, y = fitvals_mod_estimate)) +
+  geom_point(aes(size = npoints), alpha = 0.5) +
+  geom_errorbar(aes(ymin = fitvals_mod_estimate_lower, ymax = fitvals_mod_estimate_upper), alpha = 0.5) +
+  geom_errorbarh(aes(xmin = fitvals_obs_estimate_lower, xmax = fitvals_obs_estimate_upper), alpha = 0.5) +
+  # xlim( c(-100, 100) ) + ylim( c(-50, 70)) +
+  geom_abline(intercept=0, slope=1, linetype="dotted") +
+  theme_classic() +
+  labs( x = expression( paste("Observed GPP trend (g C m"^-2, " yr"^-1, ")" ) ),
+        y = expression( paste("Modelled GPP trend (g C m"^-2, " yr"^-1, ")" ) ) ) +
+  scale_size_continuous(name = " N years")
+gg_trend_scatter
+```
+
+Plot histogram of trend values.
+```{r}
+gg_trend_hist <- adf_trend %>% 
+  dplyr::select(sitename, fitvals_obs_estimate, fitvals_mod_estimate) %>% 
+  pivot_longer(c(fitvals_obs_estimate, fitvals_mod_estimate), values_to = "slope", names_to = "source") %>% 
+  ggplot(aes(x = slope, y = ..count.., fill = source)) +
+  geom_histogram(alpha = 0.5, color = "black", binwidth = 10, position="identity") +
+  scale_fill_manual(values=c("#999999", "#E69F00"), labels = c("Modelled", "Observed"), name = "") +
+  labs( x = expression( paste("GPP trend (g C m"^-2, " yr"^-1, ")" ) ), y = "Count" ) +
+  theme_classic()
+gg_trend_hist
+```
+
+```{r}
+library(cowplot)
+plot_grid(gg_trend_scatter, gg_trend_hist, labels = "auto", label_size = 12)
+ggsave("fig/trend_gpp_fluxnet2015.pdf", width=8, height=4)  
+ggsave("fig/trend_gpp_fluxnet2015.png", width=8, height=4)  
+```
 
 
 
