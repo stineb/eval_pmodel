@@ -196,18 +196,30 @@ settings_eval <- list(
 ##------------------------------------------
 ### Out of bag calibration for ORG
 ##------------------------------------------
-ddf_obs_calib <- get_obs_calib( 
-  settings_calib = settings_calib_ORG, 
-  settings_sims, 
-  settings_input 
+filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ddf_obs_calib <- get_obs_calib( 
+    settings_calib = settings_calib_ORG, 
+    settings_sims, 
+    settings_input 
   )
+  save(ddf_obs_calib, file = filn)  
+}
 
-ddf_obs_eval  <- get_obs_eval( 
-  settings_eval = settings_eval, 
-  settings_sims = settings_sims, 
-  overwrite = TRUE, 
-  light = TRUE 
+filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ddf_obs_eval  <- get_obs_eval( 
+    settings_eval = settings_eval, 
+    settings_sims = settings_sims, 
+    overwrite = TRUE, 
+    light = TRUE 
   )
+  save(ddf_obs_eval, file = filn)
+}  
 
 out_oob <- oob_calib_eval_sofun(
   setup = setup_sofun, 
