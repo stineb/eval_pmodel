@@ -23,8 +23,8 @@ library(rsofun)
 load_dependencies_rsofun()
 # tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
 # fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
-# systr <- "''"    # for Mac
-systr <- ""      # for Linux
+systr <- "''"    # for Mac
+# systr <- ""      # for Linux
 options( list( rsofun.dir.sofun="~/sofun/" ))
 ```
 
@@ -42,7 +42,7 @@ siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>% 
   
   ## test
-  dplyr::filter(sitename %in% c("FR-Pue", "IT-Cpz", "IT-Noe")) %>% 
+  dplyr::filter(sitename %in% c("FR-Pue", "FR-LBr", "IT-Noe")) %>% 
   
   write_csv(path = path_siteinfo)
 
@@ -130,7 +130,7 @@ calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
 
 # ## Calibration sites for TerraP, excluding CA-Obs
 # calibsites <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
-calibsites <- c("FR-Pue", "IT-Cpz", "IT-Noe")
+calibsites <- c("FR-Pue", "FR-LBr", "IT-Noe")
 
 ## Define calibration settings common for all setups
 settings_calib <- list(
@@ -283,11 +283,11 @@ settings_sims <- prepare_setup_sofun(
   write_paramfils = TRUE
   )
 
-# settings_sims$sitenames <- settings_calib_ORG$sitenames
-# mod_ORG <- runread_sofun( 
-#     settings = settings_sims, 
-#     setup = setup_sofun 
-#     )
+settings_sims$sitenames <- settings_calib_ORG$sitenames
+mod_ORG <- runread_sofun(
+    settings = settings_sims,
+    setup = setup_sofun
+    )
   
 # obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE, light = TRUE )
 #   
