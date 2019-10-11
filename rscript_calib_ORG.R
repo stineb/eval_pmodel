@@ -14,7 +14,7 @@ systr <- ""      # for Linux
 path_siteinfo <- "~/eval_pmodel/siteinfo_pet_fluxnet2015.csv"
 siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   dplyr::filter(!(sitename %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
-  dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
+  # dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>% 
   
@@ -100,7 +100,7 @@ flue_sites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
 
 calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   dplyr::filter(!(sitename %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
-  dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
+  # dplyr::filter(!(sitename %in% c("AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>%
   dplyr::filter( sitename %in% flue_sites ) %>%
@@ -147,7 +147,7 @@ settings_sims$loutdalpha  = FALSE
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
