@@ -42,6 +42,10 @@ siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>% 
+  
+  ## test
+  dplyr::filter(sitename %in% c("FR-Pue", "IT-Cpz", "IT-Noe")) %>% 
+  
   write_csv(path = path_siteinfo)
 
 settings_sims <- list(
@@ -128,6 +132,7 @@ calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
 
 # ## Calibration sites for TerraP, excluding CA-Obs
 # calibsites <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
+calibsites <- c("FR-Pue", "IT-Cpz", "IT-Noe")
 
 ## Define calibration settings common for all setups
 settings_calib <- list(
@@ -228,25 +233,25 @@ settings_calib_ORG$datasource = list( gpp = "fluxnet2015_NT" )
 settings_calib_ORG$filter_temp_min = NA
 settings_calib_ORG$filter_soilm_min = NA
 
-## Get observational data (GPP based on NT method) used as target for calibration
-filn <- "./data/ddf_obs_NT.Rdata"
-if (!exists("ddf_obs_NT")){
-  if (!file.exists(filn)){
-    ddf_obs_NT <- get_obs_calib( settings_calib_ORG, settings_sims, settings_input )
-    save( ddf_obs_NT, file = filn )
-  } else {
-    load(filn)
-  }
-}
-
-set.seed(1982)
-settings_calib_ORG <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib_ORG,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_NT
-  )
+# ## Get observational data (GPP based on NT method) used as target for calibration
+# filn <- "./data/ddf_obs_NT.Rdata"
+# if (!exists("ddf_obs_NT")){
+#   if (!file.exists(filn)){
+#     ddf_obs_NT <- get_obs_calib( settings_calib_ORG, settings_sims, settings_input )
+#     save( ddf_obs_NT, file = filn )
+#   } else {
+#     load(filn)
+#   }
+# }
+# 
+# set.seed(1982)
+# settings_calib_ORG <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib_ORG,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_NT
+#   )
 ```
 
 ### Evaluate (quickly)
@@ -265,9 +270,9 @@ settings_eval <- list(
   remove_premodis = TRUE
   )
 
-## update files containing parameter values read by model
-params_opt <- readr::read_csv( "calib_results/params_opt_ORG.csv" )
-nothing <- update_params( params_opt, settings_sims$dir_sofun )
+# ## update files containing parameter values read by model
+# params_opt <- readr::read_csv( "calib_results/params_opt_ORG.csv" )
+# nothing <- update_params( params_opt, settings_sims$dir_sofun )
 
 ## Prepare the model setup for this calibration set
 settings_sims$loutdgpp    = TRUE
@@ -277,20 +282,47 @@ settings_sims$loutdgpp    = TRUE
 #   write_paramfils = FALSE
 #   )
 
-settings_sims$sitenames <- settings_calib_ORG$sitenames
-mod_ORG <- runread_sofun( 
-    settings = settings_sims, 
-    setup = setup_sofun 
-    )
+# settings_sims$sitenames <- settings_calib_ORG$sitenames
+# mod_ORG <- runread_sofun( 
+#     settings = settings_sims, 
+#     setup = setup_sofun 
+#     )
   
-obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE, light = TRUE )
-  
-out_eval_ORG <- eval_sofun( mod_ORG, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE, light = TRUE )
-save(out_eval_ORG, file = "data/test.Rdata")
+# obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE, light = TRUE )
+#   
+# out_eval_ORG <- eval_sofun( mod_ORG, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE, light = TRUE )
+# save(out_eval_ORG, file = "data/test.Rdata")
+# 
+# out <- out_eval_ORG$gpp$fluxnet2015$data$xdf %>% 
+#   rbeni::analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
+# out$gg
+```
 
-out <- out_eval_ORG$gpp$fluxnet2015$data$xdf %>% 
-  rbeni::analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
-out$gg
+
+### Out of bag calibration
+```{r}
+ddf_obs_calib <- get_obs_calib( 
+  settings_calib = settings_calib_ORG, 
+  settings_sims, 
+  settings_input 
+  )
+
+ddf_obs_eval  <- get_obs_eval( 
+  settings_eval = settings_eval, 
+  settings_sims = settings_sims, 
+  overwrite = TRUE, 
+  light = TRUE 
+  )
+
+out_oob <- oob_calib_eval_sofun(
+  setup = setup_sofun, 
+  settings_calib = settings_calib_ORG, 
+  settings_eval = settings_eval, 
+  settings_sims = settings_sims, 
+  settings_input = settings_input, 
+  ddf_obs_calib = ddf_obs_calib,
+  ddf_obs_eval = ddf_obs_eval
+  )
 ```
 
 
