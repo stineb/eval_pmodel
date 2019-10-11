@@ -3,8 +3,8 @@
 ##------------------------------------------
 library(rsofun)
 load_dependencies_rsofun()
-systr <- "''"    # for Mac
-# systr <- ""      # for Linux
+# systr <- "''"    # for Mac
+systr <- ""      # for Linux
 
 ##------------------------------------------
 ## Simulation settings
@@ -42,10 +42,10 @@ settings_sims <- list(
   soilmstress     = TRUE,
   tempstress      = TRUE,
   loutdgpp        = TRUE,
-  loutdwcont      = TRUE,
-  loutdaet        = TRUE,
-  loutdpet        = TRUE,
-  loutdalpha      = TRUE
+  loutdwcont      = FALSE,
+  loutdaet        = FALSE,
+  loutdpet        = FALSE,
+  loutdalpha      = FALSE
   )
 
 ##------------------------------------------
@@ -220,6 +220,19 @@ out_oob <- oob_calib_eval_sofun(
   )
 
 save(out_oob, file = "~/eval_pmodel/data/out_oob_ORG.Rdata")
+
+# ## test
+# evalsite <- "FR-LBr"
+# filn <- paste0( settings_calib_ORG$dir_results, "/params_opt_", settings_calib_ORG$name, ".csv")
+# params_opt <- readr::read_csv( filn )
+# nothing <- update_params( params_opt, settings_sims$dir_sofun )
+# 
+# settings_sims_tmp <- settings_sims
+# settings_sims_tmp$sitenames <- evalsite
+# mod <- runread_sofun( 
+#   settings = settings_sims_tmp, 
+#   setup = setup_sofun
+# )
 
 
 # ## Setup `BRC`
