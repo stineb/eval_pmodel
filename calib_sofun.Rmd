@@ -23,17 +23,15 @@ library(rsofun)
 load_dependencies_rsofun()
 # tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
 # fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
-systr <- "''"    # for Mac
-options( list( rsofun.dir.sofun="~/sofun/trunk/" ))
+# systr <- "''"    # for Mac
+systr <- ""      # for Linux
+options( list( rsofun.dir.sofun="~/sofun/" ))
 ```
 
 ## Simulation settings
 
 First, load simulation and input settings defined outside (e.g. as shown in `vignette_rsofun.Rmd`).
 ```{r message=FALSE}
-library(dplyr)
-library(readr)
-library(rsofun)
 source("filter_days.R")
 
 path_siteinfo <- "~/eval_pmodel/siteinfo_pet_fluxnet2015.csv"
@@ -206,7 +204,7 @@ settings_sims$loutdalpha  = FALSE
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -217,8 +215,8 @@ settings_input$splined_fapar = TRUE
 #   settings_input = settings_input,
 #   settings_sims = settings_sims,
 #   return_data = FALSE,
-#   overwrite_csv_climate = FALSE,
-#   overwrite_climate = FALSE,
+#   overwrite_csv_climate = TRUE,
+#   overwrite_climate = TRUE,
 #   overwrite_csv_fapar = TRUE,
 #   overwrite_fapar = TRUE,
 #   verbose = TRUE
@@ -256,7 +254,10 @@ settings_calib_ORG$filter_soilm_min = NA
 
 ### Evaluate (quickly)
 ```{r}
-mylist <- readr::read_csv("./myselect_fluxnet2015.csv") %>% dplyr::filter( use==1 ) %>% dplyr::pull( Site )
+mylist <- readr::read_csv("./myselect_fluxnet2015.csv") %>% 
+  dplyr::filter( use==1 ) %>% 
+  dplyr::pull( Site )
+
 settings_eval <- list(
   sitenames = settings_sims$sitenames,
   sitenames_siteplots = mylist,
@@ -276,11 +277,11 @@ settings_eval <- list(
 
 ## Prepare the model setup for this calibration set
 settings_sims$loutdgpp    = TRUE
-# settings_sims <- prepare_setup_sofun(
-#   settings = settings_sims,
-#   setup = setup_sofun,
-#   write_paramfils = FALSE
-#   )
+settings_sims <- prepare_setup_sofun(
+  settings = settings_sims,
+  setup = setup_sofun,
+  write_paramfils = TRUE
+  )
 
 # settings_sims$sitenames <- settings_calib_ORG$sitenames
 # mod_ORG <- runread_sofun( 
