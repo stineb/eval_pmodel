@@ -18,8 +18,8 @@ siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>% 
   
-  ## test
-  dplyr::filter(sitename %in% c("FR-Pue", "FR-LBr", "IT-Noe")) %>% 
+  # ## test
+  # dplyr::filter(sitename %in% c("FR-Pue", "FR-LBr", "IT-Noe")) %>% 
   
   write_csv(path = path_siteinfo)
 
@@ -39,8 +39,8 @@ settings_sims <- list(
   recycle         = 1,
   spinupyears     = 10,
   calibvars       = c("gpp"),
-  soilmstress     = TRUE,
-  tempstress      = TRUE,
+  soilmstress     = FALSE,
+  tempstress      = FALSE,
   loutdgpp        = TRUE,
   loutdwcont      = FALSE,
   loutdaet        = FALSE,
@@ -108,7 +108,7 @@ calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
 
 # ## Calibration sites for TerraP, excluding CA-Obs
 # calibsites <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
-calibsites <- c("FR-Pue", "FR-LBr", "IT-Noe")
+# calibsites <- c("FR-Pue", "FR-LBr", "IT-Noe")
 
 ## Define calibration settings common for all setups
 settings_calib <- list(
@@ -119,7 +119,7 @@ settings_calib <- list(
   path_fluxnet2015_hh= "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
   maxit            = 4, # (5 for gensa) (30 for optimr)    #
-  sitenames        = calibsites,  # XXX debug dplyr::filter(siteinfo$light, c4 %in% c(FALSE, NA) )$mysitename, # calibrate for non-C4 sites
+  sitenames        = calibsites,
   filter_temp_max  = 35.0,
   filter_drought   = FALSE,
   metric           = "rmse",
@@ -221,73 +221,7 @@ out_oob <- oob_calib_eval_sofun(
 
 save(out_oob, file = "~/eval_pmodel/data/out_oob_ORG.Rdata")
 
-# ## test
-# evalsite <- "FR-LBr"
-# filn <- paste0( settings_calib_ORG$dir_results, "/params_opt_", settings_calib_ORG$name, ".csv")
-# params_opt <- readr::read_csv( filn )
-# nothing <- update_params( params_opt, settings_sims$dir_sofun )
-# 
-# settings_sims_tmp <- settings_sims
-# settings_sims_tmp$sitenames <- evalsite
-# mod <- runread_sofun( 
-#   settings = settings_sims_tmp, 
-#   setup = setup_sofun
-# )
 
-
-# ## Setup `BRC`
-
-# The setup `BRC` is different from `ORG` in that it implements the temperature dependence of the quantum yield efficiency parameter after Bernacchi et al., 2003 PCE (included by setting `settings_sims$tempstress  = TRUE`)
-
-# ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-# ## Define calibration setup-specific simulation parameters
-# settings_sims$soilmstress = FALSE
-# settings_sims$tempstress  = TRUE
-
-# ## Prepare the model setup for this calibration set
-# settings_sims <- prepare_setup_sofun( 
-#   settings = settings_sims, 
-#   setup = setup_sofun,
-#   write_paramfils = TRUE 
-#   )
-
-# ## Define fAPAR input data and re-write input files for SOFUN
-# settings_input$fapar = "MODIS_FPAR_MCD15A3H"
-# settings_input$splined_fapar = TRUE
-
-# inputdata <- prepare_input_sofun( 
-#   settings_input = settings_input, 
-#   settings_sims = settings_sims, 
-#   return_data = FALSE, 
-#   overwrite_csv_fapar = TRUE, 
-#   overwrite_fapar = TRUE, 
-#   verbose = TRUE
-#   )
-
-# ## Additional setup-specific calibration-settings
-# ## Specify data source for observations to which model is calibrated
-# settings_calib_BRC <- settings_calib
-# settings_calib_BRC$name = "BRC"
-# settings_calib_BRC$par = list( kphio = list( lower=0.01, upper=0.2, init=0.05 ) )
-# settings_calib_BRC$datasource = list( gpp = "fluxnet2015_NT" )
-# settings_calib_BRC$filter_temp_min = NA
-# settings_calib_BRC$filter_soilm_min = NA
-
-# ## Get observational data (GPP based on NT method) used as target for calibration
-# if (!exists("ddf_obs_NT")){
-#   ddf_obs_NT <- get_obs_calib( settings_calib_BRC, settings_sims, settings_input )
-#   save( ddf_obs_NT, file = "./data/ddf_obs_NT.Rdata" )
-# }
-
-# set.seed(1982)
-# settings_calib_BRC <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib_BRC,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_NT
-#   )
-# ```
 
 
 # ### Setup `FULL`
