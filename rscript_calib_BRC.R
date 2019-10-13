@@ -14,7 +14,7 @@ systr <- ""      # for Linux
 path_siteinfo <- "~/eval_pmodel/siteinfo_pet_fluxnet2015.csv"
 siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   dplyr::filter(!(sitename %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
-  dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
+  # dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>% 
   
@@ -100,7 +100,7 @@ flue_sites <- readr::read_csv( "~/data/flue/flue_stocker18nphyt.csv" ) %>%
 
 calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   dplyr::filter(!(sitename %in% c("DE-Akm", "IT-Ro1"))) %>%  # excluded because fapar data could not be downloaded (WEIRD)
-  dplyr::filter(!(sitename %in% c("AU-ASM", "AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
+  # dplyr::filter(!(sitename %in% c("AU-Wom"))) %>%  # excluded because no GPP data was found in FLUXNET file
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>%
   dplyr::filter( sitename %in% flue_sites ) %>%
@@ -118,7 +118,7 @@ settings_calib <- list(
   path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_hh= "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
-  maxit            = 5, # (5 for gensa) (30 for optimr)    #
+  maxit            = 4, # (5 for gensa) (30 for optimr)    #
   sitenames        = calibsites,
   filter_temp_max  = 35.0,
   filter_drought   = FALSE,
@@ -145,7 +145,7 @@ settings_sims$loutdalpha  = FALSE
 
 ## Prepare the model setup for this calibration set
 settings_sims <- prepare_setup_sofun( 
-  settings = settings_sims, 
+  settings = settings_sims,
   setup = setup_sofun,
   write_paramfils = TRUE 
   )
@@ -196,18 +196,30 @@ settings_eval <- list(
 ##------------------------------------------
 ### Out of bag calibration for ORG
 ##------------------------------------------
-ddf_obs_calib <- get_obs_calib( 
-  settings_calib = settings_calib_BRC, 
-  settings_sims, 
-  settings_input 
+filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ddf_obs_calib <- get_obs_calib( 
+    settings_calib = settings_calib_BRC, 
+    settings_sims, 
+    settings_input 
   )
+  save(ddf_obs_calib, file = filn)  
+}
 
-ddf_obs_eval  <- get_obs_eval( 
-  settings_eval = settings_eval, 
-  settings_sims = settings_sims, 
-  overwrite = TRUE, 
-  light = TRUE 
+filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ddf_obs_eval  <- get_obs_eval( 
+    settings_eval = settings_eval, 
+    settings_sims = settings_sims, 
+    overwrite = TRUE, 
+    light = TRUE 
   )
+  save(ddf_obs_eval, file = filn)
+}  
 
 out_oob <- oob_calib_eval_sofun(
   setup = setup_sofun, 
