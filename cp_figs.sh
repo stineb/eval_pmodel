@@ -14,8 +14,13 @@ cp ./fig/meandoy_byzone_greenness.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fi
 cp ./fig/meandoy_byzone_gpp_data.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
 
 
-cp ./fig/modobs_anomalies_daily_NULL.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
+cp ./fig/modobs_anomalies_xdaily_FULL.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
 cp ./fig/modobs_anomalies_daily_FULL.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
+<<<<<<< HEAD
+cp ./fig/hist_anomalies_daily_FULL.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
+cp ./fig/hist_anomalies_xdaily_FULL.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
+=======
+>>>>>>> 258e593ab1f0ab8ab3783fce06e6710fe1994972
 
 cp ./fig/hist_anomalies.pdf ~/Dropbox/projects/eval_pmodel/overleaf/fig/
 
