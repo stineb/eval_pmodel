@@ -28,7 +28,7 @@ load_dependencies_rsofun()
 tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
 fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
 systr <- "''"    # for Mac
-options( list( rsofun.dir.sofun="/alphadata01/bstocker/sofun/trunk/" ))
+options( list( rsofun.dir.sofun="~/sofun/trunk/" ))
 ```
 
 # Evaluation of GPP against FLUXNET data
@@ -37,19 +37,18 @@ options( list( rsofun.dir.sofun="/alphadata01/bstocker/sofun/trunk/" ))
 
 For site-scale simulations the `rsofun` package requires a meta information file. Create this here for FLUXNET 2015 Tier 1 sites (their meta info is provided as a public variable by the package).
 ```{r}
-if (!dir.exists("./ext")) system("mkdir")
-write_csv( metainfo_Tier1_sites_kgclimate_fluxnet2015, path = "./ext/siteinfo_fluxnet2015.csv" )
+rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% filter(c4) %>% write_csv( path = "./siteinfo_fluxnet2015_C4.csv" )
 ```
 
 Define settings.
 ```{r message=FALSE}
 settings_sims <- list(
-  path_siteinfo   = "./ext/siteinfo_fluxnet2015.csv",
+  path_siteinfo   = "./siteinfo_fluxnet2015_C4.csv",
   ensemble        = TRUE,
   setup           = "site",
   name            = "fluxnet2015",
-  dir_sofun       = "/alphadata01/bstocker/sofun/trunk/",
-  path_input      = "/alphadata01/bstocker/sofun/input_fluxnet2015_sofun_TEST/",
+  dir_sofun       = "~/sofun/trunk/",
+  path_input      = "~/sofun/input_fluxnet2015_sofun_TEST/",
   grid            = NA,
   implementation  = "fortran",
   in_ppfd         = TRUE,
@@ -74,18 +73,18 @@ settings_input <-  list(
   ppfd                     = "fluxnet2015",
   netrad                   = NA,
   cloudcover               = "cru",
-  path_watch_wfdei         = "/alphadata01/bstocker/data/watch_wfdei/",
-  path_cru                 = "/alphadata01/bstocker/data/cru/ts_4.01/",
-  path_MODIS_EVI_MOD13Q1   = "/alphadata01/bstocker/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
-  path_MODIS_FPAR_MCD15A3H = "/alphadata01/bstocker/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
-  path_co2                 = "/alphadata01/bstocker/data/co2/cCO2_rcp85_const850-1765.dat",
-  path_fluxnet2015         = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_watch_wfdei         = "~/data/watch_wfdei/",
+  path_cru                 = "~/data/cru/ts_4.01/",
+  path_MODIS_EVI_MOD13Q1   = "~/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
+  path_MODIS_FPAR_MCD15A3H = "~/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
+  path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
+  path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   get_from_remote          = FALSE
   )
 
 setup_sofun <- list(
   model      = "pmodel",
-  dir        = "/alphadata01/bstocker/sofun/trunk",
+  dir        = "~/sofun/trunk",
   do_compile = FALSE,
   simsuite   = FALSE
   )
@@ -98,11 +97,11 @@ settings_eval <- list(
   sitenames = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" )$sitename,
   sitenames_siteplots = mylist,
   agg = 10,
-  path_fluxnet2015_d = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
-  path_fluxnet2015_w = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
-  path_fluxnet2015_m = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
-  path_fluxnet2015_y = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1y/original/unpacked/",
-  path_gepisat_d     = "/alphadata01/bstocker/data/gepisat/v3_fluxnet2015/daily_gpp/"
+  path_fluxnet2015_d = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_fluxnet2015_w = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
+  path_fluxnet2015_m = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
+  path_fluxnet2015_y = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1y/original/unpacked/",
+  path_gepisat_d     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/"
   )
 ##------------------------------------------
 
@@ -282,8 +281,8 @@ row_rsqtable_NULLpft <- bind_cols( Setup = "NULLpft", getrow_statstable( out_eva
 Without soil moisture stress and with constant quantum yield effiency. Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output    = "/alphadata01/bstocker/sofun/output_fluxnet2015_sofun/201/"
-settings_sims$path_output_nc = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/201/"
+settings_sims$path_output    = "~/sofun/output_fluxnet2015_sofun/201/"
+settings_sims$path_output_nc = "~/sofun/output_nc_fluxnet2015_sofun/201/"
 settings_sims$soilmstress = FALSE
 settings_sims$tempstress  = FALSE
 settings_sims$loutdgpp    = TRUE
@@ -365,8 +364,8 @@ rm("mod_ORG")
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output    = "/alphadata01/bstocker/sofun/output_fluxnet2015_sofun/s202/"
-settings_sims$path_output_nc = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s202/"
+settings_sims$path_output    = "~/sofun/output_fluxnet2015_sofun/s202/"
+settings_sims$path_output_nc = "~/sofun/output_nc_fluxnet2015_sofun/s202/"
 settings_sims$soilmstress = FALSE
 settings_sims$tempstress  = TRUE
 
@@ -440,7 +439,7 @@ rm("mod_BRC")
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s203/"
+settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s203/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
 
@@ -509,7 +508,7 @@ rm("mod_FULL")
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s204/"
+settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s204/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
 
@@ -579,7 +578,7 @@ rm("mod_FULL_FPARitp")
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s205/"
+settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s205/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
 
@@ -651,7 +650,7 @@ rm("mod_FULL_EVI")
 Calibrating and evaluating SOFUN against GPP data based on the daytime decomposition method.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s206/"
+settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s206/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
 
@@ -712,7 +711,7 @@ if (!file.exists("data/obs_eval_DT.RdataXXX")){
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s207/"
+settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s207/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
 
@@ -774,7 +773,7 @@ if (!file.exists("data/obs_eval_NTsub.RdataXXX")){
 Calibrating and evaluating SOFUN against GPP data based on the alternative flux decomposition method by Tyler's method (GePiSaT data).
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s208/"
+settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s208/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
 
@@ -896,6 +895,80 @@ if (!file.exists("data/out_eval_FULL_Ty.RdataXXX")){
 
 row_rsqtable_FULL_Ty <- bind_cols( Setup = "FULL_Ty", getrow_statstable( out_eval_FULL_Ty, stat = "rsq" ) )
 rm("mod_FULL_Ty")
+```
+
+### C4
+
+Evaluation for C4 vegetation, using a small subset of sites: AU-How, DE-Kli, FR-Gri, IT-BCi, US-Ne1, US-Ne2, and US-Ne3.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+## Define new output directory and specific simulation parameters and re-run the setup step
+settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s209/"
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
+
+## Define fAPAR input data and re-write input files for SOFUN - THE SAME AS ABOVE
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
+
+## run the model with these parameters and read output into mod_FULL
+if (!file.exists("data/mod_C4.Rdata")){
+
+  settings_sims <- prepare_setup_sofun(
+    settings = settings_sims,
+    setup = setup_sofun,
+    write_paramfils = TRUE 
+    )
+
+  # Prepare and save input data for later use - THE SAME AS ABOVE
+  inputdata_FPARspl <- prepare_input_sofun( 
+    settings_input = settings_input, 
+    settings_sims = settings_sims, 
+    return_data = FALSE, 
+    overwrite_csv_fapar = FALSE, 
+    overwrite_fapar = FALSE, 
+    verbose = TRUE
+    )
+
+  ## update files containing parameter values read by model
+  params_opt <- readr::read_csv( "calib_results/params_opt_C4.csv" )
+  nothing <- update_params( params_opt, settings_sims$dir_sofun )
+
+  mod_C4 <- runread_sofun( 
+    settings = settings_sims, 
+    setup = setup_sofun 
+    )
+  save( mod_C4, file = "data/mod_C4.Rdata" )
+  
+} else {
+  load("data/mod_C4.Rdata")
+}
+
+## Subset only C4 sites
+settings_eval$sitenames <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% filter(c4) %>%
+                           dplyr::select( sitename ) %>%
+                           unlist()
+
+## Define other setup-specific evaluation settings - THE SAME AS ABOVE
+settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
+
+# get observational data separately and save since it's the same for multiple evaluations - THE SAME AS ABOVE
+if (!file.exists("data/obs_eval_C4.Rdata")){
+  obs_eval_C4 <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
+  save( obs_eval_C4, file = "data/obs_eval_C4.Rdata")
+} else {
+  load("data/obs_eval_C4.Rdata")
+}
+
+## evaluate FULL simulations
+if (!file.exists("data/out_eval_C4.Rdata")){
+  out_eval_C4 <- eval_sofun( mod_C4, settings_eval, settings_sims, obs_eval = obs_eval_C4, overwrite = TRUE )
+  save( out_eval_C4, file = "data/out_eval_C4.Rdata" )
+} else {
+  if (!exists("out_eval_C4")) load("data/out_eval_C4.Rdata")
+}
+
+row_rsqtable_C4 <- bind_cols( Setup = "FULL", getrow_statstable( out_eval_C4, stat = "rsq" ) )
+rm("mod_C4")
 ```
 
 
@@ -1036,6 +1109,7 @@ plot_modobs_spatial_annual( out_eval_BRC, xlim = c(0,4000), ylim = c(0,4000), ma
 plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "FULL" )
 plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "NULL" )
 plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
+plot_modobs_spatial_annual( out_eval_C4, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "C4" )
 ```
 
 And for individual sites:
@@ -1122,6 +1196,17 @@ plot_by_doy_allsites(
   out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
   makepdf=TRUE, label="",
   lab1="FULL", lab2="BRC", lab3="ORG", lab4="NULL"
+  )
+```
+
+#### Only C4 sites
+
+```{r echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+source("plot_by_doy_allsites.R")
+plot_by_doy_allsites( 
+  out_eval_C4, 
+  makepdf=TRUE, label="",
+  lab1="C4"
   )
 ```
 
@@ -1430,7 +1515,7 @@ load("data/mod_BRC.Rdata")
 df_dday_agg_BRC <- eval_droughtresponse( 
   mod = mod_BRC$daily, 
   obs = obs_eval_NT$ddf, 
-  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
+  path_flue = "~/data/fLUE/flue_stocker18nphyt.csv",
   before=20, 
   after=79,
   leng_threshold = 10, 
@@ -1440,7 +1525,7 @@ df_dday_agg_BRC <- eval_droughtresponse(
 df_dday_agg_FULL <- eval_droughtresponse( 
   mod = mod_FULL$daily, 
   obs = obs_eval_NT$ddf, 
-  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
+  path_flue = "~/data/fLUE/flue_stocker18nphyt.csv",
   before=20, 
   after=79,
   leng_threshold = 10, 

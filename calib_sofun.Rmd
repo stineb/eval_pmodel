@@ -36,8 +36,11 @@ library(readr)
 library(rsofun)
 source("filter_days.R")
 
+## Write sites meta info into a file
+rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% write_csv( path = "./siteinfo_fluxnet2015.csv" )
+
 settings_sims <- list(
-  path_siteinfo   = "./ext/siteinfo_fluxnet2015.csv",
+  path_siteinfo   = "./siteinfo_fluxnet2015.csv",
   ensemble        = TRUE,
   setup           = "site",
   name            = "fluxnet2015",
@@ -641,3 +644,68 @@ settings_calib_FULL_Ty <- calib_sofun(
   )
 ```
 
+### Setup `C4`
+
+Define settings, prepare setup and input data and do the calibration for the setup `C4`, using a subset of sites (only where C4 vegetation is known) for calibration. Note: Different simulation parameter!
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+## Define calibration setup-specific simulation parameters
+settings_sims$soilmstress = TRUE
+settings_sims$tempstress  = TRUE
+
+## Prepare the model setup for this calibration set
+settings_sims <- prepare_setup_sofun( 
+  settings = settings_sims, 
+  setup = setup_sofun,
+  write_paramfils = TRUE 
+  )
+
+## C4 information is now available in the simulation settings:
+print("C4 sites are:")
+settings_sims$c4 %>% unlist() %>% which() %>% names() %>% print()
+
+## Same fAPAR data used as above - nothing to be done 
+## Define fAPAR input data and re-write input files for SOFUN
+settings_input$fapar = "MODIS_FPAR_MCD15A3H"
+settings_input$splined_fapar = TRUE
+
+inputdata <- prepare_input_sofun(
+  settings_input = settings_input,
+  settings_sims = settings_sims,
+  return_data = FALSE,
+  overwrite_csv_fapar = TRUE, # WARNING: ASSUMING "LINEAR" KNITTING 
+  overwrite_fapar = TRUE, # WARNING: ASSUMING "LINEAR" KNITTING 
+  verbose = TRUE
+  )
+
+## Additional setup-specific calibration-settings
+## Specify data source for observations to which model is calibrated
+settings_calib_C4 <- settings_calib
+settings_calib_C4$sitenames <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% filter(c4) %>%
+                               dplyr::select( sitename ) %>%
+                               unlist()
+settings_calib_C4$name <- "C4"
+settings_calib_C4$par <- list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
+                               soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
+                               soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) )
+settings_calib_C4$datasource <- list( gpp = "fluxnet2015_NT" )
+settings_calib_C4$filter_temp_min <- NA
+settings_calib_C4$filter_soilm_min <- NA
+
+## load obs data if not available
+if (!exists("ddf_obs_NT_C4")){
+  ddf_obs_NT_C4 <- get_obs_calib( settings_calib_C4, settings_sims, settings_input )
+  save( ddf_obs_NT_C4, file = "./data/ddf_obs_NT_C4.Rdata" )
+}
+
+
+## Same observational data as for setup 'RED' (filtering is done afterwards, inside calib_sofun())
+set.seed(1982)
+settings_calib_C4 <- calib_sofun(
+  setup          = setup_sofun,
+  settings_calib = settings_calib_C4,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
+  ddf_obs        = ddf_obs_NT_C4
+  )
+```

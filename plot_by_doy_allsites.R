@@ -45,13 +45,17 @@ plot_by_doy_allsites <- function( out_eval, out_eval2 = NA, out_eval3 = NA, out_
     left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
     dplyr::filter( kghcode %in% df_zones$kghcode )
   
-  df2 <- out_eval2$data$meandoydf_stats %>% 
-    left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
-    dplyr::filter( kghcode %in% df_zones$kghcode )
+  if (!is.na(out_eval2)){
+    df2 <- out_eval2$data$meandoydf_stats %>% 
+      left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
+      dplyr::filter( kghcode %in% df_zones$kghcode )
+  }
   
-  df3 <- out_eval3$data$meandoydf_stats %>% 
-    left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
-    dplyr::filter( kghcode %in% df_zones$kghcode )
+  if (!is.na(out_eval3)){
+    df3 <- out_eval3$data$meandoydf_stats %>% 
+      left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
+      dplyr::filter( kghcode %in% df_zones$kghcode )
+  }
   
   # df4 <- out_eval4$data$meandoydf_stats %>% 
   #   left_join( dplyr::select(df_sites, sitename, kghcode), by="sitename" ) %>%
@@ -64,8 +68,8 @@ plot_by_doy_allsites <- function( out_eval, out_eval2 = NA, out_eval3 = NA, out_
     as.list(seq(nrow(df))), 
     ~plot_by_doy_bysite( 
       df$data[[.]], 
-      df2 = df2$data[[.]], 
-      df3 = df3$data[[.]],
+      df2 = ifelse(!is.na(out_eval2), df2$data[[.]], NA), 
+      df3 = ifelse(!is.na(out_eval3), df3$data[[.]], NA), 
       # df4 = df4$data[[.]],
       zone = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, sitename==df$sitename[[.]] ) %>%
              dplyr::select( koeppen_code ),
