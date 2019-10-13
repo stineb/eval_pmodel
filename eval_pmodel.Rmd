@@ -25,10 +25,10 @@ library(rsofun)
 library(rbeni)
 source("filter_days.R")
 load_dependencies_rsofun()
-tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
-fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
+# tab_nums <- captioner( prefix = "Table S", auto_space=FALSE, style = "i" )
+# fig_nums <- captioner( prefix = "Figure S", auto_space=FALSE, style = "i" )
 systr <- "''"    # for Mac
-options( list( rsofun.dir.sofun="~/sofun/trunk/" ))
+options( list( rsofun.dir.sofun="/alphadata01/bstocker/sofun/trunk/" ))
 ```
 
 # Evaluation of GPP against FLUXNET data
@@ -37,18 +37,19 @@ options( list( rsofun.dir.sofun="~/sofun/trunk/" ))
 
 For site-scale simulations the `rsofun` package requires a meta information file. Create this here for FLUXNET 2015 Tier 1 sites (their meta info is provided as a public variable by the package).
 ```{r}
-rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% filter(c4) %>% write_csv( path = "./siteinfo_fluxnet2015_C4.csv" )
+if (!dir.exists("./ext")) system("mkdir")
+write_csv( metainfo_Tier1_sites_kgclimate_fluxnet2015, path = "./ext/siteinfo_fluxnet2015.csv" )
 ```
 
 Define settings.
 ```{r message=FALSE}
 settings_sims <- list(
-  path_siteinfo   = "./siteinfo_fluxnet2015_C4.csv",
+  path_siteinfo   = "./ext/siteinfo_fluxnet2015.csv",
   ensemble        = TRUE,
   setup           = "site",
   name            = "fluxnet2015",
-  dir_sofun       = "~/sofun/trunk/",
-  path_input      = "~/sofun/input_fluxnet2015_sofun_TEST/",
+  dir_sofun       = "/alphadata01/bstocker/sofun/trunk/",
+  path_input      = "/alphadata01/bstocker/sofun/input_fluxnet2015_sofun_TEST/",
   grid            = NA,
   implementation  = "fortran",
   in_ppfd         = TRUE,
@@ -64,7 +65,6 @@ settings_sims <- list(
   loutdpet        = TRUE,
   loutdalpha      = TRUE
   )
-
 settings_input <-  list(
   data                     = NA,
   temperature              = "fluxnet2015",
@@ -73,18 +73,17 @@ settings_input <-  list(
   ppfd                     = "fluxnet2015",
   netrad                   = NA,
   cloudcover               = "cru",
-  path_watch_wfdei         = "~/data/watch_wfdei/",
-  path_cru                 = "~/data/cru/ts_4.01/",
-  path_MODIS_EVI_MOD13Q1   = "~/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
-  path_MODIS_FPAR_MCD15A3H = "~/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
-  path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
-  path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_watch_wfdei         = "/alphadata01/bstocker/data/watch_wfdei/",
+  path_cru                 = "/alphadata01/bstocker/data/cru/ts_4.01/",
+  path_MODIS_EVI_MOD13Q1   = "/alphadata01/bstocker/data/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
+  path_MODIS_FPAR_MCD15A3H = "/alphadata01/bstocker/data/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
+  path_co2                 = "/alphadata01/bstocker/data/co2/cCO2_rcp85_const850-1765.dat",
+  path_fluxnet2015         = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   get_from_remote          = FALSE
   )
-
 setup_sofun <- list(
   model      = "pmodel",
-  dir        = "~/sofun/trunk",
+  dir        = "/alphadata01/bstocker/sofun/trunk",
   do_compile = FALSE,
   simsuite   = FALSE
   )
@@ -96,19 +95,17 @@ mylist <- readr::read_csv("ext/myselect_fluxnet2015.csv") %>% dplyr::filter( use
 settings_eval <- list(
   sitenames = dplyr::filter( rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" )$sitename,
   sitenames_siteplots = mylist,
-  agg = 10,
-  path_fluxnet2015_d = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
-  path_fluxnet2015_w = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
-  path_fluxnet2015_m = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
-  path_fluxnet2015_y = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1y/original/unpacked/",
-  path_gepisat_d     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/"
+  agg = 8,
+  path_fluxnet2015_d = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_fluxnet2015_w = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_7d/original/unpacked/",
+  path_fluxnet2015_m = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1m/original/unpacked/",
+  path_fluxnet2015_y = "/alphadata01/bstocker/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1y/original/unpacked/",
+  path_gepisat_d     = "/alphadata01/bstocker/data/gepisat/v3_fluxnet2015/daily_gpp/"
   )
 ##------------------------------------------
-
 # ## XXX TEST: Calibration sites for TerraP, excluding CA-Obs
 # settings_eval$sitenames <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
 # settings_eval$sitenames_siteplots <- mylist[ mylist %in% settings_eval$sitenames ]
-
 ```
 
 - `benchmark`: Named list of character strings with data source identifiers for each calibration target variable. The list is named corresponding to variable names defined by 'targetvars'. The identifier triggers certain functions to be used for reading and processing observational data. Use, e.g., `datasource = list( gpp = "fluxnet2015_NT" )` to specify that observational data for the target variable `"gpp"` comes from FLUXNET 2015 dataset with GPP data based on the night-time flux decomposition method (`"NT"`). Alternatively, use GPP data based on the daytime method (`"fluxnet2015_NT"`) or Tyler Davis' new method (unpublished) (`"fluxnet2015_Ty"`). If multiple data sources are selected (e.g., `datasource = list( gpp = c("fluxnet2015_NT", "fluxnet2015_DT") )`), their mean is used for calibration.
@@ -122,7 +119,6 @@ settings_eval <- list(
 if (!exists("mod_ORG")) load("data/mod_ORG.Rdata")
 sitenames_ORG  <- mod_ORG$daily  %>% names()
 settings_eval$sitenames <- settings_eval$sitenames[ settings_eval$sitenames %in% sitenames_ORG ]
-
 ## Test: are croplands still in there?
 tibble( sitename=settings_eval$sitenames ) %>% 
   dplyr::filter( sitename %in% sitenames_ORG ) %>%
@@ -131,7 +127,6 @@ tibble( sitename=settings_eval$sitenames ) %>%
 ```
 
 <!-- ## Get additional site meta information
-
 Get additional site meta information (Koeppen-Geiger climate) first from FLUXNET 2015 meta info file (`fluxnet_site_info_mysub.csv`), then, fill missing using info extracted from a global map (`koeppen-geiger.tif`). The Koeppen-Geiger climate class info is used to aggregate mean seasonal cycles of multiple sites falling within one climate class. 
 ```{r}
 siteinfo_eval <- metainfo_Tier1_sites_kgclimate_fluxnet2015
@@ -170,7 +165,6 @@ LUE is a constant and is calibrated, given GPP data (here based on the nighttime
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
 if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   save( obs_eval_NT, file = "data/obs_eval_NT.Rdata")
@@ -181,15 +175,13 @@ mod_NULL <- obs_eval_NT$ddf %>%
             dplyr::select( sitename, date, gpp_obs, ppfd_fluxnet2015, fapar ) %>% 
             mutate( apar = ppfd_fluxnet2015 * fapar ) %>% 
             mutate( gpp_obs = ifelse( date < "2000-02-18", NA, gpp_obs ) )
-
 ## to fit constant LUE, fit linear model with zero intercept and just use its coefficient (slope)
 linmod <- lm( gpp_obs ~ 0 + apar, data = mod_NULL )
-
+save(linmod, file="data/linmod_NULL.RData")
 mod_NULL <- mod_NULL %>% 
   dplyr::select( sitename, date, apar ) %>%
   mutate( gpp = coef(linmod) * apar ) %>%
   dplyr::select( -apar )
-
 ## change the structure to something like the one of mod_FULL and mod_RED
 tmp <- purrr::map( as.list( unique(mod_NULL$sitename)), ~filter( mod_NULL, sitename==. ) %>% dplyr::select(-sitename) )
 names(tmp) <- unique(mod_NULL$sitename)
@@ -197,7 +189,6 @@ mod_NULL <- list()
 mod_NULL$daily <- tmp
 rm("tmp")
 save(mod_NULL, file = "data/mod_NULL.Rdata")
-
 ## evaluate NULL simulations
 if (!file.exists("data/out_eval_NULL.Rdata")){
   out_eval_NULL <- eval_sofun( mod_NULL, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
@@ -205,10 +196,8 @@ if (!file.exists("data/out_eval_NULL.Rdata")){
 } else {
   if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
 }
-
 row_rsqtable_NULL <- bind_cols( Setup = "NULL", getrow_statstable( out_eval_NULL, stat = "rsq" ) )
 # rm("out_eval_NULL")
-
 # ## Test: are croplands still in there?
 # out_eval_FULL$data$xdf %>% 
 #   select(sitename) %>% 
@@ -229,7 +218,6 @@ add_gpp_mod <- function( data ){
   data$gpp_mod <- coef(linmod)[["apar"]] * data$apar # fitted( linmod )
   return(data)  
 }
-
 ## Get coefficient (constant LUE) for each PFT ('classid') and use this to estimate 'gpp_mod' 
 sum_NULLpft <-  obs_eval_NT$ddf %>% 
                 dplyr::select( sitename, date, gpp_obs, ppfd_fluxnet2015, fapar ) %>% 
@@ -252,17 +240,14 @@ mod_NULLpft <- sum_NULLpft %>%
                 dplyr::select( data ) %>%
                 unnest( data ) %>%
                 dplyr::select( sitename, date, gpp = gpp_mod )
-
 ## change the structure to something like the one of mod_FULL and mod_RED
 tmp <- purrr::map( as.list( unique(mod_NULLpft$sitename)), ~filter( mod_NULLpft, sitename==. ) %>% dplyr::select(-sitename) )
 names(tmp) <- unique(mod_NULLpft$sitename)
 mod_NULLpft <- list()
 mod_NULLpft$daily <- tmp
 rm("tmp")
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
 ## evaluate NULL simulations
 if (!file.exists("data/out_eval_NULLpft.Rdata")){
   out_eval_NULLpft <- eval_sofun( mod_NULLpft, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
@@ -270,7 +255,6 @@ if (!file.exists("data/out_eval_NULLpft.Rdata")){
 } else {
   if (!exists("out_eval_NULLpft")) load("data/out_eval_NULLpft.Rdata")
 }
-
 row_rsqtable_NULLpft <- bind_cols( Setup = "NULLpft", getrow_statstable( out_eval_NULLpft, stat = "rsq" ) )
 # rm("out_eval_NULLpft")
 ```
@@ -281,8 +265,8 @@ row_rsqtable_NULLpft <- bind_cols( Setup = "NULLpft", getrow_statstable( out_eva
 Without soil moisture stress and with constant quantum yield effiency. Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output    = "~/sofun/output_fluxnet2015_sofun/201/"
-settings_sims$path_output_nc = "~/sofun/output_nc_fluxnet2015_sofun/201/"
+settings_sims$path_output    = "/alphadata01/bstocker/sofun/output_fluxnet2015_sofun/201/"
+settings_sims$path_output_nc = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/201/"
 settings_sims$soilmstress = FALSE
 settings_sims$tempstress  = FALSE
 settings_sims$loutdgpp    = TRUE
@@ -292,21 +276,16 @@ settings_sims$loutdwcont  = TRUE
 settings_sims$loutdaet    = TRUE
 settings_sims$loutdpet    = TRUE
 settings_sims$loutdalpha  = TRUE
-
-
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = TRUE
-
 ## run the model with these parameters and read output into mod_ORG
 if (!file.exists("data/mod_ORG.Rdata")){
-
   settings_sims <- prepare_setup_sofun( 
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = TRUE 
     )
-
   ## Prepare and save input data for later use
   inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -318,11 +297,9 @@ if (!file.exists("data/mod_ORG.Rdata")){
     overwrite_fapar = TRUE, 
     verbose = TRUE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_ORG.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   mod_ORG <- runread_sofun( 
     settings = settings_sims, 
     setup = setup_sofun 
@@ -331,10 +308,8 @@ if (!file.exists("data/mod_ORG.Rdata")){
 } else {
   load("data/mod_ORG.Rdata")
 }
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
@@ -342,7 +317,6 @@ if (!file.exists("data/obs_eval_NT.Rdata")){
 } else {
   load("data/obs_eval_NT.Rdata")
 }
-
 ## evaluate ORG simulations
 if (!file.exists("data/out_eval_ORG.Rdata")){
   out_eval_ORG <- eval_sofun( mod_ORG, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
@@ -350,11 +324,9 @@ if (!file.exists("data/out_eval_ORG.Rdata")){
 } else {
   if (!exists("out_eval_ORG")) load("data/out_eval_ORG.Rdata")
 }
-
 row_rsqtable_ORG <- bind_cols( Setup = "ORG", getrow_statstable( out_eval_ORG, stat = "rsq" ) )
 # rm("out_eval_ORG")
 rm("mod_ORG")
-
 ## Plot mod-vs-obs for daily values
 # if (!exists("out_eval_ORG")) load("data/out_eval_ORG.Rdata")
 # modobs_ddf_ORG <- plot_modobs_daily( out_eval_ORG$data$ddf, subtitle = "ORG, FPARspl, NT", dir = "./fig", makepdf = TRUE )
@@ -364,25 +336,20 @@ rm("mod_ORG")
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output    = "~/sofun/output_fluxnet2015_sofun/s202/"
-settings_sims$path_output_nc = "~/sofun/output_nc_fluxnet2015_sofun/s202/"
+settings_sims$path_output    = "/alphadata01/bstocker/sofun/output_fluxnet2015_sofun/s202/"
+settings_sims$path_output_nc = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s202/"
 settings_sims$soilmstress = FALSE
 settings_sims$tempstress  = TRUE
-
-
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = TRUE
-
 ## run the model with these parameters and read output into mod_BRC
 if (!file.exists("data/mod_BRC.Rdata")){
-
   settings_sims <- prepare_setup_sofun( 
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = TRUE 
     )
-
   ## Prepare and save input data for later use
   inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -392,11 +359,9 @@ if (!file.exists("data/mod_BRC.Rdata")){
     overwrite_fapar = FALSE, 
     verbose = TRUE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_BRC.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   mod_BRC <- runread_sofun( 
     settings = settings_sims, 
     setup = setup_sofun 
@@ -405,10 +370,8 @@ if (!file.exists("data/mod_BRC.Rdata")){
 } else {
   load("data/mod_BRC.Rdata")
 }
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
@@ -416,7 +379,6 @@ if (!file.exists("data/obs_eval_NT.Rdata")){
 } else {
   load("data/obs_eval_NT.Rdata")
 }
-
 ## evaluate BRC simulations
 if (!file.exists("data/out_eval_BRC.Rdata")){
   out_eval_BRC <- eval_sofun( mod_BRC, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
@@ -424,11 +386,9 @@ if (!file.exists("data/out_eval_BRC.Rdata")){
 } else {
   if (!exists("out_eval_BRC")) load("data/out_eval_BRC.Rdata")
 }
-
 row_rsqtable_BRC <- bind_cols( Setup = "BRC", getrow_statstable( out_eval_BRC, stat = "rsq" ) )
 # rm("out_eval_BRC")
 rm("mod_BRC")
-
 ## Plot mod-vs-obs for daily values
 # if (!exists("out_eval_BRC")) load("data/out_eval_BRC.Rdata")
 # modobs_ddf_BRC <- plot_modobs_daily( out_eval_BRC$data$ddf, subtitle = "BRC, FPARspl, NT", dir = "./fig", makepdf = TRUE )
@@ -439,23 +399,19 @@ rm("mod_BRC")
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s203/"
+settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s203/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
-
 ## Define fAPAR input data and re-write input files for SOFUN - THE SAME AS ABOVE
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = TRUE
-
 ## run the model with these parameters and read output into mod_FULL
 if (!file.exists("data/mod_FULL.Rdata")){
-
   settings_sims <- prepare_setup_sofun(
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = TRUE 
     )
-
   # Prepare and save input data for later use - THE SAME AS ABOVE
   inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -465,11 +421,9 @@ if (!file.exists("data/mod_FULL.Rdata")){
     overwrite_fapar = FALSE, 
     verbose = TRUE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_FULL.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   mod_FULL <- runread_sofun( 
     settings = settings_sims, 
     setup = setup_sofun 
@@ -478,10 +432,8 @@ if (!file.exists("data/mod_FULL.Rdata")){
 } else {
   load("data/mod_FULL.Rdata")
 }
-
 ## Define other setup-specific evaluation settings - THE SAME AS ABOVE
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
 # get observational data separately and save since it's the same for multiple evaluations - THE SAME AS ABOVE
 if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
@@ -489,7 +441,6 @@ if (!file.exists("data/obs_eval_NT.Rdata")){
 } else {
   load("data/obs_eval_NT.Rdata")
 }
-
 ## evaluate FULL simulations
 if (!file.exists("data/out_eval_FULL.Rdata")){
   out_eval_FULL <- eval_sofun( mod_FULL, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
@@ -497,7 +448,6 @@ if (!file.exists("data/out_eval_FULL.Rdata")){
 } else {
   if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 }
-
 row_rsqtable_FULL <- bind_cols( Setup = "FULL", getrow_statstable( out_eval_FULL, stat = "rsq" ) )
 rm("mod_FULL")
 ```
@@ -508,23 +458,19 @@ rm("mod_FULL")
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s204/"
+settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s204/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
-
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = FALSE
-
 ## run the model with these parameters and read output into mod_FULL_FPARitp
 if (!file.exists("data/mod_FULL_FPARitp.Rdata")){
-
   settings_sims <- prepare_setup_sofun( 
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = TRUE 
     )
-
   ## Prepare and save input data for later use
   inputdata_FPATitpl <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -534,11 +480,9 @@ if (!file.exists("data/mod_FULL_FPARitp.Rdata")){
     overwrite_fapar = TRUE, 
     verbose = TRUE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_FULL_FPARitp.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   mod_FULL_FPARitp <- runread_sofun( 
     settings = settings_sims, 
     setup = setup_sofun 
@@ -547,10 +491,8 @@ if (!file.exists("data/mod_FULL_FPARitp.Rdata")){
 } else {
   load("data/mod_FULL_FPARitp.Rdata")
 }
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
@@ -558,7 +500,6 @@ if (!file.exists("data/obs_eval_NT.Rdata")){
 } else {
   load("data/obs_eval_NT.Rdata")
 }
-
 ## evaluate FULL_FPARitp simulations
 if (!file.exists("data/out_eval_FULL_FPARitp.Rdata")){
   out_eval_FULL_FPARitp <- eval_sofun( mod_FULL_FPARitp, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
@@ -566,7 +507,6 @@ if (!file.exists("data/out_eval_FULL_FPARitp.Rdata")){
 } else {
   if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 }
-
 row_rsqtable_FULL_FPARitp <- bind_cols( Setup = "FULL_FPARitp", getrow_statstable( out_eval_FULL_FPARitp, stat = "rsq" ) )
 # rm("out_eval_FULL_FPARitp")
 rm("mod_FULL_FPARitp")
@@ -578,23 +518,19 @@ rm("mod_FULL_FPARitp")
 Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s205/"
+settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s205/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
-
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_EVI_MOD13Q1"
 settings_input$splined_fapar = FALSE
-
 ## run the model with these parameters and read output into mod_FULL_EVI
 if (!file.exists("data/mod_FULL_EVI.Rdata")){
-
   settings_sims <- prepare_setup_sofun( 
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = TRUE 
     )
-
   ## Prepare and save input data for later use
   inputdata_EVI <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -604,11 +540,9 @@ if (!file.exists("data/mod_FULL_EVI.Rdata")){
     overwrite_csv_fapar = TRUE, 
     verbose = FALSE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_FULL_EVI.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   settings_sims$loutdrd     = FALSE
   settings_sims$loutdtransp = FALSE
   mod_FULL_EVI <- runread_sofun( 
@@ -619,10 +553,8 @@ if (!file.exists("data/mod_FULL_EVI.Rdata")){
 } else {
   load("data/mod_FULL_EVI.Rdata")
 }
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_NT.Rdata")){
   obs_eval_NT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
@@ -630,7 +562,6 @@ if (!file.exists("data/obs_eval_NT.Rdata")){
 } else {
   load("data/obs_eval_NT.Rdata")
 }
-
 ## evaluate FULL_EVI simulations
 if (!file.exists("data/out_eval_FULL_EVI.Rdata")){
   out_eval_FULL_EVI <- eval_sofun( mod_FULL_EVI, settings_eval, settings_sims, obs_eval = obs_eval_NT, overwrite = TRUE )
@@ -638,7 +569,6 @@ if (!file.exists("data/out_eval_FULL_EVI.Rdata")){
 } else {
   if (!exists("out_eval_FULL_EVI")) load("data/out_eval_FULL_EVI.Rdata")
 }
-
 row_rsqtable_FULL_EVI <- bind_cols( Setup = "FULL_EVI", getrow_statstable( out_eval_FULL_EVI, stat = "rsq" ) )
 # rm("out_eval_FULL_EVI")
 rm("mod_FULL_EVI")
@@ -650,23 +580,19 @@ rm("mod_FULL_EVI")
 Calibrating and evaluating SOFUN against GPP data based on the daytime decomposition method.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s206/"
+settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s206/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
-
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = TRUE
-
 ## run the model with these parameters and read output into mod_FULL_EVI
 if (!file.exists("data/mod_FULL_DT.Rdata")){
-
   settings_sims <- prepare_setup_sofun( 
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = TRUE
     )
-
   ## Prepare and save input data for later use
   inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -676,11 +602,9 @@ if (!file.exists("data/mod_FULL_DT.Rdata")){
     overwrite_fapar = TRUE, 
     verbose = TRUE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_FULL_DT.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   settings_sims$loutdrd     = FALSE
   settings_sims$loutdtransp = FALSE
   mod_FULL_DT <- runread_sofun( 
@@ -691,13 +615,11 @@ if (!file.exists("data/mod_FULL_DT.Rdata")){
 } else {
   load("data/mod_FULL_DT.Rdata")
 }
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_DT") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
-
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("data/obs_eval_DT.RdataXXX")){
+if (!file.exists("data/obs_eval_DT.Rdata")){
   obs_eval_DT <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   # obs_eval_DT$ddf <- obs_eval_DT$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_DT$ddf$gpp_obs))))
@@ -711,23 +633,19 @@ if (!file.exists("data/obs_eval_DT.RdataXXX")){
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s207/"
+settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s207/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
-
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = TRUE
-
 ## run the model with these parameters and read output into mod_FULL_EVI
 if (!file.exists("data/mod_FULL_NTsub.Rdata")){
-
   settings_sims <- prepare_setup_sofun( 
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = TRUE
     )
-
   ## Prepare and save input data for later use
   inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -737,11 +655,9 @@ if (!file.exists("data/mod_FULL_NTsub.Rdata")){
     overwrite_fapar = TRUE, 
     verbose = TRUE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_FULL_NTsub.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   settings_sims$loutdrd     = FALSE
   settings_sims$loutdtransp = FALSE
   mod_FULL_NTsub <- runread_sofun( 
@@ -752,13 +668,11 @@ if (!file.exists("data/mod_FULL_NTsub.Rdata")){
 } else {
   load("data/mod_FULL_NTsub.Rdata")
 }
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
-
 ## get observational data separately and save since it's the same for multiple evaluations
-if (!file.exists("data/obs_eval_NTsub.RdataXXX")){
+if (!file.exists("data/obs_eval_NTsub.Rdata")){
   obs_eval_NTsub <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
   # obs_eval_NTsub$ddf <- obs_eval_NTsub$ddf %>% filter_days( settings_eval$filter_days, settings_eval$path_gepisat )
   print(paste0("Total number of evaluation data points: ", sum(!is.na(obs_eval_NTsub$ddf$gpp_obs))))
@@ -773,23 +687,19 @@ if (!file.exists("data/obs_eval_NTsub.RdataXXX")){
 Calibrating and evaluating SOFUN against GPP data based on the alternative flux decomposition method by Tyler's method (GePiSaT data).
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s208/"
+settings_sims$path_output_nc  = "/alphadata01/bstocker/sofun/output_nc_fluxnet2015_sofun/s208/"
 settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
-
 ## Define fAPAR input data and re-write input files for SOFUN
 settings_input$fapar = "MODIS_FPAR_MCD15A3H"
 settings_input$splined_fapar = TRUE
-
 ## run the model with these parameters and read output into mod_FULL_Ty
 if (!file.exists("data/mod_FULL_Ty.Rdata")){
-
   settings_sims <- prepare_setup_sofun( 
     settings = settings_sims,
     setup = setup_sofun,
     write_paramfils = FALSE
     )
-
   ## Prepare and save input data for later use
   inputdata_FPARspl <- prepare_input_sofun( 
     settings_input = settings_input, 
@@ -799,11 +709,9 @@ if (!file.exists("data/mod_FULL_Ty.Rdata")){
     overwrite_fapar = FALSE, 
     verbose = TRUE
     )
-
   ## update files containing parameter values read by model
   params_opt <- readr::read_csv( "calib_results/params_opt_FULL_Ty.csv" )
   nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
   settings_sims$loutdrd     = FALSE
   settings_sims$loutdtransp = FALSE
   mod_FULL_Ty <- runread_sofun( 
@@ -814,11 +722,9 @@ if (!file.exists("data/mod_FULL_Ty.Rdata")){
 } else {
   load("data/mod_FULL_Ty.Rdata")
 }
-
 ## Define other setup-specific evaluation settings
 settings_eval$benchmark <- list( gpp = c("fluxnet2015_Ty") )
 settings_eval$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
-
 ## get observational data separately and save since it's the same for multiple evaluations
 if (!file.exists("data/obs_eval_Ty.RdataXXX")){
   obs_eval_Ty <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
@@ -839,30 +745,24 @@ merged <- select(    obs_eval_DT$ddf,    sitename, date, gpp_DT = gpp_obs ) %>%
   left_join( select( obs_eval_Ty$ddf,    sitename, date, gpp_Ty = gpp_obs ), by = c("sitename", "date") ) %>% 
   mutate( use = ifelse( !is.na(gpp_DT) & !is.na(gpp_NT) & !is.na(gpp_Ty), TRUE, FALSE ) ) %>% 
   mutate( gpp_DT = ifelse(use, gpp_DT, NA), gpp_NT = ifelse(use, gpp_NT, NA), gpp_Ty = ifelse(use, gpp_Ty, NA) )
-
 sum(!is.na(merged$gpp_DT))
 sum(!is.na(merged$gpp_NT))
 sum(!is.na(merged$gpp_Ty))
-
 obs_eval_DT$ddf$gpp_obs    <- merged$gpp_DT
 obs_eval_NTsub$ddf$gpp_obs <- merged$gpp_NT
 obs_eval_Ty$ddf$gpp_obs    <- merged$gpp_Ty
-
 # x-daily
 merged <- select(    obs_eval_DT$xdf,    sitename, inbin, gpp_DT = gpp_obs ) %>% 
   left_join( select( obs_eval_NTsub$xdf, sitename, inbin, gpp_NT = gpp_obs ), by = c("sitename", "inbin") ) %>% 
   left_join( select( obs_eval_Ty$xdf,    sitename, inbin, gpp_Ty = gpp_obs ), by = c("sitename", "inbin") ) %>% 
   mutate( use = ifelse( !is.na(gpp_DT) & !is.na(gpp_NT) & !is.na(gpp_Ty), TRUE, FALSE ) ) %>% 
   mutate( gpp_DT = ifelse(use, gpp_DT, NA), gpp_NT = ifelse(use, gpp_NT, NA), gpp_Ty = ifelse(use, gpp_Ty, NA) )
-
 sum(!is.na(merged$gpp_DT))
 sum(!is.na(merged$gpp_NT))
 sum(!is.na(merged$gpp_Ty))
-
 obs_eval_DT$xdf$gpp_obs    <- merged$gpp_DT
 obs_eval_NTsub$xdf$gpp_obs <- merged$gpp_NT
 obs_eval_Ty$xdf$gpp_obs    <- merged$gpp_Ty
-
 ## evaluate FULL_DT simulations
 if (!file.exists("data/out_eval_FULL_DT.RdataXXX")){
   out_eval_FULL_DT <- eval_sofun( mod_FULL_DT, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
@@ -870,10 +770,8 @@ if (!file.exists("data/out_eval_FULL_DT.RdataXXX")){
 } else {
   if (!exists("out_eval_FULL_DT")) load("data/out_eval_FULL_DT.Rdata")
 }
-
 row_rsqtable_FULL_DT <- bind_cols( Setup = "FULL_DT", getrow_statstable( out_eval_FULL_DT, stat = "rsq" ) )
 rm("mod_FULL_DT")
-
 ## evaluate FULL_NTsub simulations
 if (!file.exists("data/out_eval_FULL_NTsub.RdataXXX")){
   out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_NTsub, overwrite = TRUE )
@@ -881,10 +779,8 @@ if (!file.exists("data/out_eval_FULL_NTsub.RdataXXX")){
 } else {
   if (!exists("out_eval_FULL_NTsub")) load("data/out_eval_FULL_NTsub.Rdata")
 }
-
 row_rsqtable_FULL_NTsub <- bind_cols( Setup = "FULL_NTsub", getrow_statstable( out_eval_FULL_NTsub, stat = "rsq" ) )
 rm("mod_FULL_NTsub")
-
 ## evaluate FULL_Ty simulations
 if (!file.exists("data/out_eval_FULL_Ty.RdataXXX")){
   out_eval_FULL_Ty <- eval_sofun( mod_FULL_Ty, settings_eval, settings_sims, obs_eval = obs_eval_Ty, overwrite = TRUE )
@@ -892,83 +788,8 @@ if (!file.exists("data/out_eval_FULL_Ty.RdataXXX")){
 } else {
   if (!exists("out_eval_FULL_Ty")) load("data/out_eval_FULL_Ty.Rdata")
 }
-
 row_rsqtable_FULL_Ty <- bind_cols( Setup = "FULL_Ty", getrow_statstable( out_eval_FULL_Ty, stat = "rsq" ) )
 rm("mod_FULL_Ty")
-```
-
-### C4
-
-Evaluation for C4 vegetation, using a small subset of sites: AU-How, DE-Kli, FR-Gri, IT-BCi, US-Ne1, US-Ne2, and US-Ne3.
-```{r, eval=TRUE, message=FALSE, warning=FALSE}
-## Define new output directory and specific simulation parameters and re-run the setup step
-settings_sims$path_output_nc  = "~/sofun/output_nc_fluxnet2015_sofun/s209/"
-settings_sims$soilmstress = TRUE
-settings_sims$tempstress  = TRUE
-
-## Define fAPAR input data and re-write input files for SOFUN - THE SAME AS ABOVE
-settings_input$fapar = "MODIS_FPAR_MCD15A3H"
-settings_input$splined_fapar = TRUE
-
-## run the model with these parameters and read output into mod_FULL
-if (!file.exists("data/mod_C4.Rdata")){
-
-  settings_sims <- prepare_setup_sofun(
-    settings = settings_sims,
-    setup = setup_sofun,
-    write_paramfils = TRUE 
-    )
-
-  # Prepare and save input data for later use - THE SAME AS ABOVE
-  inputdata_FPARspl <- prepare_input_sofun( 
-    settings_input = settings_input, 
-    settings_sims = settings_sims, 
-    return_data = FALSE, 
-    overwrite_csv_fapar = FALSE, 
-    overwrite_fapar = FALSE, 
-    verbose = TRUE
-    )
-
-  ## update files containing parameter values read by model
-  params_opt <- readr::read_csv( "calib_results/params_opt_C4.csv" )
-  nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
-  mod_C4 <- runread_sofun( 
-    settings = settings_sims, 
-    setup = setup_sofun 
-    )
-  save( mod_C4, file = "data/mod_C4.Rdata" )
-  
-} else {
-  load("data/mod_C4.Rdata")
-}
-
-## Subset only C4 sites
-settings_eval$sitenames <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% filter(c4) %>%
-                           dplyr::select( sitename ) %>%
-                           unlist()
-
-## Define other setup-specific evaluation settings - THE SAME AS ABOVE
-settings_eval$benchmark <- list( gpp = c("fluxnet2015_NT") )
-
-# get observational data separately and save since it's the same for multiple evaluations - THE SAME AS ABOVE
-if (!file.exists("data/obs_eval_C4.Rdata")){
-  obs_eval_C4 <- get_obs_eval( settings_eval = settings_eval, settings_sims = settings_sims, overwrite = TRUE )
-  save( obs_eval_C4, file = "data/obs_eval_C4.Rdata")
-} else {
-  load("data/obs_eval_C4.Rdata")
-}
-
-## evaluate FULL simulations
-if (!file.exists("data/out_eval_C4.Rdata")){
-  out_eval_C4 <- eval_sofun( mod_C4, settings_eval, settings_sims, obs_eval = obs_eval_C4, overwrite = TRUE )
-  save( out_eval_C4, file = "data/out_eval_C4.Rdata" )
-} else {
-  if (!exists("out_eval_C4")) load("data/out_eval_C4.Rdata")
-}
-
-row_rsqtable_C4 <- bind_cols( Setup = "FULL", getrow_statstable( out_eval_C4, stat = "rsq" ) )
-rm("mod_C4")
 ```
 
 
@@ -1009,33 +830,23 @@ The P-model relies on a minimum set of free parameters. Most parameters are give
 We applied a value of 146.0 for $\beta$ based on independent constraints from $\delta^{13}$C measurements on leaves (Prentice et al., 2014; Wang Han et al., 2017).
 
 $\varphi_0$ determines the fraction of absorbed light that can be used by the photosynthetic aparatus for assimilating CO$_2$. Within the P-model, this parameter acts as a linear scalar between absorbed light and GPP and therefore implies a strong sensitivity of simulated GPP to its valule. Considerable uncertainty resides in the quantification of fAPAR and some inconsistency in terms of its definition. Hence, we consider $\varphi_0$ as a free parameter that we calibrate, given the fAPAR data product used. Here, we use the MODIS FPAR MCD15A3H data product at 1 km/8 day resolution and extract values for a single pixel surrounding the flux tower location. Calibration was done ...
-
 **OPEN POINT:**
 I did a such a calibration and got $\varphi_0 = 0.0579$, as described [here](http://rpubs.com/stineb/calib_pmodel). I filtered out data points taken at low temperatures ($<5^{\circ}C$) and at low soil moisture ($<0.4$ relative soil water content). The calibration target was `GPP_NT_VUT_REF`. Now, I've implemented a more flexible and capable calibration function for SOFUN, allowing for multiple parameters to be calibrated simultaneously and accounting for uncertainty in the data. This makes use of different parameter search algorithms implemented in R.
-
 - How to use uncertainty data from FLUXNET 2015? Just use one the nighttime partitioning and use `GPP_NT_VUT_MEAN` and `GPP_NT_VUT_SE`? Or how to account for uncertainty related to the difference between the nighttime and daytime partitioning approach? Thus: how to additionally use `GPP_DT_VUT_MEAN` and `GPP_DT_VUT_SE`?
-
 ## Metrics
-
 Several performance metrics are calculated for different features of GPP variability. The performance metrics are:
-
 - R$^2$
 - RMSE
 - slope (of regression observed over modelled)
 - bias
-
 The features of variability in GPP, for which model-observation agreement is calculated, are:
-
 - mean annual values (giving "spatial" correlation)
 - annual anomalies from mean across years
 - daily values, absolute
 - mean across X-day periods, absolute
 - mean seasonal cycle (mean by day of year)
 - daily anomalies from mean seasonal cycle
-
-
 ## Results of evaluation
-
 Load evaluation data if not available.
 ```{r}
 if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
@@ -1049,11 +860,23 @@ if (!exists("out_eval_FULL_DT")) load("data/out_eval_FULL_DT.Rdata")
 if (!exists("out_eval_FULL_NTsub")) load("data/out_eval_FULL_NTsub.Rdata")
 if (!exists("out_eval_FULL_Ty")) load("data/out_eval_FULL_Ty.Rdata")
 ``` 
-
+### Save flat tables
+Save flat tables of daily data as CSV files.
+```{r}
+write_csv(dplyr::select(out_eval_ORG$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_ORG.csv")
+write_csv(dplyr::select(out_eval_BRC$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_BRC.csv")
+write_csv(dplyr::select(out_eval_FULL$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL.csv")
+write_csv(dplyr::select(out_eval_NULL$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_NULL.csv")
+write_csv(dplyr::select(out_eval_NULLpft$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_NULLpft.csv")
+write_csv(dplyr::select(out_eval_FULL_EVI$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_EVI.csv")
+write_csv(dplyr::select(out_eval_FULL_FPARitp$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_FPARitp.csv")
+write_csv(dplyr::select(out_eval_FULL_DT$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_DT.csv")
+write_csv(dplyr::select(out_eval_FULL_NTsub$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_NTsub.csv")
+write_csv(dplyr::select(out_eval_FULL_Ty$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_Ty.csv")
+```
 ### Metrics table
-
 Create a latex table for $R^2$ and RMSE:
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+```{r, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
 source("create_table_latex.R")
 table_rsq <- bind_rows( 
   bind_cols( Setup = "ORG",          dplyr::select( getrow_statstable( out_eval_ORG, stat = "rsq" ),  xdaily, spatial, annual, seasonal, daily_var, annual_var ) ),
@@ -1085,9 +908,7 @@ table_rmse <- bind_rows(
   rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var", "var(annual)"="annual_var") %>%
   create_table_latex( caption = "Caption text", filn = "table_rmse.tex" )
 ```
-
 ### Variability versus aggregation
-
 ```{r}
 source("eval_ixv_sofun.R")
 load("data/mod_FULL.Rdata")
@@ -1103,19 +924,39 @@ This shows the same as in the SI of our submitted manuscript: Figures S14 and S1
 
 ```{r, echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 ## Use customized plotting
-source("plot_modobs_spatial_annual.R")
-plot_modobs_spatial_annual( out_eval_ORG, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "ORG" )
-plot_modobs_spatial_annual( out_eval_BRC, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "BRC" )
-plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "FULL" )
-plot_modobs_spatial_annual( out_eval_NULL, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "NULL" )
-plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
-plot_modobs_spatial_annual( out_eval_C4, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "C4" )
+source("plot_modobs_spatial_annual2.R")
+gg_FULL <- plot_modobs_spatial_annual2(out_eval_FULL)
+gg_NULL <- plot_modobs_spatial_annual2(out_eval_NULL)
+gg_FULL_EVI <- plot_modobs_spatial_annual2(out_eval_FULL_EVI)
+gg_FULL <- gg_FULL +
+  labs(title = "FULL", 
+       y = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
+       x = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) )
+      ) +
+  xlim(0, 4000) + ylim(0, 4000)
+  
+gg_NULL <- gg_NULL +
+  labs(title = "NULL", 
+       x = expression( paste("observed GPP (gC m"^-2, " yr"^-1, ")" ) ), 
+       y = expression( paste("simulated GPP (gC m"^-2, " yr"^-1, ")" ) )
+      ) +
+  xlim(0, 4000) + ylim(0, 4000)
+gg_FULL_EVI <- gg_FULL_EVI +
+  labs(title = "FULL_EVI", 
+       x = expression( paste("observed GPP (gC m"^-2, " yr"^-1, ")" ) ), 
+       y = expression( paste("simulated GPP (gC m"^-2, " yr"^-1, ")" ) )
+      ) +
+  xlim(0, 4000) + ylim(0, 4000)
+library(cowplot)
+plot_grid(gg_FULL, gg_NULL, gg_FULL_EVI, labels = "auto", label_size = 12)
+  
+filn <- paste0( dir_figs, "modobs_spatial_annual.pdf" )
+ggsave(filn, width=10, height=10)  
 ```
 
 And for individual sites:
 ```{r}
 source("plot_linmod.R")
-
 ## different GPP data (NT, DT)
 purrr::map(
   as.list(out_eval_FULL_DT$data$adf_stats$sitename),
@@ -1129,7 +970,6 @@ purrr::map(
     label = "DT_NT"
   )
 )
-
 ## different greenness data
 purrr::map(
   as.list(out_eval_FULL$data$adf_stats$sitename),
@@ -1159,21 +999,91 @@ koeppen_legend %>% knitr::kable(caption = "Koeppen-Geiger climate zones.")
 Plot only for climate zones where data from at least five different sites are available. 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE}
-source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( 
-  out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
-  makepdf=TRUE, label="",
-  lab1="FULL", lab2="BRC", lab3="ORG", lab4="NULL"
-  )
-
+## determine which zones to plot
 sites_used <- out_eval_FULL$data$ddf$sitename %>% unique()
-rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+df_zones_used <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   dplyr::filter( sitename %in% sites_used ) %>% 
   mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
   group_by( koeppen_code, hemisphere ) %>%
   summarise( nsites = n() ) %>% 
-  left_join( dplyr::rename( koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>% 
-  arrange( -nsites ) %>%
+  filter(nsites >= 4) %>% 
+  left_join( dplyr::rename( rsofun::koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>%
+  arrange( -nsites ) %>% 
+  mutate(climatezone = paste(koeppen_code, hemisphere)) %>% 
+  filter(!(koeppen_code=="ET"))
+df_rosetta <- tibble(
+  climatezone = c("Aw south", "BSk north", "Cfa north", "Cfb north", "Cfb south", "Csa north", "Csb north", "Dfb north", "Dfc north", "ET"),
+  label = c("Tropical savannah, dry winter, SH", "Arid steppe, cold", "Warm tem., fully humid, hot summer", "Warm tem., fully humid, warm summer",
+    "Warm tem., fully humid, warm summer, SH", "Warm tem., dry and hot summer", "Warm tem., dry and warm summer", "Cold, fully humid, warm summer", 
+    "Cold, fully humid, cold summer", "Polar tundra" )  )
+save(df_rosetta, file = "./data/df_rosetta.Rdata")
+list_rosetta <- c(
+  "Aw south"  = "Tropical savannah, dry winter, SH", 
+  "BSk north" = "Arid steppe, cold", 
+  "Cfa north" = "Warm tem., fully humid, hot summer", 
+  "Cfb north" = "Warm tem., fully humid, warm summer",
+  "Cfb south" = "Warm tem., fully humid, warm summer, SH", 
+  "Csa north" = "Warm tem., dry and hot summer", 
+  "Csb north" = "Warm tem., dry and warm summer", 
+  "Dfb north" = "Cold, fully humid, warm summer", 
+  "Dfc north" = "Cold, fully humid, cold summer", 
+  "ET"        = "Polar tundra")
+getname_climatezone <- function(myclimatezone){
+  load("./data/df_rosetta.Rdata")
+  df_rosetta %>% 
+    dplyr::filter(climatezone==myclimatezone) %>% 
+    dplyr::select(label) %>% 
+    unlist()
+}
+## combine data
+df_meandoy_byclim <- out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>%
+  mutate( mod_mean = obs_mean) %>% 
+  mutate(setup = "Observed") %>% 
+  bind_rows(
+    out_eval_NULL$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "NULL")
+  ) %>% 
+  bind_rows(
+    out_eval_ORG$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "ORG")
+  ) %>% 
+  bind_rows(
+    out_eval_BRC$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "BRC")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL")
+  ) %>% 
+  filter(climatezone %in% df_zones_used$climatezone) %>% 
+  # mutate(setup = factor(setup, levels = c("Observed", "FULL", "BRC", "ORG", "NULL"))) %>% 
+  left_join(select(df_zones_used, climatezone, Climate), by = "climatezone")
+df_meandoy_byclim$setup <- factor(df_meandoy_byclim$setup, levels = c("NULL", "ORG", "BRC", "Observed", "FULL"))
+## plot
+df_meandoy_byclim %>% 
+  ggplot() +
+  geom_ribbon(
+    data = dplyr::filter(df_meandoy_byclim, setup=="Observed"), 
+    aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3
+    ) +
+  geom_line(aes(x = doy, y = mod_mean, color = setup), size = 0.4) +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY") +
+  facet_wrap( ~climatezone, labeller = labeller(climatezone = list_rosetta) ) +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    # values=c("black", "red", "royalblue", "#E69F00", "darkseagreen3")
+    values=c("Observed" = "black",  "FULL" = "red", "BRC" = "royalblue", "ORG" = "#E69F00", "NULL" = "darkseagreen3")
+    ) 
+ggsave("fig/meandoy_byzone.pdf", width=8, height=8)
+df_zones_used %>% 
   xtable::xtable( caption = "Caption text", auto = TRUE ) %>%
   print( hline.after=c(-1, 0), file = "tab/table_nsites_kgclimate.tex" )
 ```
@@ -1199,17 +1109,6 @@ plot_by_doy_allsites(
   )
 ```
 
-#### Only C4 sites
-
-```{r echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
-source("plot_by_doy_allsites.R")
-plot_by_doy_allsites( 
-  out_eval_C4, 
-  makepdf=TRUE, label="",
-  lab1="C4"
-  )
-```
-
 ### X-daily values
 
 Ignoring that we don't expect a LUE-type linear relationship between absorbed light $I_{\text{abs}}$ and GPP, we can still evaluate the daily GPP estimated by the P-model:
@@ -1220,33 +1119,107 @@ Here, $LUE(m|d)$ is the monthly varying light use efficiency simulated by the P-
 
 The correlation is still quite good...
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
+```{r, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
 source("plot_modobs.R")
 if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
 if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
-# modobs_ddf <- plot_modobs_daily(   out_eval_ORG, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
-# modobs_xdf <- plot_modobs_xdaily(  out_eval_ORG, makepdf=TRUE, xlim=c(0,25), ylim=c(0,25) )
-
-modobs_xdf <- plot_modobs_xdaily( out_eval_ORG,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "ORG" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_BRC,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "BRC" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "FULL" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_NULL, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NULL" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_DT, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "DT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_NTsub, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_Ty, makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "Ty" )
+if (!exists("out_eval_NULL")) load("data/out_eval_NULL.Rdata")
+## Figure 3
+  dir_figs <- "./fig/"
+  if (!dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
+  
+  ## get stats and plot
+  modobs_xdf_FULL <- analyse_modobs2(
+    out_eval_FULL$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )
+  modobs_xdf_NULL <- analyse_modobs2(
+    out_eval_NULL$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )  
+  
+  ## print plot
+  gg_FULL <- modobs_xdf_FULL$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "FULL") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  gg_NULL <- modobs_xdf_NULL$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "NULL") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  ## arrange
+  library(cowplot)
+  plot_grid(gg_FULL, gg_NULL, labels = "auto", label_size = 12)
+  
+  filn <- paste0( dir_figs, "/modobs_xdaily.pdf" )
+  ggsave(filn, width=10, height=5)  
 ```
 
 ### Daily anomalies
 
 ```{r}
-source("plot_modobs_anomalies.R")
-# source("analyse_modobs_ggplot2.R")
-modobs_anomalies_daily_FULL  <- plot_modobs_anomalies_daily(  out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
-modobs_anomalies_xdaily_FULL <- plot_modobs_anomalies_xdaily( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
-
-hist_anomalies_daily_FULL  <- plot_hist_anomalies_daily(  out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
-hist_anomalies_xdaily_FULL <- plot_hist_anomalies_xdaily( out_eval_FULL, makepdf=TRUE, label = "FULL", heat=TRUE, greyscale=TRUE )
+ddf <- out_eval_FULL$data$idvdf %>% 
+  tidyr::drop_na(gpp_obs) %>% 
+  select(gpp_mod, gpp_obs) %>%
+  tidyr::gather(source, anom, c(gpp_obs, gpp_mod))
+xdf <- out_eval_FULL$data$ixvdf %>% 
+  tidyr::drop_na(gpp_obs) %>% 
+  select(gpp_mod, gpp_obs) %>%
+  tidyr::gather(source, anom, c(gpp_obs, gpp_mod))
+gg_ddf <- ddf %>% 
+  ggplot() +
+  geom_histogram(
+    aes(x = anom, y = ..density.., fill = source), 
+    color = "black", alpha = 0.3, binwidth = 0.5, 
+    position="identity") +
+  scale_fill_manual(name = "", values = c("black", "red"), labels = c("Observed", "Modelled")) +
+  annotate( 
+    "text", x = 5, y = 0.8, 
+    label = paste("sigma[obs] == ", 
+                  format( sd(out_eval_FULL$data$idvdf$gpp_obs, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  annotate( 
+    "text", x = 5, y = 0.76, 
+    label = paste("sigma[mod] == ", 
+                  format( sd(out_eval_FULL$data$idvdf$gpp_mod, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  xlim(-10,10) + ylim(0, 0.8) +
+  theme(legend.position=c(0.05, 0.95), 
+        plot.title = element_text(hjust = 0)) +
+  labs( y = "Density", x =  expression( paste("GPP anomaly (gC m"^-2, " d"^-1, ")" ) ),
+        title = "Daily")
+gg_xdf <- xdf %>% 
+  ggplot() +
+  geom_histogram(
+    aes(x = anom, y = ..density.., fill = source), 
+    color = "black", alpha = 0.3, binwidth = 0.5, 
+    position="identity") +
+  scale_fill_manual(name = "", values = c("black", "red"), labels = c("Observed", "Modelled"), guide=FALSE) +
+  annotate( 
+    "text", x = 4, y = 0.8, 
+    label = paste("sigma[obs] == ", 
+                  format( sd(out_eval_FULL$data$ixvdf$gpp_obs, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  annotate( 
+    "text", x = 4, y = 0.76, 
+    label = paste("sigma[mod] == ", 
+                  format( sd(out_eval_FULL$data$ixvdf$gpp_mod, na.rm = TRUE), digits = 3)), 
+    parse = TRUE, hjust = 0) +
+  xlim(-10,10) + ylim(0, 0.8) +
+  theme(plot.title = element_text(hjust = 0)) +
+  labs( y = "Density", x =  expression( paste("GPP anomaly (gC m"^-2, " d"^-1, ")" ) ),
+        title = "8-daily")
+cowplot::plot_grid(gg_ddf, gg_xdf, nrow = 1, labels = "auto", label_size = 12)
+ggsave("fig/hist_anomalies.pdf", width = 7, height = 4)
 ```
 
 
@@ -1257,20 +1230,48 @@ Look at seasonality for three zones with alternative greenness data.
 if (!exists("out_eval_FULL")) load("data/out_eval_FULL.Rdata")
 if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 if (!exists("out_eval_FULL_EVI"))    load("data/out_eval_FULL_EVI.Rdata")
-
-source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( 
-  out_eval_FULL, out_eval_FULL_FPARitp, out_eval_FULL_EVI, 
-  makepdf=TRUE, label="greenness",
-  lab1="FULL", lab2="FPARitp", lab3="EVI" 
-  )
-
-source("plot_by_doy_allsites.R")
-plot_by_doy_allsites( 
-  out_eval_FULL, out_eval_FULL_FPARitp, out_eval_FULL_EVI, 
-  makepdf=TRUE, label="greenness",
-  lab1="FULL", lab2="FPARitp", lab3="EVI" 
-  )
+## combine data
+df_meandoy_byclim <- out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>%
+  mutate( mod_mean = obs_mean) %>% 
+  mutate(setup = "Observed") %>% 
+  bind_rows(
+    out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL_FPARitp$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL_FPARitp")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL_EVI$data$meandoydf_byclim_stats$data %>% 
+    bind_rows() %>% 
+    mutate(setup = "FULL_EVI")
+  ) %>% 
+  filter(climatezone %in% c("Dfb north", "BSk north")) %>% 
+  # mutate(setup = factor(setup, levels = c("Observed", "FULL", "BRC", "ORG", "NULL"))) %>% 
+  left_join(select(df_zones_used, climatezone, Climate), by = "climatezone")
+df_meandoy_byclim$setup <- factor(df_meandoy_byclim$setup, levels = c("FULL_EVI", "FULL_FPARitp", "Observed", "FULL"))
+## new try
+df_meandoy_byclim %>% 
+  ggplot() +
+  geom_ribbon(
+    data = dplyr::filter(df_meandoy_byclim, setup=="Observed"), 
+    aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3
+    ) +
+  geom_line(aes(x = doy, y = mod_mean, color = setup), size = 0.4) +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY") +
+  facet_wrap( ~climatezone, labeller = labeller(climatezone = list_rosetta) ) +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "FULL" = "red", "FULL_FPARitp" = "royalblue", "FULL_EVI" = "#E69F00")
+    ) 
+ggsave("fig/meandoy_byzone_greenness.pdf", width=6, height=3.5)
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
@@ -1286,36 +1287,98 @@ Look at seasonality for three zones with alternative greenness data.
 if (!exists("out_eval_FULL_NTsub"))  load("data/out_eval_FULL_NTsub.Rdata")
 if (!exists("out_eval_FULL_DT"))     load("data/out_eval_FULL_DT.Rdata")
 if (!exists("out_eval_FULL_Ty"))     load("data/out_eval_FULL_Ty.Rdata")
-
-source("plot_modobs.R")
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_DT,     makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "DT" )
-modobs_xdf <- plot_modobs_daily( out_eval_FULL_Ty,     makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "Ty" )
-
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
-modobs_xdf <- plot_modobs_xdaily( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
-
-modobs_xdf <- plot_modobs_monthly( out_eval_FULL_NTsub,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20), label = "NT" )
-modobs_xdf <- plot_modobs_monthly( out_eval_FULL_DT,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "DT" )
-modobs_xdf <- plot_modobs_monthly( out_eval_FULL_Ty,  makepdf=TRUE, xlim=c(0,20), ylim=c(0,20),    label = "Ty" )
-
-source("plot_by_doy_allzones.R")
-plot_by_doy_allzones( 
-  out_eval_FULL_NTsub, 
-  makepdf=TRUE, label="NT", 
-  lab1="NT"
-  )
-plot_by_doy_allzones( 
-  out_eval_FULL_DT, 
-  makepdf=TRUE, label="DT", 
-  lab1="DT"
-  )
-plot_by_doy_allzones( 
-  out_eval_FULL_Ty, 
-  makepdf=TRUE, label="Ty", 
-  lab1="Ty"
-  )
+## MEAN SEASONALITY
+## NT
+gg_NT <- out_eval_FULL_NTsub$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>% 
+  filter(climatezone == "Cfb north") %>% 
+  ggplot() +
+  geom_ribbon(aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3) +
+  geom_line(aes(x = doy, y = obs_mean), size = 0.4) +
+  geom_line(aes(x = doy, y = mod_mean), size = 0.4, color = "red") +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY", title = "NT") +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "NT" = "red")
+    ) 
+gg_DT <- out_eval_FULL_DT$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>% 
+  filter(climatezone == "Cfb north") %>% 
+  ggplot() +
+  geom_ribbon(aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3) +
+  geom_line(aes(x = doy, y = obs_mean), size = 0.4) +
+  geom_line(aes(x = doy, y = mod_mean), size = 0.4, color = "red") +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY", title = "DT") +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "DT" = "red")
+    ) 
+gg_Ty <- out_eval_FULL_Ty$data$meandoydf_byclim_stats$data %>% 
+  bind_rows() %>% 
+  filter(climatezone == "Cfb north") %>% 
+  ggplot() +
+  geom_ribbon(aes(x = doy, ymin = obs_min, ymax = obs_max), fill = "black", alpha = 0.3) +
+  geom_line(aes(x = doy, y = obs_mean), size = 0.4) +
+  geom_line(aes(x = doy, y = mod_mean), size = 0.4, color = "red") +
+  labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+       x = "DOY", title = "Ty") +
+  theme_gray() +
+  theme(legend.position = "bottom") +
+  scale_color_manual(
+    name="Setup: ", 
+    values=c("Observed" = "black",  "Ty" = "red")
+    ) 
+## SCATTER PLOT
+  ## get stats and plot
+  modobs_xdf_NT <- analyse_modobs2(
+    out_eval_FULL_NTsub$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )
+  modobs_xdf_DT <- analyse_modobs2(
+    out_eval_FULL_DT$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )  
+  modobs_xdf_Ty <- analyse_modobs2(
+    out_eval_FULL_Ty$data$xdf,
+    "gpp_mod",
+    "gpp_obs",
+    type = "heat"
+    )  
+  
+  ## print plot
+  gg_modobs_NT <- modobs_xdf_NT$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "NT") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  gg_modobs_DT <- modobs_xdf_DT$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "DT") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  gg_modobs_Ty <- modobs_xdf_Ty$gg +
+    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+         title = "Ty") +
+    xlim(0, 20) +
+    ylim(0, 20)
+  
+## arrange and save
+cowplot::plot_grid(gg_NT, gg_DT, gg_Ty, gg_modobs_NT, gg_modobs_DT, gg_modobs_Ty, nrow = 2, labels = "auto", label_size = 12, rel_heights = c(1, 1.2))
+filn <- paste0( dir_figs, "meandoy_modobs_gpp_data.pdf" )
+ggsave(filn, width=10, height=7)  
 ```
 
 
@@ -1329,12 +1392,9 @@ In order to improve comparability, ANNs are trained at (P-) modelled and observe
 if (!exists("obs_eval_NTsub")) load("data/obs_eval_NTsub.Rdata")
 if (!exists("obs_eval_DT")) load("data/obs_eval_DT.Rdata")
 if (!exists("obs_eval_Ty")) load("data/obs_eval_Ty.Rdata")
-
 source("eval_functionalrel.R")
 source("plot_functionalrel.R")
-
 predictors <- c("temp", "vpd", "soilm", "ppfd", "fapar")
-
 ## Calulate LUE, rename, and and aggregate data to multi-day periods
 df_NT <- out_eval_FULL_NTsub$data$ddf %>%
             prepare_data_functionalrel( predictors, 
@@ -1366,11 +1426,9 @@ df_Ty <- out_eval_FULL_Ty$data$ddf %>%
               year_start = 2000, 
               year_end = 2018
               )
-
 ## Apply the P-model over evaluation data and get GAM response from this noisy data
 # params_opt <- readr::read_csv( "calib_results/params_opt_BRC.csv" )
 # df_NT <- df_NT %>% apply_pmodel( returnvar="lue", kphio=params_opt$kphio ) %>% rename( lue_mod=varnam_pmodel ) %>% select(-out_pmodel)
-
 ## Get functional relationships of 'gpp_obs' and 'lue_mod' using GAMs
 dflist_eval_gpp_obs_NT <- eval_functionalrel( 
   df_NT, 
@@ -1400,7 +1458,6 @@ dflist_eval_gpp_mod <- eval_functionalrel(
   nsample_target=100, nsample_predictors=300,
   overwrite = TRUE
   )
-
 # ## Get functional relationships of P-model directly (apply P-model on the same type of evaluation data used to evaluate the GAMs)
 # ## get calibrated parameters
 # dflist_eval_pmodel <- purrr::map( as.list(predictors), ~get_eval_data(., df_NT, predictors, nsample = 12 ) ) %>%
@@ -1408,14 +1465,12 @@ dflist_eval_gpp_mod <- eval_functionalrel(
 #                       setNames(predictors)
 # dflist_eval_pmodel_stats <- purrr::map( as.list(predictors), ~get_quantiles( dflist_eval_pmodel[[.]], ., "varnam_pmodel")) %>%
 #   setNames(predictors)
-
 save(dflist_eval_gpp_obs_NT, file = "data/dflist_eval_gpp_obs_NT.Rdata")
 save(dflist_eval_gpp_obs_DT, file = "data/dflist_eval_gpp_obs_DT.Rdata")
 save(dflist_eval_gpp_obs_Ty, file = "data/dflist_eval_gpp_obs_Ty.Rdata")
 save(dflist_eval_gpp_mod, file = "data/dflist_eval_gpp_mod.Rdata")
 # save(dflist_eval_pmodel, file = "data/dflist_eval_pmodel.Rdata")
 # save(dflist_eval_pmodel_stats, file = "data/dflist_eval_pmodel_stats.Rdata")
-
 ## temperature
 plot_functionalrel( 
   df  = dflist_eval_gpp_obs_NT[["temp"]], 
@@ -1430,7 +1485,6 @@ plot_functionalrel(
   ylim=c(0,8),
   filnam="./fig/functionalrel_gam_temp.pdf"
   )
-
 plot_functionalrel( 
   df  = dflist_eval_gpp_obs_NT[["vpd"]], 
   df2 = dflist_eval_gpp_obs_DT[["vpd"]], 
@@ -1444,7 +1498,6 @@ plot_functionalrel(
   ylim=c(-0.3,8),
   filnam="./fig/functionalrel_gam_vpd.pdf"
   )
-
 plot_functionalrel( 
   df  = dflist_eval_gpp_obs_NT[["soilm"]], 
   df2 = dflist_eval_gpp_obs_DT[["soilm"]], 
@@ -1458,7 +1511,6 @@ plot_functionalrel(
   ylim=c(0,8),
   filnam="./fig/functionalrel_gam_soilm.pdf"
   )
-
 plot_functionalrel( 
   df  = dflist_eval_gpp_obs_NT[["fapar"]], 
   df2 = dflist_eval_gpp_obs_DT[["fapar"]], 
@@ -1472,7 +1524,6 @@ plot_functionalrel(
   ylim=c(0,10),
   filnam="./fig/functionalrel_gam_fapar.pdf"
   )
-
 plot_functionalrel( 
   df  = dflist_eval_gpp_obs_NT[["ppfd"]], 
   df2 = dflist_eval_gpp_obs_DT[["ppfd"]], 
@@ -1486,8 +1537,6 @@ plot_functionalrel(
   ylim=c(0,10),
   filnam="./fig/functionalrel_gam_ppfd.pdf"
   )
-
-
 ```
 
 There are several points here:
@@ -1506,6 +1555,7 @@ Colin has shown some plots at the ICDC that apparently Trevor produced. They sho
 
 Load fLUE data to use their definition of soil moisture droughts.
 ```{r}
+library(readr)
 source("align_events.R")
 source("eval_droughtresponse.R")
 source("plot_dday.R")
@@ -1515,9 +1565,9 @@ load("data/mod_BRC.Rdata")
 df_dday_agg_BRC <- eval_droughtresponse( 
   mod = mod_BRC$daily, 
   obs = obs_eval_NT$ddf, 
-  path_flue = "~/data/fLUE/flue_stocker18nphyt.csv",
+  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
   before=20, 
-  after=79,
+  after=105,
   leng_threshold = 10, 
   nbins=10, 
   do_norm=TRUE
@@ -1525,15 +1575,35 @@ df_dday_agg_BRC <- eval_droughtresponse(
 df_dday_agg_FULL <- eval_droughtresponse( 
   mod = mod_FULL$daily, 
   obs = obs_eval_NT$ddf, 
-  path_flue = "~/data/fLUE/flue_stocker18nphyt.csv",
+  path_flue = "/alphadata01/bstocker/data/fLUE/flue_stocker18nphyt.csv",
   before=20, 
-  after=79,
+  after=105,
   leng_threshold = 10, 
   nbins=10, 
   do_norm=TRUE
   )
-
-plot_dday( df_dday_agg_BRC, df_dday_agg_FULL, before=20, after=79, bias=TRUE, filn="fig/droughtresponse.pdf" )
+df_dday_agg <- df_dday_agg_BRC %>% 
+  mutate(setup = "BRC") %>% 
+  bind_rows(
+    mutate( df_dday_agg_FULL, setup = "FULL")
+    )
+usecol = colorRampPalette( c("wheat3", "white") )( 5 )[2]
+df_dday_agg %>% 
+  ggplot() +
+  # annotate("rect", xmin = 0, xmax = 105, ymin = -1.2, ymax = 2.2, alpha = .8, fill = usecol) + 
+  geom_hline(yintercept = 0, color = "black", linetype = "dotted") +
+  geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
+  geom_line(
+    aes(x = dday, y = bias_gpp_median, color = setup)) +
+  geom_ribbon(
+    aes(x = dday, ymin = bias_gpp_q33, ymax = bias_gpp_q66, fill = setup), 
+    alpha = 0.3) +
+  scale_color_manual(values = c("BRC" = "black", "FULL" = "royalblue"), name = "Setup") +
+  scale_fill_manual(values = c("BRC" = "black", "FULL" = "royalblue"), name = "Setup") +
+  ylim(-1.2, 2.2) + xlim(-20, 105) +
+  scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) +
+  labs(x = "Days after drought onset", y = expression( paste( "Bias (g C m"^{-1}, " d"^{-1}, ")")) )
+ggsave("fig/droughtresponse.pdf", width = 6, height = 4)
 ```
 
 
@@ -1547,15 +1617,15 @@ ddf <- out_eval_FULL$data$ddf %>%
 	mutate( hemisphere = ifelse( lat>0, "north", "south" ),
 	        bias = gpp_mod - gpp_obs ) %>% 
   dplyr::filter( koeppen_code %in% c("Cfb", "Dfb") )   # "Dfb"  "Cfb"
-
 with( ddf, LSD::heatscatter( soiltemp_obs_mean, bias ) )
 abline( h=0, lty=3 )
-
+with( dplyr::filter(ddf, sitename %in% c("IT-Col", "US-MMS", "DE-Hai", "IT-Ro2", "US-UMB", "CA-Qfo", "FI-Hyy") ),
+      LSD::heatscatter( temp_fluxnet2015 - soiltemp_obs_mean, bias ) )
+abline( h=0, lty=3 )
 ## with mean season cycle data
-doydf <- out_eval_FULL$data$meandoydf_byclim %>% 
-	mutate( bias = mod_mean - obs_mean ) %>% 
-  dplyr::filter( koeppen_code %in% c( "Dfb") )   # "Dfb"  "Cfb"
-
+#doydf <- out_eval_FULL$data$meandoydf_byclim %>% 
+# 	mutate( bias = mod_mean - obs_mean ) %>% 
+#   dplyr::filter( koeppen_code %in% c( "Dfb") )   # "Dfb"  "Cfb"
 ```
 
 
@@ -1586,11 +1656,85 @@ modobs_anomalies_xdaily <- plot_modobs_anomalies_xdaily( out_eval$data$ixvdf, ou
 Would it be worth exploring this in more detail, e.g. quantifying the relationship between some metric and aggregation level, and 'some metric' being e.g. the standard deviation of anomalies, the *R*$^2$ of obs. vs. mod., or ... ?
 
 
+### Linear trend
+
+Get linear trend (model, coefficients, and their standard errors).
+```{r}
+load("data/out_eval_NULL.Rdata")
+extract_fitvals <- function(model, nam_predictor){
+  tmp <- jtools::summ(model, robust = TRUE) # , confint = TRUE
+  # df <- tibble( pval = tmp$coeftable[nam_predictor,]["p"],
+  #              estimate = tmp$coeftable[nam_predictor,]["Est."],
+  #              estimate_upper = tmp$coeftable[nam_predictor,]["97.5%"],
+  #              estimate_lower = tmp$coeftable[nam_predictor,]["2.5%"])
+  df <- tibble( pval    = tmp$coeftable[nam_predictor,]["p"],
+               estimate = tmp$coeftable[nam_predictor,]["Est."],
+               se       = tmp$coeftable[nam_predictor,]["S.E."]) %>% 
+        mutate( estimate_upper = estimate + se, estimate_lower = estimate - se )
+  return(df)
+}
+adf_trend <- out_eval_NULL$data$adf %>% 
+  ungroup() %>% 
+  mutate( validpoint = ifelse( is.na(gpp_obs) | is.na(gpp_mod), FALSE, TRUE ) ) %>% 
+  group_by( sitename ) %>% 
+  nest() %>%
+  mutate( npoints = purrr::map( data, ~sum( .$validpoint ) ) ) %>%
+  unnest( npoints ) %>%
+  filter( npoints > 4 ) %>%
+  mutate( trend_obs = purrr::map( data, ~lm( gpp_obs ~ year, data = . ) ),
+          trend_mod = purrr::map( data, ~lm( gpp_mod ~ year, data = . ) ) ) %>% 
+  mutate( fitvals_obs = purrr::map( trend_obs, ~extract_fitvals(., "year")),
+          fitvals_mod = purrr::map( trend_mod, ~extract_fitvals(., "year")) ) %>% 
+  unnest( fitvals_obs, names_sep = "_" ) %>% 
+  unnest( fitvals_mod, names_sep = "_" )
+```
+
+Plot modelled versus observed trend estimates.
+```{r}
+gg_trend_scatter <- adf_trend %>% 
+  ggplot(aes(x = fitvals_obs_estimate, y = fitvals_mod_estimate)) +
+  geom_point(aes(size = npoints), alpha = 0.5) +
+  geom_errorbar(aes(ymin = fitvals_mod_estimate_lower, ymax = fitvals_mod_estimate_upper), alpha = 0.5) +
+  geom_errorbarh(aes(xmin = fitvals_obs_estimate_lower, xmax = fitvals_obs_estimate_upper), alpha = 0.5) +
+  # xlim( c(-100, 100) ) + ylim( c(-50, 70)) +
+  geom_abline(intercept=0, slope=1, linetype="dotted") +
+  theme_classic() +
+  labs( x = expression( paste("Observed GPP trend (g C m"^-2, " yr"^-1, ")" ) ),
+        y = expression( paste("Modelled GPP trend (g C m"^-2, " yr"^-1, ")" ) ) ) +
+  scale_size_continuous(name = " N years")
+gg_trend_scatter
+```
+
+Plot histogram of trend values.
+```{r}
+gg_trend_hist <- adf_trend %>% 
+  dplyr::select(sitename, fitvals_obs_estimate, fitvals_mod_estimate) %>% 
+  pivot_longer(c(fitvals_obs_estimate, fitvals_mod_estimate), values_to = "slope", names_to = "source") %>% 
+  ggplot(aes(x = slope, y = ..count.., fill = source)) +
+  geom_histogram(alpha = 0.5, color = "black", binwidth = 10, position="identity") +
+  scale_fill_manual(values=c("#999999", "#E69F00"), labels = c("Modelled", "Observed"), name = "") +
+  labs( x = expression( paste("GPP trend (g C m"^-2, " yr"^-1, ")" ) ), y = "Count" ) +
+  theme_classic()
+gg_trend_hist
+```
+
+```{r}
+library(cowplot)
+plot_grid(gg_trend_scatter, gg_trend_hist, labels = "auto", label_size = 12)
+ggsave("fig/trend_gpp_fluxnet2015.pdf", width=8, height=4)  
+ggsave("fig/trend_gpp_fluxnet2015.png", width=8, height=4)  
+```
 
 
 
+# Preparing data for sharing
 
-
+```{r}
+## This is what I sent to Paula, 19.2.2019
+ddf_DT_fluxnet <- obs_eval_DT$ddf %>% 
+                  rename( fpar_modis_spl = fapar )
+save(ddf_DT_fluxnet, file = "data/ddf_DT_fluxnet.Rdata")
+```
 
 
 
@@ -1626,20 +1770,16 @@ modobs_spatial <- plot_modobs_spatial( out_eval$data$meandf, makepdf=FALSE )
 ### Annual GPP anomalies
 
 Comparing annual anomalies ($X'_{i,t}$) yields insight into whether the model accurately simulates interannual variability.
-
 ```{r, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 modobs_anomalies_annual <- plot_modobs_anomalies_annual( out_eval$data$iavdf, out_eval$data$iavdf_stats, makepdf=FALSE )
 ```
-
 ### Seasonal cycle
-
 The mean seasonal cycle is calculated as the mean by day-of-year (DOY) across multiple years.
 $$
 \overline{X_{\text{DOY}}} = \frac{1}{N_y} \sum_y X_{\text{DOY},y}
 $$
 ```{r, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
 modobs_meandoy <- plot_modobs_meandoy( out_eval_ORG$data$meandoydf, out_eval_ORG$data$meandoydf_stats, makepdf=TRUE, label = "RED" )
-
 modobs_meandoy <- plot_modobs_meandoy( out_eval_NULL$data$meandoydf, out_eval_NULL$data$meandoydf_stats, makepdf=TRUE, label = "NULL", lab1="NULL" )
 ```
 
