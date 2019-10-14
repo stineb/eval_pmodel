@@ -3,8 +3,8 @@
 ##------------------------------------------
 library(rsofun)
 load_dependencies_rsofun()
-systr <- "''"    # for Mac
-# systr <- ""      # for Linux
+# systr <- "''"    # for Mac
+systr <- ""      # for Linux
 
 ##------------------------------------------
 ## Simulation settings
@@ -39,7 +39,7 @@ settings_sims <- list(
   recycle         = 1,
   spinupyears     = 10,
   calibvars       = c("gpp"),
-  soilmstress     = FALSE,
+  soilmstress     = TRUE,
   tempstress      = TRUE,
   loutdgpp        = TRUE,
   loutdwcont      = FALSE,
@@ -128,13 +128,13 @@ settings_calib <- list(
 
 
 ##//////////////////////////////////////////
-## BRC
+## FULL
 ##------------------------------------------
 ## Prepare specific files and settings
 ##------------------------------------------
 ## Define calibration setup-specific simulation parameters
 settings_sims$loutdgpp    = TRUE
-settings_sims$soilmstress = FALSE
+settings_sims$soilmstress = TRUE
 settings_sims$tempstress  = TRUE
 settings_sims$loutdrd     = FALSE
 settings_sims$loutdtransp = FALSE
@@ -147,7 +147,7 @@ settings_sims$loutdalpha  = FALSE
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -167,12 +167,14 @@ settings_input$splined_fapar = TRUE
 
 ## Additional setup-specific calibration-settings
 ## Specify data source for observations to which model is calibrated
-settings_calib_BRC <- settings_calib
-settings_calib_BRC$name = "BRC"
-settings_calib_BRC$par = list( kphio = list( lower=0.01, upper=0.2, init=0.05 ) )
-settings_calib_BRC$datasource = list( gpp = "fluxnet2015_NT" )
-settings_calib_BRC$filter_temp_min = NA
-settings_calib_BRC$filter_soilm_min = NA
+settings_calib_FULL <- settings_calib
+settings_calib_FULL$name = "FULL"
+settings_calib_FULL$par = list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
+                                soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
+                                soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) )
+settings_calib_FULL$datasource = list( gpp = "fluxnet2015_NT" )
+settings_calib_FULL$filter_temp_min = NA
+settings_calib_FULL$filter_soilm_min = NA
 
 ### Evaluation settings
 mylist <- readr::read_csv("~/eval_pmodel/myselect_fluxnet2015.csv") %>% 
@@ -201,7 +203,7 @@ if (file.exists(filn)){
   load(filn)
 } else {
   ddf_obs_calib <- get_obs_calib( 
-    settings_calib = settings_calib_BRC, 
+    settings_calib = settings_calib_FULL, 
     settings_sims, 
     settings_input 
   )
@@ -219,11 +221,11 @@ if (file.exists(filn)){
     light = TRUE 
   )
   save(ddf_obs_eval, file = filn)
-}
+}  
 
 out_oob <- oob_calib_eval_sofun(
   setup = setup_sofun, 
-  settings_calib = settings_calib_BRC, 
+  settings_calib = settings_calib_FULL, 
   settings_eval = settings_eval, 
   settings_sims = settings_sims, 
   settings_input = settings_input, 
@@ -231,7 +233,7 @@ out_oob <- oob_calib_eval_sofun(
   ddf_obs_eval = ddf_obs_eval
   )
 
-save(out_oob, file = "~/eval_pmodel/data/out_oob_BRC.Rdata")
+save(out_oob, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
 
 # ## xxx debug
 # mod_test <- runread_sofun( 
