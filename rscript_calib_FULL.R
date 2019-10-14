@@ -118,7 +118,7 @@ settings_calib <- list(
   path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_hh= "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
-  maxit            = 4, # (5 for gensa) (30 for optimr)    #
+  maxit            = 30, # (5 for gensa) (30 for optimr)    #
   sitenames        = calibsites,
   filter_temp_max  = 35.0,
   filter_drought   = FALSE,
@@ -196,7 +196,7 @@ settings_eval <- list(
 
   
 ##------------------------------------------
-### Out of bag calibration for ORG
+### Out of bag calibration for FULL
 ##------------------------------------------
 filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
 if (file.exists(filn)){
@@ -224,13 +224,26 @@ if (file.exists(filn)){
 }  
 
 out_oob <- oob_calib_eval_sofun(
-  setup = setup_sofun, 
-  settings_calib = settings_calib_FULL, 
-  settings_eval = settings_eval, 
-  settings_sims = settings_sims, 
-  settings_input = settings_input, 
+  setup = setup_sofun,
+  settings_calib = settings_calib_FULL,
+  settings_eval = settings_eval,
+  settings_sims = settings_sims,
+  settings_input = settings_input,
   ddf_obs_calib = ddf_obs_calib,
   ddf_obs_eval = ddf_obs_eval
   )
 
 save(out_oob, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
+
+
+# ##------------------------------------------
+# ### Single calibration for FULL (using all data for training)
+# ##------------------------------------------
+# set.seed(1982)
+# settings_calib_FULL <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib_FULL,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
