@@ -147,7 +147,7 @@ settings_sims$loutdalpha  = FALSE
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -219,7 +219,7 @@ if (file.exists(filn)){
     light = TRUE 
   )
   save(ddf_obs_eval, file = filn)
-}  
+}
 
 out_oob <- oob_calib_eval_sofun(
   setup = setup_sofun, 
