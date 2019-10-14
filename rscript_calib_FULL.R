@@ -147,7 +147,7 @@ settings_sims$loutdalpha  = FALSE
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 ## Define fAPAR input data and re-write input files for SOFUN
@@ -234,9 +234,3 @@ out_oob <- oob_calib_eval_sofun(
   )
 
 save(out_oob, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
-
-# ## xxx debug
-# mod_test <- runread_sofun( 
-#   settings = settings_sims, 
-#   setup = setup_sofun 
-#   )
