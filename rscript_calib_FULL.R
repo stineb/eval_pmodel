@@ -1,7 +1,7 @@
 ##------------------------------------------
 ## Environment
 ##------------------------------------------
-library(rsofun)
+# library(rsofun)
 load_dependencies_rsofun()
 # systr <- "''"    # for Mac
 systr <- ""      # for Linux
@@ -118,7 +118,7 @@ settings_calib <- list(
   path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_hh= "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
-  maxit            = 30, # (5 for gensa) (30 for optimr)    #
+  maxit            = 10, # (5 for gensa) (30 for optimr)    #
   sitenames        = calibsites,
   filter_temp_max  = 35.0,
   filter_drought   = FALSE,
@@ -223,27 +223,126 @@ if (file.exists(filn)){
   save(ddf_obs_eval, file = filn)
 }  
 
-out_oob <- oob_calib_eval_sofun(
-  setup = setup_sofun,
+if (!exists("out_oob_FULL")){
+  out_oob_FULL <- oob_calib_eval_sofun(
+    setup = setup_sofun,
+    settings_calib = settings_calib_FULL,
+    settings_eval = settings_eval,
+    settings_sims = settings_sims,
+    settings_input = settings_input,
+    ddf_obs_calib = ddf_obs_calib,
+    ddf_obs_eval = ddf_obs_eval
+  )
+  save(out_oob_FULL, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
+} else {
+  load("~/eval_pmodel/data/out_oob_FULL.Rdata")
+}
+
+## pooled oob evaluation results for x-daily:
+print(out_oob_FULL$`AALL`$gpp$fluxnet2015$metrics$xdaily_pooled)
+
+library(rbeni)
+modobs_xdaily_oob <- out_oob_FULL$`AALL`$gpp$fluxnet2015$data$xdf %>%
+  analyse_modobs2("mod", "obs", type="heat")
+modobs_xdaily_oob
+
+# Extract mean R2 across left-out evaluations
+extract_mean_rsq <- function(out_oob){
+  extract_rsq <- function(mylist){
+    out <- mylist$gpp$fluxnet2015$metrics$xdaily_pooled$rsq
+    if (!is.na(out) && !is.null(out)) return(out)
+  }
+  na.omit.list <- function(y) { return(y[!sapply(y, function(x) all(is.na(x)))]) }
+  null.omit.list <- function(y) { return(y[!sapply(y, function(x) all(is.null(x)))]) }
+  out_oob <- na.omit.list(out_oob)
+  list_rsq <- purrr::map(as.list(settings_calib_FULL$sitenames),
+                         ~extract_rsq(out_oob[[.]]))
+  list_rsq <- null.omit.list(list_rsq)
+  mean_rsq <- list_rsq %>% unlist() %>% mean()
+  return(mean_rsq)  
+}
+
+print(extract_mean_rsq(out_oob_FULL))
+
+
+##------------------------------------------
+## Single calibration and evaluation for FULL
+## Using 75% of data for training and 25% for testing
+##------------------------------------------
+ddf_obs_calib <- ddf_obs_calib %>% 
+  dplyr::mutate(id = 1:nrow(ddf_obs_calib))
+
+idxs_train <- ddf_obs_calib %>% 
+  dplyr::filter(!is.na(gpp_obs)) %>% 
+  sample_frac(size = 0.75) %>% 
+  pull(id)
+
+idxs_test <- ddf_obs_calib %>% 
+  dplyr::filter(!is.na(gpp_obs)) %>%
+  dplyr::filter(!(id %in% idxs_train)) %>%
+  pull(id)
+
+sitedates_test <- ddf_obs_calib[idxs_test,] %>% 
+  dplyr::select(sitename, date)
+
+sitedates_train <- ddf_obs_calib[idxs_train,] %>% 
+  dplyr::select(sitename, date)
+
+ddf_obs_calib_train <- ddf_obs_calib
+ddf_obs_calib_test  <- ddf_obs_calib
+
+ddf_obs_calib_train$gpp_obs[idxs_test] <- NA
+ddf_obs_calib_test$gpp_obs[idxs_train] <- NA
+
+set.seed(1982)
+settings_calib_FULL <- calib_sofun(
+  setup          = setup_sofun,
   settings_calib = settings_calib_FULL,
-  settings_eval = settings_eval,
-  settings_sims = settings_sims,
+  settings_sims  = settings_sims,
   settings_input = settings_input,
-  ddf_obs_calib = ddf_obs_calib,
-  ddf_obs_eval = ddf_obs_eval
+  ddf_obs        = ddf_obs_calib_train
+)
+
+## Update parameters
+filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib_FULL$name, ".csv")
+params_opt <- readr::read_csv( filn )
+nothing <- update_params( params_opt, settings_sims$dir_sofun )
+
+## run at evaluation sites
+mod <- runread_sofun( 
+  settings = settings_sims, 
+  setup = setup_sofun
+)
+
+# ## tmp
+# mod <- mod$daily %>% dplyr::bind_rows(.id = "sitename")
+
+## remove training dates from model outputs (replacing by NA) 
+mod <- sitedates_train %>% 
+  dplyr::mutate(dropme = TRUE) %>% 
+  dplyr::right_join(mod, by=c("sitename", "date")) %>% 
+  dplyr::mutate(dropme = ifelse(is.na(dropme), FALSE, dropme)) %>% 
+  dplyr::mutate(gpp = ifelse(dropme, NA, gpp))
+
+## evaluate at calib sites only (for comparison)
+settings_eval$sitenames <- settings_calib_FULL$sitenames
+out_eval_FULL <- eval_sofun( 
+  mod, 
+  settings_eval, 
+  settings_sims, 
+  obs_eval = ddf_obs_eval, 
+  overwrite = TRUE, 
+  light = TRUE 
   )
 
-save(out_oob, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
+## write to file
+save(out_eval_FULL, file = paste0(settings_calib$dir_results, "/out_eval_FULL.Rdata"))
+
+# print(out_eval$gpp$fluxnet2015$metrics$xdaily_pooled)
+
+# out <- out_eval$gpp$fluxnet2015$data$xdf %>%
+#   rbeni::analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
+# out$gg
 
 
-# ##------------------------------------------
-# ### Single calibration for FULL (using all data for training)
-# ##------------------------------------------
-# set.seed(1982)
-# settings_calib_FULL <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib_FULL,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_calib
-# )
+
