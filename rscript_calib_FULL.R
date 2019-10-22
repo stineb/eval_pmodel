@@ -104,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 
@@ -292,17 +292,10 @@ params_opt <- readr::read_csv( filn )
 nothing <- update_params( params_opt, settings_sims$dir_sofun )
 
 ## run at evaluation sites
-mod <- runread_sofun( 
+mod <- runread_sofun(
   settings = settings_sims, 
   setup = setup_sofun
 )
-
-# ## remove training dates from model outputs (replacing by NA)
-# mod <- sitedates_train %>%
-#   dplyr::mutate(dropme = TRUE) %>%
-#   dplyr::right_join(mod, by=c("sitename", "date")) %>%
-#   dplyr::mutate(dropme = ifelse(is.na(dropme), FALSE, dropme)) %>%
-#   dplyr::mutate(gpp = ifelse(dropme, NA, gpp))
 
 ## evaluate at calib sites only (for comparison)
 settings_eval$sitenames <- settings_calib$sitenames
