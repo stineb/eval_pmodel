@@ -311,6 +311,7 @@ out_eval_FULL <- eval_sofun(
 ## write to file
 save(out_eval_FULL, file = paste0(settings_calib$dir_results, "/out_eval_FULL.Rdata"))
 
+
 # # print(out_eval$gpp$fluxnet2015$metrics$xdaily_pooled)
 # out <- out_eval_FULL$gpp$fluxnet2015$data$xdf %>%
 #   rbeni::analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
