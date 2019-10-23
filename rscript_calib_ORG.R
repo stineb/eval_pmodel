@@ -56,7 +56,6 @@ settings_sims <- list(
   loutdalpha     = FALSE
   )
 
-
 ##------------------------------------------
 ## Input settings
 ##------------------------------------------
@@ -105,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 
@@ -174,11 +173,10 @@ settings_eval <- list(
   )
 
 
-
 ##//////////////////////////////////////////
 ## ORG
 ##------------------------------------------
-## Prepare specific files and settings
+## Prepare input files
 ##------------------------------------------
 # inputdata <- prepare_input_sofun(
 #   settings_input = settings_input,
@@ -190,7 +188,6 @@ settings_eval <- list(
 #   overwrite_fapar = TRUE,
 #   verbose = TRUE
 #   )
-
 
   
 ##------------------------------------------
@@ -241,11 +238,16 @@ if (!exists("out_oob_ORG") || overwrite){
 
 # ## pooled oob evaluation results for x-daily:
 # print(out_oob_ORG$`AALL`$gpp$fluxnet2015$metrics$xdaily_pooled)
+out_oob_ORG$AALL$gpp$fluxnet2015$data$ddf %>% 
+  filter(sitename=="FR-Pue" & year(date)>=2003 & year(date) < 2006) %>%
+  pivot_longer(cols = c(mod, obs), values_to = "gpp") %>% 
+  ggplot(aes(x=date, y=gpp, color=name)) + 
+  geom_line()
 
-# library(rbeni)
-# modobs_xdaily_oob <- out_oob_ORG$`AALL`$gpp$fluxnet2015$data$xdf %>%
-#   analyse_modobs2("mod", "obs", type="heat")
-# modobs_xdaily_oob
+library(rbeni)
+modobs_xdaily_oob <- out_oob_ORG$`AALL`$gpp$fluxnet2015$data$xdf %>%
+  analyse_modobs2("mod", "obs", type="heat")
+modobs_xdaily_oob$gg
 
 # source("extract_mean_rsq.R")
 # print(extract_mean_rsq(out_oob_ORG))
@@ -296,7 +298,7 @@ params_opt <- readr::read_csv( filn )
 nothing <- update_params( params_opt, settings_sims$dir_sofun )
 
 ## run at evaluation sites
-mod <- runread_sofun( 
+mod <- runread_sofun(
   settings = settings_sims, 
   setup = setup_sofun
 )
