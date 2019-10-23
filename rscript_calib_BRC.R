@@ -218,23 +218,23 @@ if (file.exists(filn)){
   save(ddf_obs_eval, file = filn)
 }
 
-# if (!exists("out_oob_BRC") || overwrite){
+if (!exists("out_oob_BRC") || overwrite){
 
-#   out_oob_BRC <- oob_calib_eval_sofun(
-#     setup = setup_sofun, 
-#     settings_calib = settings_calib, 
-#     settings_eval = settings_eval, 
-#     settings_sims = settings_sims, 
-#     settings_input = settings_input, 
-#     ddf_obs_calib = ddf_obs_calib,
-#     ddf_obs_eval = ddf_obs_eval
-#     )
+  out_oob_BRC <- oob_calib_eval_sofun(
+    setup = setup_sofun,
+    settings_calib = settings_calib,
+    settings_eval = settings_eval,
+    settings_sims = settings_sims,
+    settings_input = settings_input,
+    ddf_obs_calib = ddf_obs_calib,
+    ddf_obs_eval = ddf_obs_eval
+    )
 
-#   save(out_oob_BRC, file = "~/eval_pmodel/data/out_oob_BRC.Rdata")
+  save(out_oob_BRC, file = "~/eval_pmodel/data/out_oob_BRC.Rdata")
 
-# } else {
-#   load("~/eval_pmodel/data/out_oob_BRC.Rdata")
-# }
+} else {
+  load("~/eval_pmodel/data/out_oob_BRC.Rdata")
+}
 
 # ## pooled oob evaluation results for x-daily:
 # print(out_oob_BRC$`AALL`$gpp$fluxnet2015$metrics$xdaily_pooled)
