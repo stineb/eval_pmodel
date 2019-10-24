@@ -56,28 +56,29 @@ settings_sims <- list(
   loutdalpha     = FALSE
   )
 
+
 ##------------------------------------------
 ## Input settings
 ##------------------------------------------
 settings_input <-  list(
-    data                     = NA,
-    temperature              = "fluxnet2015",
-    precipitation            = "fluxnet2015",
-    vpd                      = "fluxnet2015",
-    ppfd                     = "fluxnet2015",
-    netrad                   = "fluxnet2015",  #  c("fluxnet2015", "watch_wfdei"),
-    patm                     = "fluxnet2015",
-    netrad                   = NA,
-    cloudcover               = "cru",
-    path_watch_wfdei         = "~/data/watch_wfdei/",
-    path_cru                 = "~/data/cru/ts_4.01/",
-    path_MODIS_FPAR_MCD15A3H = "~/data/fluxnet_subsets/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
-    path_MODIS_EVI_MOD13Q1   = "~/data/fluxnet_subsets/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
-    path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
-    path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
-    path_fluxnet2015_hh      = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
-    get_from_remote          = FALSE,
-    settings_gee             = get_settings_gee( 
+  data                     = NA,
+  temperature              = "fluxnet2015",
+  precipitation            = "fluxnet2015",
+  vpd                      = "fluxnet2015",
+  ppfd                     = "fluxnet2015",
+  netrad                   = "fluxnet2015",  #  c("fluxnet2015", "watch_wfdei"),
+  patm                     = "fluxnet2015",
+  netrad                   = NA,
+  cloudcover               = "cru",
+  path_watch_wfdei         = "~/data/watch_wfdei/",
+  path_cru                 = "~/data/cru/ts_4.01/",
+  path_MODIS_FPAR_MCD15A3H = "~/data/fluxnet_subsets/fapar_MODIS_FPAR_MCD15A3H_gee_MCD15A3H_fluxnet2015_gee_subset/",
+  path_MODIS_EVI_MOD13Q1   = "~/data/fluxnet_subsets/fapar_MODIS_EVI_MOD13Q1_gee_MOD13Q1_fluxnet2015_gee_subset/",
+  path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
+  path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
+  path_fluxnet2015_hh      = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
+  get_from_remote          = FALSE,
+  settings_gee             = get_settings_gee( 
     bundle = "fpar", 
     python_path = "/Users/benjaminstocker/Library/Enthought/Canopy_64bit/User/bin/python",
     gee_path = "~/gee_subset/gee_subset/"
@@ -173,6 +174,7 @@ settings_eval <- list(
   )
 
 
+
 ##//////////////////////////////////////////
 ## BRC
 ##------------------------------------------
@@ -189,7 +191,7 @@ settings_eval <- list(
 #   verbose = TRUE
 #   )
 
-  
+
 ##------------------------------------------
 ### Out of bag calibration for BRC
 ##------------------------------------------
