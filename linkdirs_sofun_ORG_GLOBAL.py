@@ -39,8 +39,10 @@ example = False
 ## Manually et the root directory for the local mirror of 
 ## /work/bstocker/labprentice/data
 ##--------------------------------------------------------------------
-dataroot = '/Users/benjaminstocker/data/'
-mydataroot = '/Users/benjaminstocker/data/'
+dataroot = '/Users/bestocke/data/'
+mydataroot = '/Users/bestocke/data/'
+# dataroot = '/Users/benjaminstocker/data/'
+# mydataroot = '/Users/benjaminstocker/data/'
 # dataroot = '/rds/general/project/lab-prentice-realm-data/live/data/'
 # mydataroot = '/rds/general/user/bstocker/home/mydata/'
 
@@ -48,13 +50,8 @@ mydataroot = '/Users/benjaminstocker/data/'
 ## Link directories
 ##--------------------------------------------------------------------
 ## link output direcories
-## ASCII output
-os.system( 'unlink output' )
-os.system( 'ln -svf ../output_' + name + '_sofun output'  )
-
-## NetCDF output
 os.system( 'unlink output_nc' )
-os.system( 'ln -svf ../output_nc_' + name + '_sofun output_nc'  )
+os.system( 'ln -svf ~/sofun_outputs/output_nc_' + name + '_sofun output_nc'  )
 
 
 ## link NetCDF input files for global simulations
@@ -78,7 +75,8 @@ if name == 'global':
 	## CO2
 	##--------------------------------------
 	dirn = 'input/global/co2'
-	call(['cp', dataroot + 'co2/cCO2_rcp85_const850-1765.dat', dirn ])
+	os.system( 'mkdir -p ' + dirn )
+	call(['ln', '-svf', dataroot + 'co2/cCO2_rcp85_const850-1765.dat', dirn ])
 
 	## fapar (fapar3g)
 	##--------------------------------------
@@ -167,8 +165,8 @@ if name == 'global':
 	else:
 		os.system( 'unlink run')
 		os.system( 'unlink site_paramfils')
-		os.system( 'ln -sv ../input_' + name + '_sofun/run run')
-		os.system( 'ln -sv ../input_' + name + '_sofun/site_paramfils site_paramfils')
+		os.system( 'ln -svf ~/sofun_inputs/input_' + name + '_sofun/run run')
+		os.system( 'ln -svf ~/sofun_inputs/input_' + name + '_sofun/site_paramfils site_paramfils')
 
 else:
 	##--------------------------------------
@@ -190,9 +188,8 @@ else:
 
 	os.system( 'unlink run')
 	os.system( 'unlink site_paramfils')
-	os.system( 'unlink input/sitedata')
-	os.system( 'ln -sv ../input_' + name + '_sofun/run run')
-	os.system( 'ln -sv ../input_' + name + '_sofun/site_paramfils site_paramfils')
-	os.system( 'ln -sv ../../input_' + simsuite_climate_link + '_sofun/sitedata input/sitedata')
+	os.system( 'unlink input/global')
+	os.system( 'ln -svf ~/sofun_inputs/input_' + name + '_sofun/run .')
+	os.system( 'ln -svf ~/sofun_inputs/input_' + name + '_sofun/site_paramfils .')
 
 
