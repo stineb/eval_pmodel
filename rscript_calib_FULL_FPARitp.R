@@ -84,7 +84,7 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_FPAR_MCD15A3H",
-  splined_fapar = TRUE
+  splined_fapar = FALSE
   )
 
 
@@ -145,7 +145,7 @@ settings_calib <- list(
   filter_drought   = FALSE,
   metric           = "rmse",
   dir_results      = "~/eval_pmodel/calib_results",
-  name = "FULL",
+  name = "FULL_FPARitp",
   par = list( kphio = list( lower=0.01, upper=0.4, init=0.1 ),
                             soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
                             soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
@@ -178,24 +178,24 @@ settings_eval <- list(
 
 
 ##//////////////////////////////////////////
-## FULL
+## FULL_FPARitp
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-# inputdata <- prepare_input_sofun(
-#   settings_input = settings_input,
-#   settings_sims = settings_sims,
-#   return_data = FALSE,
-#   overwrite_csv_climate = TRUE,
-#   overwrite_climate = TRUE,
-#   overwrite_csv_fapar = TRUE,
-#   overwrite_fapar = TRUE,
-#   verbose = TRUE
-#   )
+inputdata <- prepare_input_sofun(
+  settings_input        = settings_input,
+  settings_sims         = settings_sims,
+  return_data           = FALSE,
+  overwrite_csv_climate = FALSE,
+  overwrite_climate     = FALSE,
+  overwrite_csv_fapar   = TRUE,
+  overwrite_fapar       = TRUE,
+  verbose               = TRUE
+  )
 
 
 ##------------------------------------------
-### Out of bag calibration for FULL
+### Out of bag calibration for FULL_FPARitp
 ##------------------------------------------
 filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
 if (file.exists(filn)){
@@ -222,8 +222,8 @@ if (file.exists(filn)){
   save(ddf_obs_eval, file = filn)
 }  
 
-# if (!exists("out_oob_FULL") || overwrite){
-#   out_oob_FULL <- oob_calib_eval_sofun(
+# if (!exists("out_oob_FULL_FPARitp") || overwrite){
+#   out_oob_FULL_FPARitp <- oob_calib_eval_sofun(
 #     setup = setup_sofun,
 #     settings_calib = settings_calib,
 #     settings_eval = settings_eval,
@@ -232,14 +232,14 @@ if (file.exists(filn)){
 #     ddf_obs_calib = ddf_obs_calib,
 #     ddf_obs_eval = ddf_obs_eval
 #   )
-#   save(out_oob_FULL, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
+#   save(out_oob_FULL_FPARitp, file = "~/eval_pmodel/data/out_oob_FULL_FPARitp.Rdata")
 # } else {
-#   load("~/eval_pmodel/data/out_oob_FULL.Rdata")
+#   load("~/eval_pmodel/data/out_oob_FULL_FPARitp.Rdata")
 # }
 
 
 ##------------------------------------------
-## Single calibration and evaluation for FULL
+## Single calibration and evaluation for FULL_FPARitp
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
 set.seed(1982)
@@ -264,7 +264,7 @@ mod <- runread_sofun(
 
 ## evaluate at calib sites only (for comparison)
 settings_eval$sitenames <- settings_calib$sitenames
-out_eval_FULL <- eval_sofun(
+out_eval_FULL_FPARitp <- eval_sofun(
   mod,
   settings_eval,
   settings_sims,
@@ -274,5 +274,5 @@ out_eval_FULL <- eval_sofun(
   )
 
 ## write to file
-save(out_eval_FULL, file = paste0(settings_calib$dir_results, "/out_eval_FULL.Rdata"))
+save(out_eval_FULL_FPARitp, file = paste0(settings_calib$dir_results, "/out_eval_FULL_FPARitp.Rdata"))
 

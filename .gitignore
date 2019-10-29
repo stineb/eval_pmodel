@@ -5,3 +5,6 @@
 calib_results/*
 data/*
 *.Rproj
+*.tex
+*.csv
+*.pdf
