@@ -95,7 +95,7 @@ if name == 'global':
 	## soil
 	##--------------------------------------
 	dirn = 'input/global/soil'
-        ## WARNING: using mydataroot for soil files!
+    ## WARNING: using mydataroot for soil files!
 	os.system( 'mkdir -p ' + dirn )
 	call(['ln', '-svf', mydataroot + 'soil/soilgrids/whc_soilgrids_halfdeg_FILLED.nc', dirn ])
 	call(['ln', '-svf', mydataroot + 'soil/hwsd/soil_type_hwsd_halfdeg.cdf', dirn ])
