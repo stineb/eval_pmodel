@@ -3,8 +3,8 @@
 ##------------------------------------------
 library(rsofun)
 load_dependencies_rsofun()
-# systr <- "''"    # for Mac
-systr <- ""      # for Linux
+systr <- "''"    # for Mac
+# systr <- ""      # for Linux
 overwrite <- TRUE
 
 ##------------------------------------------
@@ -19,8 +19,8 @@ siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   dplyr::filter(sitename != "FI-Sod") %>%  # excluded because some temperature data is missing
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>% 
   
-  # ## test
-  # dplyr::filter(sitename %in% c("FR-Pue", "FR-LBr", "IT-Noe")) %>% 
+  # ## xxx test
+  # dplyr::filter(sitename %in% c("FR-Pue", "FR-LBr", "IT-Noe")) %>%
   
   write_csv(path = path_siteinfo)
 
@@ -126,7 +126,7 @@ calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   dplyr::filter( sitename %in% flue_sites ) %>%
   pull(sitename)
 
-# ## Calibration sites for TerraP, excluding CA-Obs
+## Calibration sites for TerraP, excluding CA-Obs XXX test XXX
 # calibsites <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
 # calibsites <- c("FR-Pue", "FR-LBr", "IT-Noe")
 
@@ -178,117 +178,75 @@ settings_eval <- list(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-# inputdata <- prepare_input_sofun(
-#   settings_input = settings_input,
-#   settings_sims = settings_sims,
-#   return_data = FALSE,
-#   overwrite_csv_climate = TRUE,
-#   overwrite_climate = TRUE,
-#   overwrite_csv_fapar = TRUE,
-#   overwrite_fapar = TRUE,
-#   verbose = TRUE
-#   )
+inputdata <- prepare_input_sofun(
+  settings_input = settings_input,
+  settings_sims = settings_sims,
+  return_data = FALSE,
+  overwrite_csv_climate = FALSE,
+  overwrite_climate = FALSE,
+  overwrite_csv_fapar = TRUE,
+  overwrite_fapar = TRUE,
+  verbose = TRUE
+  )
 
   
-##------------------------------------------
-### Out of bag calibration for ORG
-##------------------------------------------
-filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
-if (file.exists(filn)){
-  load(filn)
-} else {
-  ddf_obs_calib <- get_obs_calib( 
-    settings_calib = settings_calib, 
-    settings_sims, 
-    settings_input 
-  )
-  save(ddf_obs_calib, file = filn)  
-}
-
-filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
-if (file.exists(filn)){
-  load(filn)
-} else {
-  ddf_obs_eval  <- get_obs_eval( 
-    settings_eval = settings_eval, 
-    settings_sims = settings_sims, 
-    overwrite = TRUE, 
-    light = TRUE 
-  )
-  save(ddf_obs_eval, file = filn)
-}  
-
-if (!exists("out_oob_ORG") || overwrite){
-
-  out_oob_ORG <- oob_calib_eval_sofun(
-    setup = setup_sofun, 
-    settings_calib = settings_calib, 
-    settings_eval = settings_eval, 
-    settings_sims = settings_sims, 
-    settings_input = settings_input, 
-    ddf_obs_calib = ddf_obs_calib,
-    ddf_obs_eval = ddf_obs_eval
-    )
-
-  save(out_oob_ORG, file = "~/eval_pmodel/data/out_oob_ORG.Rdata")
-
-} else {
-  load("~/eval_pmodel/data/out_oob_ORG.Rdata")
-}
-
-# ## pooled oob evaluation results for x-daily:
-# print(out_oob_ORG$`AALL`$gpp$fluxnet2015$metrics$xdaily_pooled)
-out_oob_ORG$AALL$gpp$fluxnet2015$data$ddf %>% 
-  filter(sitename=="FR-Pue" & year(date)>=2003 & year(date) < 2006) %>%
-  pivot_longer(cols = c(mod, obs), values_to = "gpp") %>% 
-  ggplot(aes(x=date, y=gpp, color=name)) + 
-  geom_line()
-
-library(rbeni)
-modobs_xdaily_oob <- out_oob_ORG$`AALL`$gpp$fluxnet2015$data$xdf %>%
-  analyse_modobs2("mod", "obs", type="heat")
-modobs_xdaily_oob$gg
-
-# source("extract_mean_rsq.R")
-# print(extract_mean_rsq(out_oob_ORG))
+# ##------------------------------------------
+# ### Out of bag calibration for ORG
+# ##------------------------------------------
+# filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
+# if (file.exists(filn)){
+#   load(filn)
+# } else {
+#   ddf_obs_calib <- get_obs_calib( 
+#     settings_calib = settings_calib, 
+#     settings_sims, 
+#     settings_input 
+#   )
+#   save(ddf_obs_calib, file = filn)  
+# }
+# 
+# filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
+# if (file.exists(filn)){
+#   load(filn)
+# } else {
+#   ddf_obs_eval  <- get_obs_eval( 
+#     settings_eval = settings_eval, 
+#     settings_sims = settings_sims, 
+#     overwrite = TRUE, 
+#     light = TRUE 
+#   )
+#   save(ddf_obs_eval, file = filn)
+# }  
+# 
+# if (!exists("out_oob_ORG") || overwrite){
+# 
+#   out_oob_ORG <- oob_calib_eval_sofun(
+#     setup = setup_sofun, 
+#     settings_calib = settings_calib, 
+#     settings_eval = settings_eval, 
+#     settings_sims = settings_sims, 
+#     settings_input = settings_input, 
+#     ddf_obs_calib = ddf_obs_calib,
+#     ddf_obs_eval = ddf_obs_eval
+#     )
+# 
+#   save(out_oob_ORG, file = "~/eval_pmodel/data/out_oob_ORG.Rdata")
+# 
+# } else {
+#   load("~/eval_pmodel/data/out_oob_ORG.Rdata")
+# }
 
 
 ##------------------------------------------
 ## Single calibration and evaluation for ORG
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-# ddf_obs_calib <- ddf_obs_calib %>% 
-#   dplyr::mutate(id = 1:nrow(ddf_obs_calib))
-
-# idxs_train <- ddf_obs_calib %>% 
-#   dplyr::filter(!is.na(gpp_obs)) %>% 
-#   sample_frac(size = 0.75) %>% 
-#   pull(id)
-
-# idxs_test <- ddf_obs_calib %>% 
-#   dplyr::filter(!is.na(gpp_obs)) %>%
-#   dplyr::filter(!(id %in% idxs_train)) %>%
-#   pull(id)
-
-# sitedates_test <- ddf_obs_calib[idxs_test,] %>% 
-#   dplyr::select(sitename, date)
-
-# sitedates_train <- ddf_obs_calib[idxs_train,] %>% 
-#   dplyr::select(sitename, date)
-
-# ddf_obs_calib_train <- ddf_obs_calib
-# ddf_obs_calib_test  <- ddf_obs_calib
-
-# ddf_obs_calib_train$gpp_obs[idxs_test] <- NA
-# ddf_obs_calib_test$gpp_obs[idxs_train] <- NA
-
 set.seed(1982)
 settings_calib <- calib_sofun(
   setup          = setup_sofun,
   settings_calib = settings_calib,
   settings_sims  = settings_sims,
   settings_input = settings_input,
-  # ddf_obs        = ddf_obs_calib_train
   ddf_obs        = ddf_obs_calib
 )
 
@@ -302,16 +260,6 @@ mod <- runread_sofun(
   settings = settings_sims, 
   setup = setup_sofun
 )
-
-# # ## tmp
-# # mod <- mod$daily %>% dplyr::bind_rows(.id = "sitename")
-
-# ## remove training dates from model outputs (replacing by NA) 
-# mod <- sitedates_train %>% 
-#   dplyr::mutate(dropme = TRUE) %>% 
-#   dplyr::right_join(mod, by=c("sitename", "date")) %>% 
-#   dplyr::mutate(dropme = ifelse(is.na(dropme), FALSE, dropme)) %>% 
-#   dplyr::mutate(gpp = ifelse(dropme, NA, gpp))
 
 ## evaluate at calib sites only (for comparison)
 settings_eval$sitenames <- settings_calib$sitenames
@@ -327,14 +275,9 @@ out_eval_ORG <- eval_sofun(
 ## write to file
 save(out_eval_ORG, file = paste0(settings_calib$dir_results, "/out_eval_ORG.Rdata"))
 
-# print(out_eval$gpp$fluxnet2015$metrics$xdaily_pooled)
-
-# out <- out_eval$gpp$fluxnet2015$data$xdf %>%
-#   rbeni::analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
-# out$gg
-
-
-
+out <- out_eval_ORG$gpp$fluxnet2015$data$xdf %>% 
+  analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
+out$gg
 
 # ### Setup `FULL`
 

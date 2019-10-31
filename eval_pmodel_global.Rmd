@@ -1,0 +1,67 @@
+---
+title: "Evaluation of global runs"
+author: "Beni Stocker"
+date: "`r Sys.Date()`"
+# output:
+#   html_document:
+#     toc: true
+#     toc_float: true
+#     toc_depth: 4
+#     number_sections: true
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+header-includes:
+   - \usepackage{amsmath}
+bibliography: bibliography.bib
+---
+
+```{r "knitr config", cache = FALSE, include=FALSE}
+require(knitr)
+library(rsofun)
+library(rbeni)
+library(ggplot2)
+load_dependencies_rsofun()
+```
+
+# Evaluation of GPP against FLUXNET data
+
+## Time series
+```{r}
+ifil_3g <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
+ifil_modis <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
+landfil <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_fAPAR3g_v2_2000_2016.fland.nc"
+
+df <- rbeni::integrate_lonlat(ifil_3g, landfil) %>% 
+  rename(gpp_fapar3g = gpp) %>% 
+  left_join(
+    rbeni::integrate_lonlat(ifil_modis, landfil) %>% 
+      rename(gpp_modis = gpp),
+    by = "date"
+  )
+
+df %>% 
+  pivot_longer(cols = c(gpp_fapar3g, gpp_modis), names_to = "fapar_source", values_to = "gpp") %>% 
+  ggplot(aes(x = date, y = gpp, color = fapar_source)) +
+  geom_line()
+```
+
+## Latitudinal distribution
+
+```{r}
+dflat <- rbeni::integrate_lon(ifil = ifil_3g, landfil = landfil) %>% 
+  rename( gpp_3g = gpp ) %>% 
+  left_join(
+    rbeni::integrate_lon(ifil = ifil_modis, landfil = landfil) %>% 
+      rename( gpp_modis = gpp),
+    by = "lat"
+  )
+
+dflat %>% 
+  pivot_longer(cols = c(gpp_3g, gpp_modis), names_to = "fapar_source", values_to = "gpp" ) %>% 
+  ggplot(aes(x = lat, y = gpp, color = fapar_source)) +
+  geom_line()
+```
+
