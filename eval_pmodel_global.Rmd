@@ -28,40 +28,239 @@ load_dependencies_rsofun()
 
 # Evaluation of GPP against FLUXNET data
 
+## Global fields
+```{r}
+fil_pmodel_org_modis  <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
+fil_pmodel_brc_modis  <- "~/sofun_outputs/output_nc_global_sofun/global_BRC_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
+fil_pmodel_full_modis <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
+
+fil_pmodel_org_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
+fil_pmodel_brc_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_BRC_fAPAR3g_v2_2000_2016.a.gpp.nc"
+fil_pmodel_full_3g <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_fAPAR3g_v2_2000_2016.a.gpp.nc"
+
+landfil <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.fland.nc"
+
+fil_pmodel_stocker19 <- "~/data/stocker19natgeo_outputs/s0_fapar3g_v2_global.a.gpp.nc"
+
+fil_mte <- "~/data/gpp_mte/gpp_mte_ANN.nc"
+fil_fluxcom <- "~/data/gpp_mte/gpp_mte_fluxcom_ANN.nc"
+fil_vpm <- "~/data/gpp_vpm/gpp_vpm_ANN.nc"
+fil_bess <- "~/data/gpp_bess/gpp_bess_ANN.nc"
+fil_modis <- "~/data/gpp_modis/gpp_modis_ANN.nc"
+
+# nc_org_modis <- read_nc_onefile(fil_pmodel_org_modis)
+# nc_old <- read_nc_onefile(fil_pmodel_stocker19)
+# 
+# nc_mte     <- read_nc_onefile(fil_mte, time_is_years = TRUE)
+# nc_fluxcom <- read_nc_onefile(fil_fluxcom, time_is_years = TRUE)
+# nc_vpm     <- read_nc_onefile(fil_vpm, time_is_years = TRUE)
+# nc_bess    <- read_nc_onefile(fil_bess, date_origin = "1970-01-01")
+# nc_modis   <- read_nc_onefile(fil_modis, time_is_years = TRUE)
+
+# plot 2016 field
+# image(log(nc_old$vars$gpp[,,35] / nc_org_modis$vars$gpp[,,17]), zlim = c(-1, 1))
+# image(nc_old$vars$gpp[,,35] - nc_org_modis$vars$gpp[,,17])
+```
+
+<!-- SiF fields -->
+<!-- ```{r} -->
+<!-- nc_sif -->
+<!-- ``` -->
+
+
 ## Time series
 ```{r}
-ifil_3g <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
-ifil_modis <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
-landfil <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_fAPAR3g_v2_2000_2016.fland.nc"
-
-df <- rbeni::integrate_lonlat(ifil_3g, landfil) %>% 
-  rename(gpp_fapar3g = gpp) %>% 
+df <- integrate_lonlat(fil_pmodel_org_modis, landfil) %>% 
+  rename(gpp_pmodel_org_modis = gpp) %>% 
   left_join(
-    rbeni::integrate_lonlat(ifil_modis, landfil) %>% 
-      rename(gpp_modis = gpp),
+    integrate_lonlat(fil_pmodel_brc_modis, landfil) %>% 
+      rename(gpp_pmodel_brc_modis = gpp),
     by = "date"
+  )  %>% 
+  left_join(
+    integrate_lonlat(fil_pmodel_full_modis, landfil) %>% 
+      rename(gpp_pmodel_full_modis = gpp),
+    by = "date"
+  ) %>% 
+  left_join(
+    integrate_lonlat(fil_pmodel_org_3g, landfil) %>% 
+      rename(gpp_pmodel_org_3g = gpp),
+    by = "date"
+  ) %>% 
+  left_join(
+    integrate_lonlat(fil_pmodel_brc_3g, landfil) %>% 
+      rename(gpp_pmodel_brc_3g = gpp),
+    by = "date"
+  ) %>% 
+  left_join(
+    integrate_lonlat(fil_pmodel_full_3g, landfil) %>%
+      rename(gpp_pmodel_full_3g = gpp),
+    by = "date"
+  ) %>%
+  mutate(year = year(date)) %>% 
+  select(-date) %>% 
+  left_join(
+    integrate_lonlat(fil_pmodel_stocker19, landfil) %>% 
+      rename(gpp_pmodel_stocker19 = gpp) %>% 
+      mutate(year = year(date)) %>% 
+      select(-date),
+    by = "year"
+    ) %>% 
+  left_join(
+    integrate_lonlat(fil_mte, date_origin = "1970-01-01") %>% 
+      rename(gpp_mte = gpp) %>% 
+      mutate(year = year(date)) %>% 
+      select(-date),
+    by = "year"
+    ) %>% 
+  left_join(
+    integrate_lonlat(fil_fluxcom, time_is_years = TRUE) %>% 
+      rename(gpp_fluxcom = gpp) %>% 
+      mutate(year = year(date)) %>% 
+      select(-date),
+    by = "year"
+    ) %>% 
+  left_join(
+    integrate_lonlat(fil_vpm, time_is_years = TRUE) %>% 
+      rename(gpp_vpm = gpp) %>% 
+      mutate(year = year(date)) %>% 
+      select(-date),
+    by = "year"
+    ) %>% 
+  left_join(
+    integrate_lonlat(fil_bess, date_origin = "1970-01-01") %>% 
+      rename(gpp_bess = gpp) %>% 
+      mutate(year = year(date)) %>% 
+      select(-date),
+    by = "year"
+    ) %>% 
+  left_join(
+    integrate_lonlat(fil_modis, time_is_years = TRUE) %>% 
+      rename(gpp_modis = gpp) %>% 
+      mutate(year = year(date)) %>% 
+      select(-date),
+    by = "year"
+    )
+
+## add co2 data
+df <- df %>% 
+  left_join(
+    readr::read_csv("~/data/co2/cCO2_rcp85_const850-1765.csv") %>% 
+      dplyr::filter(year>1750) %>% 
+      dplyr::mutate(date = lubridate::ymd(paste0(as.integer(year), "-01-01"))) %>% 
+      dplyr::mutate(year = lubridate::year(date)) %>% 
+      dplyr::select(-date),
+    by = "year"
   )
 
+## CAlculate sensitivity to CO2
+mynorm <- function(vec){
+  out <- vec/vec[1]
+  return(out)
+}
+
+df$gpp_bess[1] <- df$gpp_bess[2]  # is NA otherwise
+
+df_lm <- df %>% 
+  mutate_all(.funs = mynorm) %>% 
+  pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp") %>% 
+  group_by(model) %>% 
+  nest() %>% 
+  mutate(linmod = purrr::map(data, ~lm(gpp ~ co2, data = .))) %>% 
+  mutate(tidied = purrr::map(linmod, tidy)) %>% 
+  unnest(tidied) %>% 
+  filter(term=="co2")
+  
 df %>% 
-  pivot_longer(cols = c(gpp_fapar3g, gpp_modis), names_to = "fapar_source", values_to = "gpp") %>% 
-  ggplot(aes(x = date, y = gpp, color = fapar_source)) +
-  geom_line()
+  pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp") %>% 
+  ggplot(aes(x = year, y = gpp, color = model)) + 
+  geom_line() + 
+  scale_colour_brewer(palette = "Paired") + 
+  labs(x = "Year", y =  "GPP (GtC/yr)")
+ggsave("fig/gpp_vs_year.pdf", width = 7, height = 4)
+
+df %>% 
+  pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp") %>% 
+  ggplot(aes(x = co2, y = gpp, color = model)) + 
+  geom_line() + 
+  scale_colour_brewer(palette = "Paired") +
+  labs( x = "CO2 (ppm)", y = "GPP (GtC/yr)")
+ggsave("fig/gpp_vs_co2.pdf", width = 7, height = 4)
+
+df_lm %>% 
+  ggplot(aes(x = model, y = estimate)) +  #, 
+  geom_bar(position=position_dodge(), stat="identity") +
+  geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), position=position_dodge(), width = 0.2) +
+  labs(x = "Model", y = "dGPP/GPP / dCO2/CO2") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggsave("fig/barplot_co2_sensitivity.pdf", width = 6, height = 5)
 ```
 
 ## Latitudinal distribution
 
 ```{r}
-dflat <- rbeni::integrate_lon(ifil = ifil_3g, landfil = landfil) %>% 
-  rename( gpp_3g = gpp ) %>% 
+dflat <- rbeni::integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>% 
+  rename( gpp_pmodel_org_modis = gpp ) %>% 
   left_join(
-    rbeni::integrate_lon(ifil = ifil_modis, landfil = landfil) %>% 
+    integrate_lon(ifil = fil_pmodel_brc_modis, landfil = landfil) %>% 
+      rename( gpp_pmodel_brc_modis = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_pmodel_full_modis, landfil = landfil) %>% 
+      rename( gpp_pmodel_full_modis = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_pmodel_org_3g, landfil = landfil) %>% 
+      rename( gpp_pmodel_org_3g = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_pmodel_brc_3g, landfil = landfil) %>% 
+      rename( gpp_pmodel_brc_3g = gpp),
+    by = "lat"
+  ) %>% 
+  # left_join(
+  #   integrate_lon(ifil = fil_pmodel_full_3g, landfil = landfil) %>% 
+  #     rename( gpp_pmodel_full_3g = gpp),
+  #   by = "lat"
+  # ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_pmodel_stocker19, landfil = landfil) %>% 
+      rename( gpp_pmodel_stocker19 = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_mte, date_origin = "1970-01-01") %>% 
+      rename( gpp_mte = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_fluxcom, time_is_years = TRUE) %>% 
+      rename( gpp_fluxcom = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_bess, date_origin = "1970-01-01") %>% 
+      rename( gpp_bess = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_vpm, time_is_years = TRUE) %>% 
+      rename( gpp_vpm = gpp),
+    by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_modis, time_is_years = TRUE) %>% 
       rename( gpp_modis = gpp),
     by = "lat"
   )
 
 dflat %>% 
-  pivot_longer(cols = c(gpp_3g, gpp_modis), names_to = "fapar_source", values_to = "gpp" ) %>% 
-  ggplot(aes(x = lat, y = gpp, color = fapar_source)) +
-  geom_line()
+  pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp" ) %>% 
+  ggplot(aes(x = lat, y = gpp, color = model)) +
+  geom_line() +
+  xlim( -55, 80 )
 ```
 
