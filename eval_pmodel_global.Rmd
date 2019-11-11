@@ -25,6 +25,7 @@ library(rbeni)
 library(ggplot2)
 library(tidyr)
 library(broom)
+library(viridis)
 load_dependencies_rsofun()
 ```
 
@@ -52,12 +53,11 @@ fil_vpm <- "~/data/gpp_vpm/gpp_vpm_ANN.nc"
 fil_bess <- "~/data/gpp_bess/gpp_bess_ANN.nc"
 fil_modis <- "~/data/gpp_modis/gpp_modis_ANN.nc"
 
-fil_sif <- "~/data/gome2_sif_downscaled/data_halfdeg/GOME_JJ_dcSIF_05deg_MEANANN.nc"
+fil_sif <- "~/data/gome2_sif_downscaled/data_halfdeg/GOME_JJ_dcSIF_05deg_ANN.nc"
 
 fil_pmodel_full_modis_meanann <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp_MEANANN.nc"
 fil_pmodel_full_3g_meanann    <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_fAPAR3g_v2_2000_2016.a.gpp_MEANANN.nc"
 
-# nc_org_modis <- read_nc_onefile(fil_pmodel_org_modis)
 # nc_old <- read_nc_onefile(fil_pmodel_stocker19)
 # 
 # nc_mte     <- read_nc_onefile(fil_mte, time_is_years = TRUE)
@@ -74,16 +74,26 @@ fil_pmodel_full_3g_meanann    <- "~/sofun_outputs/output_nc_global_sofun/global_
 ## Lon/lat fields
 
 ```{r}
-map_sif <- plot_map3(fil_sif, colorscale = viridis, plot_title = "SiF")
-map_sif <- plot_map3(fil_sif, colorscale = viridis, plot_title = "SiF")
+## SIF
+map_sif <- plot_map3(fil_sif, colorscale = viridis, plot_title = "SiF", plot_subtitle = expression(paste("mW m"^-2, " sr"^-1, " nm"^1)), nbin = 10, width = 0.01)
 
-cowplot::plot_grid(map_sif, map_sif)
+## FLUXCOM
+nc_fluxcom <- read_nc_onefile(fil_fluxcom, time_is_years = TRUE)
+nc_fluxcom$vars$gpp <- apply(nc_fluxcom$vars$gpp, c(1,2), FUN = mean)
+map_fluxcom <- plot_map3(nc_fluxcom, colorscale = viridis, nbin = 15, plot_title = "FLUXCOM", plot_subtitle = expression( paste("g C m"^-2, " yr"^-1 ) ), width = 0.01, breaks = c(seq(0, 3000, 200), Inf))
 
-map_sif
+## P-model FULL MODIS, load and take mean across time, and map
+nc_full_modis <- read_nc_onefile(fil_pmodel_full_modis)
+nc_full_modis$vars$gpp <- apply(nc_full_modis$vars$gpp, c(1,2), FUN = mean)
+map_pmodel_full_modis <- plot_map3(nc_full_modis, colorscale = viridis, nbin = 15, plot_title = "P-model", plot_subtitle = expression( paste("g C m"^-2, " yr"^-1, "  FULL, MODIS FPAR" ) ), width = 0.01, breaks = c(seq(0, 3000, 200), Inf))
 
-# nc_sif$vars$SIF %>% image()
-# nc_pmodel_modis$vars$gpp %>% image()
-# nc_pmodel_3g$vars$gpp %>% image()
+## P-model FULL MODIS, load and take mean across time, and map
+nc_full_3g <- read_nc_onefile(fil_pmodel_full_3g)
+nc_full_3g$vars$gpp <- apply(nc_full_3g$vars$gpp, c(1,2), FUN = mean)
+map_pmodel_full_3g <- plot_map3(nc_full_3g, colorscale = viridis, nbin = 15, plot_title = "P-model", plot_subtitle = expression( paste("g C m"^-2, " yr"^-1, "  FULL, fAPAR3g" ) ), width = 0.01, breaks = c(seq(0, 3000, 200), Inf))
+
+cowplot::plot_grid(map_sif, map_fluxcom, map_pmodel_full_modis, map_pmodel_full_3g, ncol = 2)
+ggsave("fig/maps_comparison.pdf", width = 12, height = 8)
 ```
 
 ## Time series
@@ -325,7 +335,7 @@ df_lat <- integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>%
 plot_selection <- c("gpp_fluxcom", "gpp_pmodel_full_3g", "gpp_pmodel_full_modis", "gpp_modis")
 
 # scaleme <- max(df_lat$gpp_pmodel_full_modis)/max(df_lat$sif, na.rm=TRUE)
-scaleme <- 4000
+scaleme <- 400
 
 ggplot() +
   geom_line(
