@@ -23,12 +23,14 @@ require(knitr)
 library(rsofun)
 library(rbeni)
 library(ggplot2)
+library(tidyr)
+library(broom)
 load_dependencies_rsofun()
 ```
 
 # Evaluation of GPP against FLUXNET data
 
-## Global fields
+## Define file paths
 ```{r}
 fil_pmodel_org_modis  <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
 fil_pmodel_brc_modis  <- "~/sofun_outputs/output_nc_global_sofun/global_BRC_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
@@ -37,6 +39,8 @@ fil_pmodel_full_modis <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MOD
 fil_pmodel_org_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
 fil_pmodel_brc_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_BRC_fAPAR3g_v2_2000_2016.a.gpp.nc"
 fil_pmodel_full_3g <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_fAPAR3g_v2_2000_2016.a.gpp.nc"
+
+fil_pmodel_simpleorg_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_simpleORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
 
 landfil <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.fland.nc"
 
@@ -47,6 +51,11 @@ fil_fluxcom <- "~/data/gpp_mte/gpp_mte_fluxcom_ANN.nc"
 fil_vpm <- "~/data/gpp_vpm/gpp_vpm_ANN.nc"
 fil_bess <- "~/data/gpp_bess/gpp_bess_ANN.nc"
 fil_modis <- "~/data/gpp_modis/gpp_modis_ANN.nc"
+
+fil_sif <- "~/data/gome2_sif_downscaled/data_halfdeg/GOME_JJ_dcSIF_05deg_MEANANN.nc"
+
+fil_pmodel_full_modis_meanann <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp_MEANANN.nc"
+fil_pmodel_full_3g_meanann    <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_fAPAR3g_v2_2000_2016.a.gpp_MEANANN.nc"
 
 # nc_org_modis <- read_nc_onefile(fil_pmodel_org_modis)
 # nc_old <- read_nc_onefile(fil_pmodel_stocker19)
@@ -62,15 +71,29 @@ fil_modis <- "~/data/gpp_modis/gpp_modis_ANN.nc"
 # image(nc_old$vars$gpp[,,35] - nc_org_modis$vars$gpp[,,17])
 ```
 
-<!-- SiF fields -->
-<!-- ```{r} -->
-<!-- nc_sif -->
-<!-- ``` -->
+## Lon/lat fields
 
+```{r}
+map_sif <- plot_map3(fil_sif, colorscale = viridis, plot_title = "SiF")
+map_sif <- plot_map3(fil_sif, colorscale = viridis, plot_title = "SiF")
+
+cowplot::plot_grid(map_sif, map_sif)
+
+map_sif
+
+# nc_sif$vars$SIF %>% image()
+# nc_pmodel_modis$vars$gpp %>% image()
+# nc_pmodel_3g$vars$gpp %>% image()
+```
 
 ## Time series
+
+### Collect data.
 ```{r}
-df <- integrate_lonlat(fil_pmodel_org_modis, landfil) %>% 
+filn <- "./data/df_tseries.csv"
+overwrite <- FALSE
+if (!file.exists(filn) || overwrite){
+df_tseries <- integrate_lonlat(fil_pmodel_org_modis, landfil) %>% 
   rename(gpp_pmodel_org_modis = gpp) %>% 
   left_join(
     integrate_lonlat(fil_pmodel_brc_modis, landfil) %>% 
@@ -95,6 +118,11 @@ df <- integrate_lonlat(fil_pmodel_org_modis, landfil) %>%
   left_join(
     integrate_lonlat(fil_pmodel_full_3g, landfil) %>%
       rename(gpp_pmodel_full_3g = gpp),
+    by = "date"
+  ) %>%
+  left_join(
+    integrate_lonlat(fil_pmodel_simpleorg_3g, landfil) %>%
+      rename(gpp_pmodel_simpleorg_3g = gpp),
     by = "date"
   ) %>%
   mutate(year = year(date)) %>% 
@@ -142,27 +170,41 @@ df <- integrate_lonlat(fil_pmodel_org_modis, landfil) %>%
     by = "year"
     )
 
-## add co2 data
-df <- df %>% 
-  left_join(
-    readr::read_csv("~/data/co2/cCO2_rcp85_const850-1765.csv") %>% 
-      dplyr::filter(year>1750) %>% 
-      dplyr::mutate(date = lubridate::ymd(paste0(as.integer(year), "-01-01"))) %>% 
-      dplyr::mutate(year = lubridate::year(date)) %>% 
-      dplyr::select(-date),
-    by = "year"
-  )
+  ## add co2 data
+  df_tseries <- df_tseries %>% 
+    left_join(
+      readr::read_csv("~/data/co2/cCO2_rcp85_const850-1765.csv") %>% 
+        dplyr::filter(year>1750) %>% 
+        dplyr::mutate(date = lubridate::ymd(paste0(as.integer(year), "-01-01"))) %>% 
+        dplyr::mutate(year = lubridate::year(date)) %>% 
+        dplyr::select(-date),
+      by = "year"
+    )
+
+  write_csv(df_tseries, path = filn)
+  
+} else {
+  df_tseries <- read_csv(filn)
+}
+```
+
+
+### Evaluate time series.
+```{r}
+plot_selection <- c("gpp_fluxcom", "gpp_pmodel_full_3g", "gpp_pmodel_full_modis", "gpp_modis", "gpp_bess")
 
 ## CAlculate sensitivity to CO2
 mynorm <- function(vec){
   out <- vec/vec[1]
   return(out)
 }
+minus_one <- function(x){x-1.0}
 
-df$gpp_bess[1] <- df$gpp_bess[2]  # is NA otherwise
+df_tseries$gpp_bess[1] <- df_tseries$gpp_bess[2]  # is NA otherwise
 
-df_lm <- df %>% 
+df_lm <- df_tseries %>% 
   mutate_all(.funs = mynorm) %>% 
+  mutate_all(.funs = minus_one) %>% 
   pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp") %>% 
   group_by(model) %>% 
   nest() %>% 
@@ -171,35 +213,44 @@ df_lm <- df %>%
   unnest(tidied) %>% 
   filter(term=="co2")
   
-df %>% 
+df_tseries %>% 
   pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp") %>% 
+  filter(model %in% plot_selection) %>% 
   ggplot(aes(x = year, y = gpp, color = model)) + 
   geom_line() + 
-  scale_colour_brewer(palette = "Paired") + 
+  # scale_colour_brewer(palette = "Paired") + 
   labs(x = "Year", y =  "GPP (GtC/yr)")
-ggsave("fig/gpp_vs_year.pdf", width = 7, height = 4)
+#ggsave("fig/gpp_vs_year.pdf", width = 7, height = 4)
 
-df %>% 
+df_tseries %>% 
   pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp") %>% 
+  filter(model %in% plot_selection) %>% 
   ggplot(aes(x = co2, y = gpp, color = model)) + 
   geom_line() + 
-  scale_colour_brewer(palette = "Paired") +
+  # scale_colour_brewer(palette = "Paired") +
   labs( x = "CO2 (ppm)", y = "GPP (GtC/yr)")
-ggsave("fig/gpp_vs_co2.pdf", width = 7, height = 4)
+#ggsave("fig/gpp_vs_co2.pdf", width = 7, height = 4)
 
 df_lm %>% 
+  filter(model %in% plot_selection) %>% 
   ggplot(aes(x = model, y = estimate)) +  #, 
   geom_bar(position=position_dodge(), stat="identity") +
   geom_errorbar(aes(ymin = estimate - std.error, ymax = estimate + std.error), position=position_dodge(), width = 0.2) +
   labs(x = "Model", y = "dGPP/GPP / dCO2/CO2") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-ggsave("fig/barplot_co2_sensitivity.pdf", width = 6, height = 5)
+#ggsave("fig/barplot_co2_sensitivity.pdf", width = 6, height = 5)
 ```
 
 ## Latitudinal distribution
 
+### Collect data
+
 ```{r}
-dflat <- rbeni::integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>% 
+filn <- "./data/df_lat.csv"
+overwrite <- TRUE
+if (!file.exists(filn) || overwrite){
+  
+df_lat <- integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>% 
   rename( gpp_pmodel_org_modis = gpp ) %>% 
   left_join(
     integrate_lon(ifil = fil_pmodel_brc_modis, landfil = landfil) %>% 
@@ -221,11 +272,11 @@ dflat <- rbeni::integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>
       rename( gpp_pmodel_brc_3g = gpp),
     by = "lat"
   ) %>% 
-  # left_join(
-  #   integrate_lon(ifil = fil_pmodel_full_3g, landfil = landfil) %>% 
-  #     rename( gpp_pmodel_full_3g = gpp),
-  #   by = "lat"
-  # ) %>% 
+  left_join(
+    integrate_lon(ifil = fil_pmodel_full_3g, landfil = landfil) %>%
+      rename( gpp_pmodel_full_3g = gpp),
+    by = "lat"
+  ) %>%
   left_join(
     integrate_lon(ifil = fil_pmodel_stocker19, landfil = landfil) %>% 
       rename( gpp_pmodel_stocker19 = gpp),
@@ -255,12 +306,43 @@ dflat <- rbeni::integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>
     integrate_lon(ifil = fil_modis, time_is_years = TRUE) %>% 
       rename( gpp_modis = gpp),
     by = "lat"
+  ) %>% 
+  left_join(
+    integrate_lon_sif(fil_sif, "~/data/gome2_sif_downscaled/data_halfdeg/gridarea.nc"),
+    by = "lat"
   )
 
-dflat %>% 
-  pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp" ) %>% 
-  ggplot(aes(x = lat, y = gpp, color = model)) +
-  geom_line() +
-  xlim( -55, 80 )
+  write_csv(df_lat, path = filn)
+  
+} else {
+  df_lat <- read_csv(filn)
+}
+```
+
+### Evaluate latitudinal distribution
+
+```{r}
+plot_selection <- c("gpp_fluxcom", "gpp_pmodel_full_3g", "gpp_pmodel_full_modis", "gpp_modis")
+
+# scaleme <- max(df_lat$gpp_pmodel_full_modis)/max(df_lat$sif, na.rm=TRUE)
+scaleme <- 4000
+
+ggplot() +
+  geom_line(
+    data = df_lat %>% 
+      pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp" ) %>% 
+      filter(model %in% plot_selection),
+    aes(x = lat, y = gpp, color = model)
+    ) +
+  geom_line(data = df_lat, aes(x = lat, y = sif * scaleme), color = "black", size = 0.8) +
+  scale_y_continuous(sec.axis = sec_axis(~.*scaleme, name = expression(paste("SIF (mW m"^-1, " sr"^-1, " nm"^1, ")")))) +
+  scale_colour_brewer(palette = "Set1", label = c("FLUXCOM", "MODIS GPP", "P-model fAPAR3g", "P-model MODIS"), name = "GPP") +
+  xlim( -55, 80 ) +
+  labs(
+    x = expression(paste("Latitude (", degree, "N)")), 
+    y = expression( paste("GPP (gC m"^-1, "yr"^-1, ")" ) )
+    )
+
+ggsave("fig/gpp_by_latitude.pdf", width = 7, height = 4)
 ```
 
