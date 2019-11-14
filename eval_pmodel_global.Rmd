@@ -49,22 +49,21 @@ fil_pmodel_stocker19 <- "~/data/stocker19natgeo_outputs/s0_fapar3g_v2_global.a.g
 
 fil_mte <- "~/data/gpp_mte/gpp_mte_ANN.nc"
 fil_fluxcom <- "~/data/gpp_mte/gpp_mte_fluxcom_ANN.nc"
-fil_vpm <- "~/data/gpp_vpm/gpp_vpm_ANN.nc"
-fil_bess <- "~/data/gpp_bess/gpp_bess_ANN.nc"
-fil_modis <- "~/data/gpp_modis/gpp_modis_ANN.nc"
 
-fil_sif <- "~/data/gome2_sif_downscaled/data_halfdeg/GOME_JJ_dcSIF_05deg_ANN.nc"
+fil_vpm <- "~/data/sif_gpp_remy_trevor/data_proc/VPM_remy_trevor_ANN.nc"
+fil_bess <- "~/data/sif_gpp_remy_trevor/data_proc/BESS_remy_trevor_ANN.nc"
+fil_beps <- "~/data/sif_gpp_remy_trevor/data_proc/BEPS_remy_trevor_ANN.nc"
+fil_modis55 <- "~/data/sif_gpp_remy_trevor/data_proc/MODc55_remy_trevor_ANN.nc"
+fil_modis6 <- "~/data/sif_gpp_remy_trevor/data_proc/MODc6_remy_trevor_ANN.nc"
+
+fil_gome2a <- "~/data/sif_gpp_remy_trevor/data_proc/GOME2A_remy_trevor_ANN.nc"
+fil_gome2b <- "~/data/sif_gpp_remy_trevor/data_proc/GOME2B_remy_trevor_ANN.nc"
 
 fil_pmodel_full_modis_meanann <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp_MEANANN.nc"
 fil_pmodel_full_3g_meanann    <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_fAPAR3g_v2_2000_2016.a.gpp_MEANANN.nc"
 
 # nc_old <- read_nc_onefile(fil_pmodel_stocker19)
 # 
-# nc_mte     <- read_nc_onefile(fil_mte, time_is_years = TRUE)
-# nc_fluxcom <- read_nc_onefile(fil_fluxcom, time_is_years = TRUE)
-# nc_vpm     <- read_nc_onefile(fil_vpm, time_is_years = TRUE)
-# nc_bess    <- read_nc_onefile(fil_bess, date_origin = "1970-01-01")
-# nc_modis   <- read_nc_onefile(fil_modis, time_is_years = TRUE)
 
 # plot 2016 field
 # image(log(nc_old$vars$gpp[,,35] / nc_org_modis$vars$gpp[,,17]), zlim = c(-1, 1))
@@ -73,27 +72,131 @@ fil_pmodel_full_3g_meanann    <- "~/sofun_outputs/output_nc_global_sofun/global_
 
 ## Lon/lat fields
 
+### Read data and get differences
+
+```{r}
+nc_sif <- read_nc_onefile(fil_sif)
+
+nc_timmean_2000_2011 <- function(fil, ...){
+  nc     <- read_nc_onefile(fil, ...)
+  nc$years <- nc$time %>% lubridate::year()
+  idxs <- which(nc$years %in% 2000:2016)
+  nc$vars$gpp <- apply(nc$vars$gpp[,,idxs], c(1,2), FUN = mean, na.rm = TRUE)
+  nc$vars$time <- nc$vars$time[idxs]
+  nc$vars$years <- nc$vars$years[idxs]
+  return(nc)
+}
+
+nc_flip_lat <- function(nc){
+  nc$vars[[1]] <- nc$vars[[1]][,360:1]
+  nc$lat <- rev(nc$lat)
+  return(nc)
+}
+
+## MTE
+nc_mte <- nc_timmean_2000_2011(fil_mte)
+ofil_mte <- "./data/gpp_mte_MEAN.nc"
+nc_mte <- nc_flip_lat(nc_mte)
+write_nc2(nc_mte, path = ofil_mte, varnam = "gpp")
+
+## FLUXCOM
+nc_fluxcom <- nc_timmean_2000_2011(fil_fluxcom, time_is_years = TRUE)
+ofil_fluxcom <- "./data/gpp_fluxcom_MEAN.nc"
+nc_fluxcom <- nc_flip_lat(nc_fluxcom)
+write_nc2(nc_fluxcom, path = ofil_fluxcom, varnam = "gpp")
+
+## VPM
+nc_vpm <- nc_timmean_2000_2011(fil_vpm, time_is_years = TRUE)
+ofil_vpm <- "./data/gpp_vpm_MEAN.nc"
+nc_vpm <- nc_flip_lat(nc_vpm)
+write_nc2(nc_vpm, path = ofil_vpm, varnam = "gpp")
+
+## BESS
+nc_bess   <- nc_timmean_2000_2011(fil_bess, date_origin = "1970-01-01")
+ofil_bess <- "./data/gpp_bess_MEAN.nc"
+nc_bess <- nc_flip_lat(nc_bess)
+write_nc2(nc_bess, path = ofil_bess, varnam = "gpp")
+
+## MODIS
+nc_modis   <- nc_timmean_2000_2011(fil_modis, time_is_years = TRUE)
+ofil_modis <- "./data/gpp_modis_MEAN.nc"
+nc_modis <- nc_flip_lat(nc_modis)
+write_nc2(nc_modis, path = ofil_modis, varnam = "gpp")
+
+## combine and take mean across models
+library(abind)
+nc_mean <- nc_mte
+nc_mean$vars$gpp <- abind(
+  nc_fluxcom$vars$gpp, nc_vpm$vars$gpp, nc_bess$vars$gpp, nc_modis$vars$gpp, along = 3) %>% 
+  apply(., c(1,2), FUN = mean)
+plot_map3(nc_mean)
+```
+
+### Create plots
 ```{r}
 ## SIF
 map_sif <- plot_map3(fil_sif, colorscale = viridis, plot_title = "SiF", plot_subtitle = expression(paste("mW m"^-2, " sr"^-1, " nm"^1)), nbin = 10, width = 0.01)
 
-## FLUXCOM
+# ## FLUXCOM
+# nc_fluxcom <- read_nc_onefile(fil_fluxcom, time_is_years = TRUE)
+# nc_fluxcom$vars$gpp <- apply(nc_fluxcom$vars$gpp, c(1,2), FUN = mean)
+# map_fluxcom <- plot_map3(nc_fluxcom, colorscale = viridis, nbin = 15, plot_title = "FLUXCOM", plot_subtitle = expression( paste("g C m"^-2, " yr"^-1 ) ), width = 0.01, breaks = c(seq(0, 3000, 200), Inf))
+
+## Mean
+map_mean <- plot_map3(
+  nc_mean, 
+  colorscale = viridis, 
+  nbin = 15, 
+  plot_title = "Mean of RS-models", 
+  plot_subtitle = expression( paste("g C m"^-2, " yr"^-1 ) ), 
+  breaks = c(seq(0, 3000, 200), Inf)
+  )
+
+## P-model FULL MODIS, load and take mean across time, and map
+nc_full_modis <- nc_timmean_2000_2011(fil_pmodel_full_modis)
+ofil_pmodel_full_modis <- "./data/gpp_pmodel_full_modis.nc"
+write_nc2(nc_full_modis, path = ofil_pmodel_full_modis)
+
+map_pmodel_full_modis <- plot_map3(
+  nc_full_modis, 
+  colorscale = viridis, 
+  nbin = 15, 
+  plot_title = "P-model", 
+  plot_subtitle = expression( paste("g C m"^-2, " yr"^-1, "  FULL, MODIS FPAR" ) ), 
+  breaks = c(seq(0, 3000, 200), Inf)
+  )
+
+## P-model FULL MODIS, load and take mean across time, and map
+nc_full_3g <- nc_timmean_2000_2011(fil_pmodel_full_3g)
+ofil_pmodel_full_3g <- "./data/gpp_pmodel_full_3g.nc"
+write_nc2(nc_full_3g, path = ofil_pmodel_full_3g)
+
+map_pmodel_full_3g <- plot_map3(
+  nc_full_3g, 
+  colorscale = viridis, 
+  nbin = 15, 
+  plot_title = "P-model", 
+  plot_subtitle = expression( paste("g C m"^-2, " yr"^-1, "  FULL, fAPAR3g" ) ), 
+  breaks = c(seq(0, 3000, 200), Inf)
+  )
+
+cowplot::plot_grid(map_sif, map_mean, map_pmodel_full_modis, map_pmodel_full_3g, ncol = 2)
+ggsave("fig/maps_comparison.pdf", width = 12, height = 8)
+```
+
+### Differences
+```{r}
 nc_fluxcom <- read_nc_onefile(fil_fluxcom, time_is_years = TRUE)
 nc_fluxcom$vars$gpp <- apply(nc_fluxcom$vars$gpp, c(1,2), FUN = mean)
-map_fluxcom <- plot_map3(nc_fluxcom, colorscale = viridis, nbin = 15, plot_title = "FLUXCOM", plot_subtitle = expression( paste("g C m"^-2, " yr"^-1 ) ), width = 0.01, breaks = c(seq(0, 3000, 200), Inf))
+nc_fluxcom$vars$gpp <- nc_fluxcom$vars$gpp[,360:1]
 
-## P-model FULL MODIS, load and take mean across time, and map
-nc_full_modis <- read_nc_onefile(fil_pmodel_full_modis)
-nc_full_modis$vars$gpp <- apply(nc_full_modis$vars$gpp, c(1,2), FUN = mean)
-map_pmodel_full_modis <- plot_map3(nc_full_modis, colorscale = viridis, nbin = 15, plot_title = "P-model", plot_subtitle = expression( paste("g C m"^-2, " yr"^-1, "  FULL, MODIS FPAR" ) ), width = 0.01, breaks = c(seq(0, 3000, 200), Inf))
+image(nc_full_3g$vars$gpp)
+image(nc_fluxcom$vars$gpp)
 
-## P-model FULL MODIS, load and take mean across time, and map
-nc_full_3g <- read_nc_onefile(fil_pmodel_full_3g)
-nc_full_3g$vars$gpp <- apply(nc_full_3g$vars$gpp, c(1,2), FUN = mean)
-map_pmodel_full_3g <- plot_map3(nc_full_3g, colorscale = viridis, nbin = 15, plot_title = "P-model", plot_subtitle = expression( paste("g C m"^-2, " yr"^-1, "  FULL, fAPAR3g" ) ), width = 0.01, breaks = c(seq(0, 3000, 200), Inf))
+diff_pmodel3g_fluxcom <- nc_full_3g
+diff_pmodel3g_fluxcom$vars$gpp <- diff_pmodel3g_fluxcom$vars$gpp - nc_fluxcom$vars$gpp
 
-cowplot::plot_grid(map_sif, map_fluxcom, map_pmodel_full_modis, map_pmodel_full_3g, ncol = 2)
-ggsave("fig/maps_comparison.pdf", width = 12, height = 8)
+plot_map3(diff_pmodel3g_fluxcom, colorscale = "mycentered", nbin = 10, width = 0.01, breaks = c(-Inf, seq(-1000, 1000, by = 200), Inf), plot_title = expression(paste("Difference P-model - FLUXCOM")))
 ```
 
 ## Time series
@@ -201,7 +304,7 @@ df_tseries <- integrate_lonlat(fil_pmodel_org_modis, landfil) %>%
 
 ### Evaluate time series.
 ```{r}
-plot_selection <- c("gpp_fluxcom", "gpp_pmodel_full_3g", "gpp_pmodel_full_modis", "gpp_modis", "gpp_bess")
+plot_selection <- c("gpp_fluxcom", "gpp_pmodel_full_3g", "gpp_pmodel_full_modis", "gpp_modis")
 
 ## CAlculate sensitivity to CO2
 mynorm <- function(vec){
@@ -249,7 +352,13 @@ df_lm %>%
   labs(x = "Model", y = "dGPP/GPP / dCO2/CO2") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 #ggsave("fig/barplot_co2_sensitivity.pdf", width = 6, height = 5)
+
+df_tseries %>% 
+  filter(year %in% 2000:2011) %>% 
+  summarise_all(.funs = mean) %>% 
+  print()
 ```
+
 
 ## Latitudinal distribution
 
@@ -260,65 +369,45 @@ filn <- "./data/df_lat.csv"
 overwrite <- TRUE
 if (!file.exists(filn) || overwrite){
   
-df_lat <- integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>% 
-  rename( gpp_pmodel_org_modis = gpp ) %>% 
+df_lat <- integrate_lon(ifil = ofil_pmodel_full_modis, landfil = landfil, mask = nc_mean$vars$gpp) %>% 
+  rename( gpp_pmodel_full_modis = gpp ) %>% 
   left_join(
-    integrate_lon(ifil = fil_pmodel_brc_modis, landfil = landfil) %>% 
-      rename( gpp_pmodel_brc_modis = gpp),
-    by = "lat"
-  ) %>% 
-  left_join(
-    integrate_lon(ifil = fil_pmodel_full_modis, landfil = landfil) %>% 
-      rename( gpp_pmodel_full_modis = gpp),
-    by = "lat"
-  ) %>% 
-  left_join(
-    integrate_lon(ifil = fil_pmodel_org_3g, landfil = landfil) %>% 
-      rename( gpp_pmodel_org_3g = gpp),
-    by = "lat"
-  ) %>% 
-  left_join(
-    integrate_lon(ifil = fil_pmodel_brc_3g, landfil = landfil) %>% 
-      rename( gpp_pmodel_brc_3g = gpp),
-    by = "lat"
-  ) %>% 
-  left_join(
-    integrate_lon(ifil = fil_pmodel_full_3g, landfil = landfil) %>%
+    integrate_lon(ifil = ofil_pmodel_full_3g, landfil = landfil) %>%
       rename( gpp_pmodel_full_3g = gpp),
     by = "lat"
   ) %>%
+  # left_join(
+  #   integrate_lon(ifil = fil_pmodel_stocker19, landfil = landfil) %>% 
+  #     rename( gpp_pmodel_stocker19 = gpp),
+  #   by = "lat"
+  # ) %>% 
   left_join(
-    integrate_lon(ifil = fil_pmodel_stocker19, landfil = landfil) %>% 
-      rename( gpp_pmodel_stocker19 = gpp),
-    by = "lat"
-  ) %>% 
-  left_join(
-    integrate_lon(ifil = fil_mte, date_origin = "1970-01-01") %>% 
+    integrate_lon(ifil = ofil_mte, mask = nc_mean$vars$gpp) %>% 
       rename( gpp_mte = gpp),
     by = "lat"
   ) %>% 
   left_join(
-    integrate_lon(ifil = fil_fluxcom, time_is_years = TRUE) %>% 
+    integrate_lon(ifil = ofil_fluxcom, mask = nc_mean$vars$gpp) %>% 
       rename( gpp_fluxcom = gpp),
     by = "lat"
   ) %>% 
   left_join(
-    integrate_lon(ifil = fil_bess, date_origin = "1970-01-01") %>% 
+    integrate_lon(ifil = ofil_bess, mask = nc_mean$vars$gpp) %>% 
       rename( gpp_bess = gpp),
     by = "lat"
   ) %>% 
   left_join(
-    integrate_lon(ifil = fil_vpm, time_is_years = TRUE) %>% 
+    integrate_lon(ifil = ofil_vpm, mask = nc_mean$vars$gpp) %>% 
       rename( gpp_vpm = gpp),
     by = "lat"
   ) %>% 
   left_join(
-    integrate_lon(ifil = fil_modis, time_is_years = TRUE) %>% 
+    integrate_lon(ifil = ofil_modis, mask = nc_mean$vars$gpp) %>% 
       rename( gpp_modis = gpp),
     by = "lat"
   ) %>% 
   left_join(
-    integrate_lon_sif(fil_sif, "~/data/gome2_sif_downscaled/data_halfdeg/gridarea.nc"),
+    integrate_lon_sif(fil_sif, "~/data/gome_2_sif_downscaled/data_halfdeg/gridarea.nc", mask = nc_mean$vars$gpp),
     by = "lat"
   )
 
@@ -332,21 +421,47 @@ df_lat <- integrate_lon(ifil = fil_pmodel_org_modis, landfil = landfil) %>%
 ### Evaluate latitudinal distribution
 
 ```{r}
-plot_selection <- c("gpp_fluxcom", "gpp_pmodel_full_3g", "gpp_pmodel_full_modis", "gpp_modis")
+plot_selection <- c("gpp_pmodel_full_modis", "gpp_pmodel_full_3g", "gpp_fluxcom", "gpp_modis", "gpp_bess", "gpp_vpm")
+
+df_long <- df_lat %>% 
+      pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp" ) %>% 
+      filter(model %in% plot_selection) %>% 
+      mutate( model = factor(model, levels = plot_selection, ordered = TRUE))
+
 
 # scaleme <- max(df_lat$gpp_pmodel_full_modis)/max(df_lat$sif, na.rm=TRUE)
 scaleme <- 400
 
+myjcolors <- function(ncolors){
+  
+  jcols <- jcolors::jcolors("default")
+  
+  ## add
+  out <- c(jcols, gplots::col2hex("darkgreen"), gplots::col2hex("navyblue"))
+  names(out) <- c(names(jcols), "darkgreen", "navyblue")
+  
+  out <- out[1:ncolors]
+  return(out)
+}
+
+use_colors <- myjcolors(6) %>% unlist()
+
+values_cols <- c("#006400", "#29BF12", "#00A5CF", "#DE1A1A", "#574AE2", "#FFBF00")
+
 ggplot() +
   geom_line(
-    data = df_lat %>% 
-      pivot_longer(cols = starts_with("gpp_"), names_to = "model", values_to = "gpp" ) %>% 
-      filter(model %in% plot_selection),
-    aes(x = lat, y = gpp, color = model)
+    data = df_long,
+    aes(x = lat, y = gpp, color = model),
+    size = 0.8
     ) +
-  geom_line(data = df_lat, aes(x = lat, y = sif * scaleme), color = "black", size = 0.8) +
-  scale_y_continuous(sec.axis = sec_axis(~.*scaleme, name = expression(paste("SIF (mW m"^-1, " sr"^-1, " nm"^1, ")")))) +
-  scale_colour_brewer(palette = "Set1", label = c("FLUXCOM", "MODIS GPP", "P-model fAPAR3g", "P-model MODIS"), name = "GPP") +
+  geom_line(data = df_lat, aes(x = lat, y = sif * scaleme, size = "GOME-2"), color = "black") +
+  scale_y_continuous(sec.axis = sec_axis(~.*scaleme, name = expression(paste("SiF (mW m"^-1, " sr"^-1, " nm"^1, ")")))) +
+  scale_colour_manual(values = c("#006400", "#29BF12", "#00A5CF", "#DE1A1A", "#574AE2", "#FFBF00"), label = c("P-model MODIS FPAR", "P-model fAPAR3g", "FLUXCOM", "MODIS GPP", "BESS", "VPM"), name = "GPP") +
+  # scale_colour_hue() +
+  scale_size_manual(
+    "SiF", values = 1.0,
+    guide = guide_legend(override.aes = list(color=c("black")))
+    ) +
   xlim( -55, 80 ) +
   labs(
     x = expression(paste("Latitude (", degree, "N)")), 
