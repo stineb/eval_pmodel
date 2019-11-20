@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+calib_results/*
+data/*
+*.Rproj
+*.tex
+*.csv
+*.pdf
