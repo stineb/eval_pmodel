@@ -3,8 +3,8 @@
 ##------------------------------------------
 library(rsofun)
 load_dependencies_rsofun()
-# systr <- "''"    # for Mac
-systr <- ""      # for Linux
+systr <- "''"    # for Mac
+# systr <- ""      # for Linux
 overwrite <- TRUE
 
 ##------------------------------------------
@@ -56,7 +56,6 @@ settings_sims <- list(
   loutdalpha     = FALSE
   )
 
-
 ##------------------------------------------
 ## Input settings
 ##------------------------------------------
@@ -105,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 
@@ -174,24 +173,23 @@ settings_eval <- list(
   )
 
 
-
 ##//////////////////////////////////////////
 ## BRC
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
 # inputdata <- prepare_input_sofun(
-#   settings_input = settings_input,
-#   settings_sims = settings_sims,
-#   return_data = FALSE,
-#   overwrite_csv_climate = TRUE,
-#   overwrite_climate = TRUE,
-#   overwrite_csv_fapar = TRUE,
-#   overwrite_fapar = TRUE,
-#   verbose = TRUE
+#   settings_input        = settings_input,
+#   settings_sims         = settings_sims,
+#   return_data           = FALSE,
+#   overwrite_csv_climate = FALSE,
+#   overwrite_climate     = FALSE,
+#   overwrite_csv_fapar   = TRUE,
+#   overwrite_fapar       = TRUE,
+#   verbose               = TRUE
 #   )
 
-
+  
 ##------------------------------------------
 ### Out of bag calibration for BRC
 ##------------------------------------------
@@ -214,80 +212,44 @@ if (file.exists(filn)){
   ddf_obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
     settings_sims = settings_sims, 
-    overwrite = TRUE, 
-    light = TRUE 
+    overwrite     = TRUE, 
+    light         = TRUE,
+    add_forcing   = FALSE
   )
   save(ddf_obs_eval, file = filn)
 }
 
-if (!exists("out_oob_BRC") || overwrite){
+# if (!exists("out_oob_BRC") || overwrite){
 
-  out_oob_BRC <- oob_calib_eval_sofun(
-    setup = setup_sofun,
-    settings_calib = settings_calib,
-    settings_eval = settings_eval,
-    settings_sims = settings_sims,
-    settings_input = settings_input,
-    ddf_obs_calib = ddf_obs_calib,
-    ddf_obs_eval = ddf_obs_eval
-    )
+#   out_oob_BRC <- oob_calib_eval_sofun(
+#     setup = setup_sofun,
+#     settings_calib = settings_calib,
+#     settings_eval = settings_eval,
+#     settings_sims = settings_sims,
+#     settings_input = settings_input,
+#     ddf_obs_calib = ddf_obs_calib,
+#     ddf_obs_eval = ddf_obs_eval
+#     )
 
-  save(out_oob_BRC, file = "~/eval_pmodel/data/out_oob_BRC.Rdata")
+#   save(out_oob_BRC, file = "~/eval_pmodel/data/out_oob_BRC.Rdata")
 
-} else {
-  load("~/eval_pmodel/data/out_oob_BRC.Rdata")
-}
-
-# ## pooled oob evaluation results for x-daily:
-# print(out_oob_BRC$`AALL`$gpp$fluxnet2015$metrics$xdaily_pooled)
-
-# library(rbeni)
-# modobs_xdaily_oob <- out_oob_BRC$`AALL`$gpp$fluxnet2015$data$xdf %>%
-#   analyse_modobs2("mod", "obs", type="heat")
-# modobs_xdaily_oob
-
-# source("extract_mean_rsq.R")
-# print(extract_mean_rsq(out_oob_BRC))
+# } else {
+#   load("~/eval_pmodel/data/out_oob_BRC.Rdata")
+# }
 
 
 ##------------------------------------------
 ## Single calibration and evaluation for BRC
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-# ddf_obs_calib <- ddf_obs_calib %>% 
-#   dplyr::mutate(id = 1:nrow(ddf_obs_calib))
-
-# idxs_train <- ddf_obs_calib %>% 
-#   dplyr::filter(!is.na(gpp_obs)) %>% 
-#   sample_frac(size = 0.75) %>% 
-#   pull(id)
-
-# idxs_test <- ddf_obs_calib %>% 
-#   dplyr::filter(!is.na(gpp_obs)) %>%
-#   dplyr::filter(!(id %in% idxs_train)) %>%
-#   pull(id)
-
-# sitedates_test <- ddf_obs_calib[idxs_test,] %>% 
-#   dplyr::select(sitename, date)
-
-# sitedates_train <- ddf_obs_calib[idxs_train,] %>% 
-#   dplyr::select(sitename, date)
-
-# ddf_obs_calib_train <- ddf_obs_calib
-# ddf_obs_calib_test  <- ddf_obs_calib
-
-# ddf_obs_calib_train$gpp_obs[idxs_test] <- NA
-# ddf_obs_calib_test$gpp_obs[idxs_train] <- NA
-
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  # ddf_obs        = ddf_obs_calib_train
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 ## Update parameters
 filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
@@ -300,13 +262,6 @@ mod <- runread_sofun(
   setup = setup_sofun
 )
 
-# ## remove training dates from model outputs (replacing by NA) 
-# mod <- sitedates_train %>% 
-#   dplyr::mutate(dropme = TRUE) %>% 
-#   dplyr::right_join(mod, by=c("sitename", "date")) %>% 
-#   dplyr::mutate(dropme = ifelse(is.na(dropme), FALSE, dropme)) %>% 
-#   dplyr::mutate(gpp = ifelse(dropme, NA, gpp))
-
 ## evaluate at calib sites only (for comparison)
 settings_eval$sitenames <- settings_calib$sitenames
 out_eval_BRC <- eval_sofun( 
@@ -315,24 +270,13 @@ out_eval_BRC <- eval_sofun(
   settings_sims, 
   obs_eval = ddf_obs_eval, 
   overwrite = TRUE, 
-  light = TRUE 
+  light = FALSE 
   )
 
 ## write to file
 save(out_eval_BRC, file = paste0(settings_calib$dir_results, "/out_eval_BRC.Rdata"))
 
-# print(out_eval$gpp$fluxnet2015$metrics$xdaily_pooled)
+save(settings_eval,  file = "./data/settings_eval_BRC.Rdata")
+save(settings_sims,  file = "./data/settings_sims_BRC.Rdata")
+save(settings_calib, file = "./data/settings_calib_BRC.Rdata")
 
-# out <- out_eval$gpp$fluxnet2015$data$xdf %>%
-#   rbeni::analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
-# out$gg
-
-
-# ## TESTING
-# out_oob_FULL$AALL$gpp$fluxnet2015$metrics$xdaily_pooled
-
-# out_oob_FULL$`FR-Pue`$gpp$fluxnet2015$data$ddf %>% 
-#   filter(year(date)>2003 & year(date)<2005) %>% 
-#   tidyr::
-#   ggplot(aes(x=date, y=obs)) +
-#   geom_line()

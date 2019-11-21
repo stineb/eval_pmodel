@@ -179,45 +179,46 @@ settings_eval <- list(
 ## Prepare input files
 ##------------------------------------------
 inputdata <- prepare_input_sofun(
-  settings_input = settings_input,
-  settings_sims = settings_sims,
-  return_data = FALSE,
+  settings_input        = settings_input,
+  settings_sims         = settings_sims,
+  return_data           = FALSE,
   overwrite_csv_climate = FALSE,
-  overwrite_climate = FALSE,
-  overwrite_csv_fapar = TRUE,
-  overwrite_fapar = TRUE,
-  verbose = TRUE
+  overwrite_climate     = FALSE,
+  overwrite_csv_fapar   = TRUE,
+  overwrite_fapar       = TRUE,
+  verbose               = TRUE
   )
 
   
-# ##------------------------------------------
-# ### Out of bag calibration for ORG
-# ##------------------------------------------
-# filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
-# if (file.exists(filn)){
-#   load(filn)
-# } else {
-#   ddf_obs_calib <- get_obs_calib( 
-#     settings_calib = settings_calib, 
-#     settings_sims, 
-#     settings_input 
-#   )
-#   save(ddf_obs_calib, file = filn)  
-# }
-# 
-# filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
-# if (file.exists(filn)){
-#   load(filn)
-# } else {
-#   ddf_obs_eval  <- get_obs_eval( 
-#     settings_eval = settings_eval, 
-#     settings_sims = settings_sims, 
-#     overwrite = TRUE, 
-#     light = TRUE 
-#   )
-#   save(ddf_obs_eval, file = filn)
-# }  
-# 
+##------------------------------------------
+### Out of bag calibration for ORG
+##------------------------------------------
+filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ddf_obs_calib <- get_obs_calib( 
+    settings_calib = settings_calib, 
+    settings_sims, 
+    settings_input 
+  )
+  save(ddf_obs_calib, file = filn)  
+}
+
+filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ddf_obs_eval  <- get_obs_eval( 
+    settings_eval = settings_eval, 
+    settings_sims = settings_sims, 
+    overwrite     = TRUE, 
+    light         = TRUE,
+    add_forcing   = FALSE
+  )
+  save(ddf_obs_eval, file = filn)
+}  
+
 # if (!exists("out_oob_ORG") || overwrite){
 # 
 #   out_oob_ORG <- oob_calib_eval_sofun(
@@ -241,14 +242,14 @@ inputdata <- prepare_input_sofun(
 ## Single calibration and evaluation for ORG
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 ## Update parameters
 filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
@@ -269,15 +270,20 @@ out_eval_ORG <- eval_sofun(
   settings_sims, 
   obs_eval = ddf_obs_eval, 
   overwrite = TRUE, 
-  light = TRUE 
+  light = FALSE 
   )
 
 ## write to file
-save(out_eval_ORG, file = paste0(settings_calib$dir_results, "/out_eval_ORG.Rdata"))
+save(out_eval_ORG,   file = paste0(settings_calib$dir_results, "/out_eval_ORG.Rdata"))
 
-out <- out_eval_ORG$gpp$fluxnet2015$data$xdf %>% 
-  analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
-out$gg
+save(settings_eval,  file = "./data/settings_eval_ORG.Rdata")
+save(settings_sims,  file = "./data/settings_sims_ORG.Rdata")
+save(settings_calib, file = "./data/settings_calib_ORG.Rdata")
+
+
+# out <- out_eval_ORG$gpp$fluxnet2015$data$xdf %>% 
+#   analyse_modobs2(mod = "mod", obs = "obs", type = "heat")
+# out$gg
 
 # ### Setup `FULL`
 
@@ -466,184 +472,5 @@ out$gg
 # ```
 
 
-# ### Sensitivity to target GPP data with `FULL_DT` and `FULL_Ty` and `FULL_NTsub`
 
-# Do the same as described under `ORG`, but with alternative calibration target data: GPP based on the daytime decomposition method and GPP on GePiSaT method. Note that GPP data decomposed based on the GePiSaT method is much sparser than the FLUXNET 2015 data (NT and DT decomposition). To have a fair comparison, we use days that have valid data in all datasets GePiSaT, NT, and DT. This requires the `FULL` setup to be repeated with only a subset of the data (`FULL_NTsub`). Calibrated parameters are written to `"params_opt_FULL_DT.csv"` and `"params_opt_FULL_Ty.csv"`.
-
-# #### Setup `FULL_DT`
-
-# ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-# ## Define calibration setup-specific simulation parameters
-# settings_sims$soilmstress = TRUE
-# settings_sims$tempstress  = TRUE
-
-# ## Prepare the model setup for this calibration set
-# settings_sims <- prepare_setup_sofun( 
-#   settings = settings_sims, 
-#   setup = setup_sofun,
-#   write_paramfils = FALSE 
-#   )
-
-# ## Define fAPAR input data and re-write input files for SOFUN
-# settings_input$fapar = "MODIS_FPAR_MCD15A3H"
-# settings_input$splined_fapar = TRUE
-
-# inputdata <- prepare_input_sofun( 
-#   settings_input = settings_input, 
-#   settings_sims = settings_sims, 
-#   return_data = FALSE, 
-#   overwrite_csv_fapar = TRUE, 
-#   overwrite_fapar = TRUE, 
-#   verbose = TRUE
-#   )
-
-# ## Additional setup-specific calibration-settings
-# ## Specify data source for observations to which model is calibrated
-# source("filter_days.R")
-# settings_calib_FULL_DT <- settings_calib
-# settings_calib_FULL_DT$name <- "FULL_DT"
-# settings_calib_FULL_DT$par <- list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
-#                                     soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-#                                     soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) )
-# settings_calib_FULL_DT$datasource = list( gpp = "fluxnet2015_DT" )
-# settings_calib_FULL_DT$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
-# settings_calib_FULL_DT$filter_temp_min = NA
-# settings_calib_FULL_DT$filter_soilm_min = NA
-
-# ## Get observational data (GPP based on NT method) used as target for calibration
-# if (!exists("ddf_obs_DT")){
-#   ddf_obs_DT <- get_obs_calib( settings_calib_FULL_DT, settings_sims, settings_input ) %>% 
-#     filter_days( settings_calib_FULL_DT$filter_days, settings_calib_FULL_DT$path_gepisat )
-#   save(ddf_obs_DT, file = "data/ddf_obs_DT.Rdata")
-# } else {
-#   load("data/ddf_obs_DT.Rdata")
-# }
-# print(paste0("Total number of calibration target data points: ", sum(!is.na(ddf_obs_DT$gpp_obs))))
-
-# settings_calib_FULL_DT <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib_FULL_DT,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_DT
-#   )
-# ```
-
-# #### Setup `FULL_NTsub`
-
-# ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-# ## Define calibration setup-specific simulation parameters
-# settings_sims$soilmstress = TRUE
-# settings_sims$tempstress  = TRUE
-
-# ## Prepare the model setup for this calibration set
-# settings_sims <- prepare_setup_sofun( 
-#   settings = settings_sims, 
-#   setup = setup_sofun,
-#   write_paramfils = FALSE 
-#   )
-
-# ## Define fAPAR input data and re-write input files for SOFUN
-# settings_input$fapar = "MODIS_FPAR_MCD15A3H"
-# settings_input$splined_fapar = TRUE
-
-# inputdata <- prepare_input_sofun( 
-#   settings_input = settings_input, 
-#   settings_sims = settings_sims, 
-#   return_data = FALSE, 
-#   overwrite_csv_fapar = TRUE, 
-#   overwrite_fapar = TRUE, 
-#   verbose = TRUE
-#   )
-
-# ## Additional setup-specific calibration-settings
-# ## Specify data source for observations to which model is calibrated
-# settings_calib_FULL_NTsub <- settings_calib
-# settings_calib_FULL_NTsub$name <- "FULL_NTsub"
-# settings_calib_FULL_NTsub$par <- list(  kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
-#                                         soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-#                                         soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) )
-# settings_calib_FULL_NTsub$datasource = list( gpp = "fluxnet2015_NT" )
-# settings_calib_FULL_NTsub$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
-# settings_calib_FULL_NTsub$filter_temp_min = NA
-# settings_calib_FULL_NTsub$filter_soilm_min = NA
-
-# ## Get observational data (GPP based on NT method) used as target for calibration
-# if (!exists("ddf_obs_NTsub")){
-#   ddf_obs_NTsub <- get_obs_calib( settings_calib_FULL_NTsub, settings_sims, settings_input ) %>% 
-#     filter_days( settings_calib_FULL_NTsub$filter_days, settings_calib_FULL_NTsub$path_gepisat )
-#   save( ddf_obs_NTsub, file = "data/ddf_obs_NTsub.Rdata")
-# } else {
-#   load("data/ddf_obs_NTsub.Rdata")
-# }
-# print(paste0("Total number of calibration target data points: ", sum(!is.na(ddf_obs_NTsub$gpp_obs))))
-
-# settings_calib_FULL_NTsub <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib_FULL_NTsub,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_NTsub
-#   )
-# ```
-
-
-# #### Setup `FULL_Ty`
-
-# ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-# ## Define calibration setup-specific simulation parameters
-# settings_sims$soilmstress = TRUE
-# settings_sims$tempstress  = TRUE
-
-# ## Prepare the model setup for this calibration set
-# settings_sims <- prepare_setup_sofun( 
-#   settings = settings_sims, 
-#   setup = setup_sofun,
-#   write_paramfils = FALSE 
-#   )
-
-# ## Define fAPAR input data and re-write input files for SOFUN
-# settings_input$fapar = "MODIS_FPAR_MCD15A3H"
-# settings_input$splined_fapar = TRUE
-
-# inputdata <- prepare_input_sofun( 
-#   settings_input = settings_input, 
-#   settings_sims = settings_sims, 
-#   return_data = FALSE, 
-#   overwrite_climate = FALSE, 
-#   overwrite_csv_fapar = TRUE, 
-#   overwrite_fapar = TRUE, 
-#   verbose = TRUE
-#   )
-
-# ## Additional setup-specific calibration-settings
-# ## Specify data source for observations to which model is calibrated
-# settings_calib_FULL_Ty <- settings_calib
-# settings_calib_FULL_Ty$name = "FULL_Ty"
-# settings_calib_FULL_Ty$par = list( kphio          = list( lower=0.01, upper=0.4, init=0.1 ),
-#                                    soilm_par_a    = list( lower=0.0, upper=1.0, init=0.2 ),
-#                                    soilm_par_b    = list( lower=0.0, upper=2.0, init=0.2 ) )
-# settings_calib_FULL_Ty$datasource = list( gpp = "fluxnet2015_Ty" )
-# settings_calib_FULL_Ty$filter_days = c("fluxnet2015_Ty", "fluxnet2015_DT", "fluxnet2015_NT")
-# settings_calib_FULL_Ty$filter_temp_min = NA
-# settings_calib_FULL_Ty$filter_soilm_min = NA
-
-# ## Get observational data (GPP based on NT method) used as target for calibration
-# if (!exists("ddf_obs_Ty")){
-#   ddf_obs_Ty <- get_obs_calib( settings_calib_FULL_Ty, settings_sims, settings_input ) %>% 
-#     filter_days( settings_calib_FULL_Ty$filter_days, settings_calib_FULL_Ty$path_gepisat )
-#   save( ddf_obs_Ty, file = "data/ddf_obs_Ty.Rdata" )
-# } else {
-#   load("data/ddf_obs_Ty.Rdata")
-# }
-# print(paste0("Total number of calibration target data points: ", sum(!is.na(ddf_obs_Ty$gpp_obs))))
-
-# settings_calib_FULL_Ty <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib_FULL_Ty,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_Ty
-#   )
-# ```
 

@@ -752,6 +752,7 @@ sum(!is.na(merged$gpp_Ty))
 obs_eval_DT$ddf$gpp_obs    <- merged$gpp_DT
 obs_eval_NTsub$ddf$gpp_obs <- merged$gpp_NT
 obs_eval_Ty$ddf$gpp_obs    <- merged$gpp_Ty
+
 # x-daily
 merged <- select(    obs_eval_DT$xdf,    sitename, inbin, gpp_DT = gpp_obs ) %>% 
   left_join( select( obs_eval_NTsub$xdf, sitename, inbin, gpp_NT = gpp_obs ), by = c("sitename", "inbin") ) %>% 
@@ -764,6 +765,7 @@ sum(!is.na(merged$gpp_Ty))
 obs_eval_DT$xdf$gpp_obs    <- merged$gpp_DT
 obs_eval_NTsub$xdf$gpp_obs <- merged$gpp_NT
 obs_eval_Ty$xdf$gpp_obs    <- merged$gpp_Ty
+
 ## evaluate FULL_DT simulations
 if (!file.exists("data/out_eval_FULL_DT.RdataXXX")){
   out_eval_FULL_DT <- eval_sofun( mod_FULL_DT, settings_eval, settings_sims, obs_eval = obs_eval_DT, overwrite = TRUE )
@@ -773,6 +775,7 @@ if (!file.exists("data/out_eval_FULL_DT.RdataXXX")){
 }
 row_rsqtable_FULL_DT <- bind_cols( Setup = "FULL_DT", getrow_statstable( out_eval_FULL_DT, stat = "rsq" ) )
 rm("mod_FULL_DT")
+
 ## evaluate FULL_NTsub simulations
 if (!file.exists("data/out_eval_FULL_NTsub.RdataXXX")){
   out_eval_FULL_NTsub <- eval_sofun( mod_FULL_NTsub, settings_eval, settings_sims, obs_eval = obs_eval_NTsub, overwrite = TRUE )
@@ -782,6 +785,7 @@ if (!file.exists("data/out_eval_FULL_NTsub.RdataXXX")){
 }
 row_rsqtable_FULL_NTsub <- bind_cols( Setup = "FULL_NTsub", getrow_statstable( out_eval_FULL_NTsub, stat = "rsq" ) )
 rm("mod_FULL_NTsub")
+
 ## evaluate FULL_Ty simulations
 if (!file.exists("data/out_eval_FULL_Ty.RdataXXX")){
   out_eval_FULL_Ty <- eval_sofun( mod_FULL_Ty, settings_eval, settings_sims, obs_eval = obs_eval_Ty, overwrite = TRUE )
@@ -849,6 +853,7 @@ The features of variability in GPP, for which model-observation agreement is cal
 - daily anomalies from mean seasonal cycle
 ## Results of evaluation
 Load evaluation data if not available.
+
 ```{r}
 if (!exists("out_eval_ORG"))  load("data/out_eval_ORG.Rdata")
 if (!exists("out_eval_BRC"))  load("data/out_eval_BRC.Rdata")
@@ -861,6 +866,7 @@ if (!exists("out_eval_FULL_DT")) load("data/out_eval_FULL_DT.Rdata")
 if (!exists("out_eval_FULL_NTsub")) load("data/out_eval_FULL_NTsub.Rdata")
 if (!exists("out_eval_FULL_Ty")) load("data/out_eval_FULL_Ty.Rdata")
 ``` 
+
 ### Save flat tables
 Save flat tables of daily data as CSV files.
 ```{r}
@@ -875,6 +881,7 @@ write_csv(dplyr::select(out_eval_FULL_DT$data$ddf, sitename, date, gpp_mod), pat
 write_csv(dplyr::select(out_eval_FULL_NTsub$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_NTsub.csv")
 write_csv(dplyr::select(out_eval_FULL_Ty$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_Ty.csv")
 ```
+
 ### Metrics table
 Create a latex table for $R^2$ and RMSE:
 ```{r, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
@@ -909,6 +916,7 @@ table_rmse <- bind_rows(
   rename_( "5-daily"="xdaily", "Spatial"="spatial", "Annual"="annual", "Seasonal"="seasonal", "var(daily)"="daily_var", "var(annual)"="annual_var") %>%
   create_table_latex( caption = "Caption text", filn = "table_rmse.tex" )
 ```
+
 ### Variability versus aggregation
 ```{r}
 source("eval_ixv_sofun.R")
@@ -1012,12 +1020,15 @@ df_zones_used <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   arrange( -nsites ) %>% 
   mutate(climatezone = paste(koeppen_code, hemisphere)) %>% 
   filter(!(koeppen_code=="ET"))
+
 df_rosetta <- tibble(
   climatezone = c("Aw south", "BSk north", "Cfa north", "Cfb north", "Cfb south", "Csa north", "Csb north", "Dfb north", "Dfc north", "ET"),
   label = c("Tropical savannah, dry winter, SH", "Arid steppe, cold", "Warm tem., fully humid, hot summer", "Warm tem., fully humid, warm summer",
     "Warm tem., fully humid, warm summer, SH", "Warm tem., dry and hot summer", "Warm tem., dry and warm summer", "Cold, fully humid, warm summer", 
     "Cold, fully humid, cold summer", "Polar tundra" )  )
+
 save(df_rosetta, file = "./data/df_rosetta.Rdata")
+
 list_rosetta <- c(
   "Aw south"  = "Tropical savannah, dry winter, SH", 
   "BSk north" = "Arid steppe, cold", 
@@ -1029,6 +1040,7 @@ list_rosetta <- c(
   "Dfb north" = "Cold, fully humid, warm summer", 
   "Dfc north" = "Cold, fully humid, cold summer", 
   "ET"        = "Polar tundra")
+
 getname_climatezone <- function(myclimatezone){
   load("./data/df_rosetta.Rdata")
   df_rosetta %>% 
@@ -1036,6 +1048,7 @@ getname_climatezone <- function(myclimatezone){
     dplyr::select(label) %>% 
     unlist()
 }
+
 ## combine data
 df_meandoy_byclim <- out_eval_FULL$data$meandoydf_byclim_stats$data %>% 
   bind_rows() %>%
@@ -1064,7 +1077,9 @@ df_meandoy_byclim <- out_eval_FULL$data$meandoydf_byclim_stats$data %>%
   filter(climatezone %in% df_zones_used$climatezone) %>% 
   # mutate(setup = factor(setup, levels = c("Observed", "FULL", "BRC", "ORG", "NULL"))) %>% 
   left_join(select(df_zones_used, climatezone, Climate), by = "climatezone")
+  
 df_meandoy_byclim$setup <- factor(df_meandoy_byclim$setup, levels = c("NULL", "ORG", "BRC", "Observed", "FULL"))
+
 ## plot
 df_meandoy_byclim %>% 
   ggplot() +
@@ -1083,7 +1098,9 @@ df_meandoy_byclim %>%
     # values=c("black", "red", "royalblue", "#E69F00", "darkseagreen3")
     values=c("Observed" = "black",  "FULL" = "red", "BRC" = "royalblue", "ORG" = "#E69F00", "NULL" = "darkseagreen3")
     ) 
+
 ggsave("fig/meandoy_byzone.pdf", width=8, height=8)
+
 df_zones_used %>% 
   xtable::xtable( caption = "Caption text", auto = TRUE ) %>%
   print( hline.after=c(-1, 0), file = "tab/table_nsites_kgclimate.tex" )

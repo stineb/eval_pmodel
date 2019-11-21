@@ -5,8 +5,9 @@ plot_map_siteoverview <- function( df, background, plotfiln=NA ){
   require( sp, quietly = TRUE )
   require( maptools, quietly = TRUE )
   require( dplyr, quietly = TRUE )  
+  require( rbeni )
 
-  #source("../utilities/mycolorbar.R")
+  source("~/rbeni/R/mycolorbar.R")
 
   ## half degree resolution
   lon <- seq(-179.75, 179.75, 0.5)
@@ -72,8 +73,8 @@ plot_map_siteoverview <- function( df, background, plotfiln=NA ){
     # growtype <- list( herb=c("GRA", "CRO"), sav=c("SAV", "WSA"), shrub=c("OSH", "CSH"), woody_dec=c("MF", "DBF"), woody_evg=c("ENF", "EBF"), wet=c("WET") )
 
     ## Sites used for the analysis
-    with( dplyr::filter( df, calib=="" ),  points( lon, lat, col='black', pch=19, cex=0.5 ) )
-    with( dplyr::filter( df, calib=="Y" ), points( lon, lat, col='black', pch=21, bg='springgreen2', cex=0.9 ) )
+    # with( dplyr::filter( df, calib=="" ),  points( lon, lat, col='black', pch=19, cex=0.5 ) )
+    with( df, points( lon, lat, col='black', pch=21, bg='springgreen2', cex=0.9 ) )
 
     # ## Sites not used for the analysis
     # with( dplyr::filter( df, !(used) ), points( lon, lat, col='red', pch=4, cex=0.8 ) )    

@@ -56,7 +56,6 @@ settings_sims <- list(
   loutdalpha     = FALSE
   )
 
-
 ##------------------------------------------
 ## Input settings
 ##------------------------------------------
@@ -79,12 +78,12 @@ settings_input <-  list(
   path_fluxnet2015_hh      = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
   get_from_remote          = FALSE,
   settings_gee             = get_settings_gee( 
-    bundle = "fpar", 
+    bundle = "evi", 
     python_path = "/Users/benjaminstocker/Library/Enthought/Canopy_64bit/User/bin/python",
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_EVI_MOD13Q1",
-  splined_fapar = FALSE
+  splined_fapar = TRUE
   )
 
 
@@ -105,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 
@@ -154,7 +153,6 @@ settings_calib <- list(
   filter_soilm_min = NA
  )
 
-
 ##------------------------------------------
 ## Evaluation settings
 ##------------------------------------------
@@ -176,12 +174,12 @@ settings_eval <- list(
   )
 
 
-
-##//////////////////////////////////////////
-## FULL_EVI
-##------------------------------------------
-## Prepare input files
-##------------------------------------------
+# 
+# ##//////////////////////////////////////////
+# ## FULL_EVI
+# ##------------------------------------------
+# ## Prepare input files
+# ##------------------------------------------
 inputdata <- prepare_input_sofun(
   settings_input        = settings_input,
   settings_sims         = settings_sims,
@@ -216,40 +214,26 @@ if (file.exists(filn)){
   ddf_obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
     settings_sims = settings_sims, 
-    overwrite = TRUE, 
-    light = TRUE 
+    overwrite     = TRUE, 
+    light         = TRUE,
+    add_forcing   = FALSE
   )
   save(ddf_obs_eval, file = filn)
 }  
-
-# if (!exists("out_oob_FULL_EVI") || overwrite){
-#   out_oob_FULL_EVI <- oob_calib_eval_sofun(
-#     setup = setup_sofun,
-#     settings_calib = settings_calib,
-#     settings_eval = settings_eval,
-#     settings_sims = settings_sims,
-#     settings_input = settings_input,
-#     ddf_obs_calib = ddf_obs_calib,
-#     ddf_obs_eval = ddf_obs_eval
-#   )
-#   save(out_oob_FULL_EVI, file = "~/eval_pmodel/data/out_oob_FULL_EVI.Rdata")
-# } else {
-#   load("~/eval_pmodel/data/out_oob_FULL_EVI.Rdata")
-# }
 
 
 ##------------------------------------------
 ## Single calibration and evaluation for FULL_EVI
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 ## Update parameters
 filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
@@ -270,9 +254,13 @@ out_eval_FULL_EVI <- eval_sofun(
   settings_sims,
   obs_eval = ddf_obs_eval,
   overwrite = TRUE,
-  light = TRUE
+  light = FALSE
   )
 
 ## write to file
 save(out_eval_FULL_EVI, file = paste0(settings_calib$dir_results, "/out_eval_FULL_EVI.Rdata"))
+
+save(settings_eval, file = "./data/settings_eval_FULL_EVI.Rdata")
+save(settings_sims, file = "./data/settings_sims_FULL_EVI.Rdata")
+save(settings_calib, file = "./data/settings_calib_FULL_EVI.Rdata")
 

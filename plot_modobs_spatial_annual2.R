@@ -2,34 +2,34 @@ plot_modobs_spatial_annual2 <- function( out_eval ){
   
   get_start_end <- function(df){
     df_start <- df %>% 
-      arrange(gpp_mod) %>% 
-      drop_na(gpp_mod, fitted) %>% 
+      arrange(mod) %>% 
+      drop_na(mod, fitted) %>% 
       slice(1)
     df_end <- df %>% 
-      arrange(desc(gpp_mod)) %>% 
-      drop_na(gpp_mod, fitted) %>% 
+      arrange(desc(mod)) %>% 
+      drop_na(mod, fitted) %>% 
       slice(1)
     out <- tibble(
-      xmin = df_start$gpp_mod, 
-      xmax = df_end$gpp_mod,
+      xmin = df_start$mod, 
+      xmax = df_end$mod,
       ymin = df_start$fitted,
       ymax = df_end$fitted )
     return(out)
   }
-  df <- out_eval$data$adf_stats %>% 
+  df <- out_eval$gpp$fluxnet2015$data$adf_stats %>% 
     mutate(start_end = purrr::map(data, ~get_start_end(.))) %>% 
     tidyr::unnest(start_end)
 
-  rsq_lab_annual <-  format(out_eval$metrics$gpp$fluxnet2015$annual_pooled$rsq, digits = 2)
-  rmse_lab_annual <- format(out_eval$metrics$gpp$fluxnet2015$annual_pooled$rmse, digits = 3)
+  rsq_lab_annual <-  format(out_eval$gpp$fluxnet2015$metrics$annual_pooled$rsq, digits = 2)
+  rmse_lab_annual <- format(out_eval$gpp$fluxnet2015$metrics$annual_pooled$rmse, digits = 3)
   
-  rsq_lab_spatial <-  format(out_eval$metrics$gpp$fluxnet2015$spatial$rsq, digits = 2)
-  rmse_lab_spatial <- format(out_eval$metrics$gpp$fluxnet2015$spatial$rmse, digits = 3)
+  rsq_lab_spatial <-  format(out_eval$gpp$fluxnet2015$metrics$spatial$rsq, digits = 2)
+  rmse_lab_spatial <- format(out_eval$gpp$fluxnet2015$metrics$spatial$rmse, digits = 3)
   
   gg <- df %>% 
     ggplot() +
     geom_segment(aes(x=xmin, y=ymin, xend=xmax, yend=ymax)) +
-    geom_line(data = fortify(out_eval$data$linmod_meandf), aes(x = gpp_mod, y = .fitted), color="red") +
+    geom_line(data = fortify(out_eval$gpp$fluxnet2015$data$linmod_meandf), aes(x = mod, y = .fitted), color="red") +
     geom_abline(intercept=0, slope=1, linetype="dotted") +
     theme_classic() +
     xlim(0,NA) +
@@ -57,7 +57,7 @@ plot_modobs_spatial_annual2 <- function( out_eval ){
     # # par( fig=v, new=TRUE, mar=c(0,0,0,0), mgp=c(3,0.5,0) )
     # if (makepdf && !dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
     # if (makepdf) pdf( paste0( dir_figs, "/hist_slopes_anomalies_annual.pdf" ) )
-    #   hist( out_eval$data$annual_bysite_stats$slope, xlim=c(-5,5), cex.axis=0.7, axes=FALSE, col="grey70", main="", breaks = 50, xlab="slope" )
+    #   hist( out_eval$gpp$fluxnet2015$data$annual_bysite_stats$slope, xlim=c(-5,5), cex.axis=0.7, axes=FALSE, col="grey70", main="", breaks = 50, xlab="slope" )
     #   abline( v=1.0, col="red" )
     #   axis( 1, cex.axis=1.0, xlab="slope" )
     #   title( "Slopes of annual regressions" )
@@ -76,7 +76,7 @@ plot_modobs_spatial_annual2 <- function( out_eval ){
     # # par( fig=v, new=TRUE, mar=c(0,0,0,0), mgp=c(3,0.5,0) )
     # if (makepdf && !dir.exists(dir_figs)) system( paste0( "mkdir -p ", dir_figs))
     # if (makepdf) pdf( paste0( dir_figs, "/hist_r2_anomalies_annual.pdf" ) )
-    #   hist( out_eval$data$annual_bysite_stats$rsq, xlim=c(-1,1), cex.axis=0.7, axes=FALSE, col="grey70", main="", breaks = 12, xlab= bquote( italic(R)^2 ) )
+    #   hist( out_eval$gpp$fluxnet2015$data$annual_bysite_stats$rsq, xlim=c(-1,1), cex.axis=0.7, axes=FALSE, col="grey70", main="", breaks = 12, xlab= bquote( italic(R)^2 ) )
     #   abline( v=1.0, col="red" )
     #   axis( 1, cex.axis=1.0, xlab = bquote( italic(R)^2 ) )
     #   title( bquote( bold(Slopes ~ of ~ italic(R)^2) ) )

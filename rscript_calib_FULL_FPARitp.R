@@ -56,7 +56,6 @@ settings_sims <- list(
   loutdalpha     = FALSE
   )
 
-
 ##------------------------------------------
 ## Input settings
 ##------------------------------------------
@@ -105,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 
@@ -145,15 +144,14 @@ settings_calib <- list(
   filter_drought   = FALSE,
   metric           = "rmse",
   dir_results      = "~/eval_pmodel/calib_results",
-  name = "FULL_FPARitp",
-  par = list( kphio = list( lower=0.01, upper=0.4, init=0.1 ),
+  name             = "FULL_FPARitp",
+  par              = list( kphio        = list( lower=0.01, upper=0.4, init=0.1 ),
                             soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
                             soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
   datasource = list( gpp = "fluxnet2015_NT" ),
   filter_temp_min = NA,
   filter_soilm_min = NA
  )
-
 
 ##------------------------------------------
 ## Evaluation settings
@@ -174,7 +172,6 @@ settings_eval <- list(
   benchmark = list( gpp = c("fluxnet2015_NT") ),
   remove_premodis = TRUE
   )
-
 
 
 ##//////////////////////////////////////////
@@ -216,40 +213,26 @@ if (file.exists(filn)){
   ddf_obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
     settings_sims = settings_sims, 
-    overwrite = TRUE, 
-    light = TRUE 
+    overwrite     = TRUE, 
+    light         = TRUE,
+    add_forcing   = FALSE
   )
   save(ddf_obs_eval, file = filn)
 }  
-
-# if (!exists("out_oob_FULL_FPARitp") || overwrite){
-#   out_oob_FULL_FPARitp <- oob_calib_eval_sofun(
-#     setup = setup_sofun,
-#     settings_calib = settings_calib,
-#     settings_eval = settings_eval,
-#     settings_sims = settings_sims,
-#     settings_input = settings_input,
-#     ddf_obs_calib = ddf_obs_calib,
-#     ddf_obs_eval = ddf_obs_eval
-#   )
-#   save(out_oob_FULL_FPARitp, file = "~/eval_pmodel/data/out_oob_FULL_FPARitp.Rdata")
-# } else {
-#   load("~/eval_pmodel/data/out_oob_FULL_FPARitp.Rdata")
-# }
 
 
 ##------------------------------------------
 ## Single calibration and evaluation for FULL_FPARitp
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 ## Update parameters
 filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
@@ -270,9 +253,12 @@ out_eval_FULL_FPARitp <- eval_sofun(
   settings_sims,
   obs_eval = ddf_obs_eval,
   overwrite = TRUE,
-  light = TRUE
+  light = FALSE
   )
 
 ## write to file
 save(out_eval_FULL_FPARitp, file = paste0(settings_calib$dir_results, "/out_eval_FULL_FPARitp.Rdata"))
+save(settings_eval, file = "./data/settings_eval_FULLitp.Rdata")
+save(settings_sims, file = "./data/settings_sims_FULLitp.Rdata")
+save(settings_calib, file = "./data/settings_calib_FULLitp.Rdata")
 

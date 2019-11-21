@@ -56,7 +56,6 @@ settings_sims <- list(
   loutdalpha     = FALSE
   )
 
-
 ##------------------------------------------
 ## Input settings
 ##------------------------------------------
@@ -105,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 
@@ -126,10 +125,6 @@ calibsites <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
   dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" & classid != "WET" ) %>%
   dplyr::filter( sitename %in% flue_sites ) %>%
   pull(sitename)
-
-# ## Calibration sites for TerraP, excluding CA-Obs
-# calibsites <- c("AU-Tum", "CA-NS3", "CA-NS6", "DE-Geb", "DE-Hai", "DE-Kli", "FI-Hyy", "FR-Fon", "FR-LBr", "FR-Pue", "IT-Cpz", "NL-Loo", "US-Ha1", "US-MMS", "US-UMB", "US-WCr")
-# calibsites <- c("FR-Pue", "FR-LBr", "IT-Noe")
 
 ## Define calibration settings common for all setups
 settings_calib <- list(
@@ -154,7 +149,6 @@ settings_calib <- list(
   filter_soilm_min = NA
  )
 
-
 ##------------------------------------------
 ## Evaluation settings
 ##------------------------------------------
@@ -176,7 +170,6 @@ settings_eval <- list(
   )
 
 
-
 ##//////////////////////////////////////////
 ## FULL
 ##------------------------------------------
@@ -186,8 +179,8 @@ settings_eval <- list(
 #   settings_input = settings_input,
 #   settings_sims = settings_sims,
 #   return_data = FALSE,
-#   overwrite_csv_climate = TRUE,
-#   overwrite_climate = TRUE,
+#   overwrite_csv_climate = FALSE,
+#   overwrite_climate = FALSE,
 #   overwrite_csv_fapar = TRUE,
 #   overwrite_fapar = TRUE,
 #   verbose = TRUE
@@ -216,8 +209,9 @@ if (file.exists(filn)){
   ddf_obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
     settings_sims = settings_sims, 
-    overwrite = TRUE, 
-    light = TRUE 
+    overwrite     = TRUE, 
+    light         = TRUE,
+    add_forcing   = FALSE
   )
   save(ddf_obs_eval, file = filn)
 }  
@@ -242,14 +236,14 @@ if (file.exists(filn)){
 ## Single calibration and evaluation for FULL
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 ## Update parameters
 filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
@@ -270,9 +264,13 @@ out_eval_FULL <- eval_sofun(
   settings_sims,
   obs_eval = ddf_obs_eval,
   overwrite = TRUE,
-  light = TRUE
+  light = FALSE
   )
 
 ## write to file
 save(out_eval_FULL, file = paste0(settings_calib$dir_results, "/out_eval_FULL.Rdata"))
+
+save(settings_eval, file = "./data/settings_eval_FULL.Rdata")
+save(settings_sims, file = "./data/settings_sims_FULL.Rdata")
+save(settings_calib, file = "./data/settings_calib_FULL.Rdata")
 
