@@ -75,9 +75,10 @@ align_events <- function( df, df_isevent, dovars, leng_threshold, before, after,
       ## add bin information based on dday to expanded df
       df_dday <- df_dday %>% mutate( inbin  = cut( as.numeric(dday), breaks = bins ) )
       
-      tmp <- df_dday %>% group_by( inbin ) %>% 
-        summarise_at( vars(one_of(dovars)), funs(median( ., na.rm=TRUE )) ) %>% 
-        filter( !is.na(inbin) )
+      tmp <- df_dday %>% 
+        dplyr::filter(!is.na(inbin)) %>% 
+        group_by( inbin ) %>% 
+        summarise_at( vars(one_of(dovars)), funs(median( ., na.rm=TRUE )) )
       
       norm <- slice(tmp, normbin)
       
@@ -90,7 +91,7 @@ align_events <- function( df, df_isevent, dovars, leng_threshold, before, after,
     ## Aggregate accross events
     ##--------------------------------------------------------
     df_dday_aggbydday <- df_dday %>%  group_by( dday ) %>% 
-                                      summarise_at( vars(one_of(dovars)), funs(median( ., na.rm=TRUE), q33( ., na.rm=TRUE), q66( ., na.rm=TRUE) ) ) %>%
+                                      summarise_at( vars(one_of(dovars)), funs( median = median( ., na.rm=TRUE), q33( ., na.rm=TRUE), q66( ., na.rm=TRUE) ) ) %>%
                                       filter( !is.na( dday ) )
 
   } else {

@@ -79,7 +79,7 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_FPAR_MCD15A3H",
-  splined_fapar = TRUE
+  splined_fapar = FALSE
   )
 
 
@@ -543,7 +543,10 @@ sum(!is.na(merged$gpp_NT))
 sum(!is.na(merged$gpp_Ty))
 obs_eval_DT$ddf$gpp    <- merged$gpp_DT
 obs_eval_NTsub$ddf$gpp <- merged$gpp_NT
-obs_eval_Ty$ddf$gpp    <- merged$gpp_Ty
+obs_eval_Ty$ddf <- obs_eval_Ty$ddf %>% 
+  dplyr::select(-gpp) %>% 
+  left_join(dplyr::select(merged, sitename, date, gpp = gpp_Ty), by = c("sitename", "date"))
+
 
 # x-daily
 merged <- select(    obs_eval_DT$xdf,    sitename, inbin, gpp_DT = gpp ) %>% 
@@ -556,7 +559,9 @@ sum(!is.na(merged$gpp_NT))
 sum(!is.na(merged$gpp_Ty))
 obs_eval_DT$xdf$gpp    <- merged$gpp_DT
 obs_eval_NTsub$xdf$gpp <- merged$gpp_NT
-obs_eval_Ty$xdf$gpp    <- merged$gpp_Ty
+obs_eval_Ty$xdf <- obs_eval_Ty$xdf %>% 
+  dplyr::select(-gpp) %>% 
+  left_join(dplyr::select(merged, sitename, inbin, gpp = gpp_Ty), by = c("sitename", "inbin"))
 
 
 ##//////////////////////////////////////////
@@ -564,7 +569,7 @@ obs_eval_Ty$xdf$gpp    <- merged$gpp_Ty
 ##------------------------------------------
 ## DT
 ##------------------------------------------
-settings_eval_DT$sitenames <- settings_calib_DT$sitenames
+# settings_eval_DT$sitenames <- settings_calib_DT$sitenames
 out_eval_DT <- eval_sofun(
   mod_DT,
   settings_eval_DT,
@@ -577,12 +582,12 @@ out_eval_DT <- eval_sofun(
 ## write to files
 save(out_eval_DT, file = paste0(settings_calib_DT$dir_results, "/out_eval_FULL_DT.Rdata"))
 save(settings_eval_DT,  file = "./data/settings_eval_FULL_DT.Rdata")
-save(settings_calib_DT, file = "./data/settings_calib_FULL.Rdata")
+save(settings_calib_DT, file = "./data/settings_calib_FULL_DT.Rdata")
 
 ##------------------------------------------
 ## NT
 ##------------------------------------------
-settings_eval_NTsub$sitenames <- settings_calib_NT$sitenames
+# settings_eval_NTsub$sitenames <- settings_calib_NT$sitenames
 out_eval_NTsub <- eval_sofun(
   mod_NT,
   settings_eval_NTsub,
@@ -600,7 +605,7 @@ save(settings_calib_NTsub, file = "./data/settings_calib_NTsub.Rdata")
 ##------------------------------------------
 ## Ty
 ##------------------------------------------
-settings_eval_Ty$sitenames <- settings_calib_Ty$sitenames
+# settings_eval_Ty$sitenames <- settings_calib_Ty$sitenames
 out_eval_Ty <- eval_sofun(
   mod_Ty,
   settings_eval_Ty,

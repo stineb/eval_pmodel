@@ -83,7 +83,7 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_FPAR_MCD15A3H",
-  splined_fapar = TRUE
+  splined_fapar = FALSE
   )
 
 
@@ -104,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 
@@ -141,9 +141,9 @@ settings_calib <- list(
   metric           = "rmse",
   dir_results      = "~/eval_pmodel/calib_results",
   name = "FULL",
-  par = list( kphio = list( lower=0.01, upper=0.4, init=0.1 ),
-                            soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-                            soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
+  par = list( kphio       = list( lower=0.01, upper=0.4, init= 0.0858 ),
+              soilm_par_a = list( lower=0.0,  upper=1.0, init=0.0 ),
+              soilm_par_b = list( lower=0.0,  upper=1.5, init=0.6 ) ),
   datasource = list( gpp = "fluxnet2015_NT" ),
   filter_temp_min = NA,
   filter_soilm_min = NA
@@ -175,16 +175,16 @@ settings_eval <- list(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-# inputdata <- prepare_input_sofun(
-#   settings_input = settings_input,
-#   settings_sims = settings_sims,
-#   return_data = FALSE,
-#   overwrite_csv_climate = FALSE,
-#   overwrite_climate = FALSE,
-#   overwrite_csv_fapar = TRUE,
-#   overwrite_fapar = TRUE,
-#   verbose = TRUE
-#   )
+inputdata <- prepare_input_sofun(
+  settings_input = settings_input,
+  settings_sims = settings_sims,
+  return_data = FALSE,
+  overwrite_csv_climate = FALSE,
+  overwrite_climate = FALSE,
+  overwrite_csv_fapar = TRUE,
+  overwrite_fapar = TRUE,
+  verbose = TRUE
+  )
 
 
 ##------------------------------------------
@@ -202,18 +202,18 @@ if (file.exists(filn)){
   save(ddf_obs_calib, file = filn)  
 }
 
-filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
+filn <- "~/eval_pmodel/data/obs_eval_NT.Rdata"
 if (file.exists(filn)){
   load(filn)
 } else {
-  ddf_obs_eval  <- get_obs_eval( 
+  obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
     settings_sims = settings_sims, 
     overwrite     = TRUE, 
     light         = TRUE,
     add_forcing   = FALSE
   )
-  save(ddf_obs_eval, file = filn)
+  save(obs_eval, file = filn)
 }  
 
 # if (!exists("out_oob_FULL") || overwrite){
@@ -224,7 +224,7 @@ if (file.exists(filn)){
 #     settings_sims = settings_sims,
 #     settings_input = settings_input,
 #     ddf_obs_calib = ddf_obs_calib,
-#     ddf_obs_eval = ddf_obs_eval
+#     ddf_obs_eval = obs_eval
 #   )
 #   save(out_oob_FULL, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
 # } else {
@@ -236,33 +236,41 @@ if (file.exists(filn)){
 ## Single calibration and evaluation for FULL
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-# set.seed(1982)
-# settings_calib <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_calib
-# )
-
-## Update parameters
-filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
-params_opt <- readr::read_csv( filn )
-nothing <- update_params( params_opt, settings_sims$dir_sofun )
-
-## run at evaluation sites
-mod <- runread_sofun(
-  settings = settings_sims, 
-  setup = setup_sofun
+set.seed(1982)
+settings_calib <- calib_sofun(
+  setup          = setup_sofun,
+  settings_calib = settings_calib,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
+  ddf_obs        = ddf_obs_calib
 )
 
+filn <- "./data/mod_FULL.Rdata"
+overwrite <- TRUE
+if (file.exists(filn) || overwrite){
+  load(filn)
+} else {
+  ## Update parameters
+  param_filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
+  params_opt <- readr::read_csv( param_filn )
+  nothing <- update_params( params_opt, settings_sims$dir_sofun )
+
+  ## run at evaluation sites
+  mod <- runread_sofun(
+    settings = settings_sims, 
+    setup = setup_sofun
+  )
+  save(mod, file = filn)
+} 
+
+
 ## evaluate at calib sites only (for comparison)
-settings_eval$sitenames <- settings_calib$sitenames
+#settings_eval$sitenames <- settings_calib$sitenames
 out_eval_FULL <- eval_sofun(
   mod,
   settings_eval,
   settings_sims,
-  obs_eval = ddf_obs_eval,
+  obs_eval = obs_eval,
   overwrite = TRUE,
   light = FALSE
   )

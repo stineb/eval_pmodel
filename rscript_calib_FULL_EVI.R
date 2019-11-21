@@ -83,7 +83,7 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_EVI_MOD13Q1",
-  splined_fapar = TRUE
+  splined_fapar = FALSE
   )
 
 
@@ -207,18 +207,18 @@ if (file.exists(filn)){
   save(ddf_obs_calib, file = filn)  
 }
 
-filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
+filn <- "~/eval_pmodel/data/obs_eval_NT.Rdata"
 if (file.exists(filn)){
   load(filn)
 } else {
-  ddf_obs_eval  <- get_obs_eval( 
+  obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
     settings_sims = settings_sims, 
     overwrite     = TRUE, 
     light         = TRUE,
     add_forcing   = FALSE
   )
-  save(ddf_obs_eval, file = filn)
+  save(obs_eval, file = filn)
 }  
 
 
@@ -235,24 +235,31 @@ if (file.exists(filn)){
 #   ddf_obs        = ddf_obs_calib
 # )
 
-## Update parameters
-filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
-params_opt <- readr::read_csv( filn )
-nothing <- update_params( params_opt, settings_sims$dir_sofun )
+filn <- "./data/mod_FULL_EVI.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ## Update parameters
+  param_filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
+  params_opt <- readr::read_csv( param_filn )
+  nothing <- update_params( params_opt, settings_sims$dir_sofun )
 
-## run at evaluation sites
-mod <- runread_sofun(
-  settings = settings_sims, 
-  setup = setup_sofun
-)
+  ## run at evaluation sites
+  mod <- runread_sofun(
+    settings = settings_sims, 
+    setup = setup_sofun
+  )
+  save(mod, file = filn)
+} 
+
 
 ## evaluate at calib sites only (for comparison)
-settings_eval$sitenames <- settings_calib$sitenames
+# settings_eval$sitenames <- settings_calib$sitenames
 out_eval_FULL_EVI <- eval_sofun(
   mod,
   settings_eval,
   settings_sims,
-  obs_eval = ddf_obs_eval,
+  obs_eval = obs_eval,
   overwrite = TRUE,
   light = FALSE
   )

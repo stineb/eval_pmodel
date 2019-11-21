@@ -83,7 +83,7 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_FPAR_MCD15A3H",
-  splined_fapar = FALSE
+  splined_fapar = TRUE
   )
 
 
@@ -104,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 
@@ -234,19 +234,26 @@ if (file.exists(filn)){
 #   ddf_obs        = ddf_obs_calib
 # )
 
-## Update parameters
-filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
-params_opt <- readr::read_csv( filn )
-nothing <- update_params( params_opt, settings_sims$dir_sofun )
+filn <- "./data/mod_FULL_FPARitp.Rdata"
+if (file.exists(filn)){
+  load(filn)
+} else {
+  ## Update parameters
+  param_filn <- paste0( settings_calib$dir_results, "/params_opt_", settings_calib$name, ".csv")
+  params_opt <- readr::read_csv( param_filn )
+  nothing <- update_params( params_opt, settings_sims$dir_sofun )
 
-## run at evaluation sites
-mod <- runread_sofun(
-  settings = settings_sims, 
-  setup = setup_sofun
-)
+  ## run at evaluation sites
+  mod <- runread_sofun(
+    settings = settings_sims, 
+    setup = setup_sofun
+  )
+  save(mod, file = filn)
+} 
+
 
 ## evaluate at calib sites only (for comparison)
-settings_eval$sitenames <- settings_calib$sitenames
+# settings_eval$sitenames <- settings_calib$sitenames
 out_eval_FULL_FPARitp <- eval_sofun(
   mod,
   settings_eval,

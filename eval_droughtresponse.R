@@ -15,17 +15,25 @@ eval_droughtresponse <- function( mod, obs, path_flue, before, after, leng_thres
 
   ## Get fLUE Stocker et al., 2018 publicly available data
   df_flue <- read_csv( path_flue ) %>% 
-    select(-year, -doy, -cluster) %>% 
-    rename( isevent = is_flue_drought )
+    dplyr::select(-year, -doy, -cluster) %>% 
+    dplyr::rename( isevent = is_flue_drought )
 
   ## do some weird cleaning and do some weird cleaning
-  mod <- na.omit.list(mod) %>% bind_rows( .id = "sitename" ) %>% select( site=sitename, date, gpp_mod = gpp )
+  mod <- mod %>% 
+    # na.omit.list() %>% 
+    bind_rows() %>% 
+    dplyr::select( site=sitename, date, gpp ) %>% 
+    dplyr::rename(gpp_mod = gpp)
 
   ## Get observational data
-  obs <- obs %>% select( site=sitename, date, gpp_obs )
+  obs <- obs %>% 
+    dplyr::select( site=sitename, date, gpp ) %>% 
+    dplyr::rename(gpp_obs = gpp)
 
   ## combine data frames into one
-  df_modobs <- obs %>% left_join( mod, by=c("site", "date") ) %>% mutate( bias_gpp = gpp_mod - gpp_obs )
+  df_modobs <- obs %>% 
+    left_join( mod, by=c("site", "date") ) %>% 
+    mutate( bias_gpp = gpp_mod - gpp_obs )
 
   ## Rearrange data. Function returns list( df_dday, df_dday_aggbydday )
   dovars <- colnames( dplyr::select( df_modobs, -date, -site ) )

@@ -120,6 +120,7 @@ settings_eval <- list(
 if (!exists("mod_ORG")) load("data/mod_ORG.Rdata")
 sitenames_ORG  <- mod_ORG$daily  %>% names()
 settings_eval$sitenames <- settings_eval$sitenames[ settings_eval$sitenames %in% sitenames_ORG ]
+
 ## Test: are croplands still in there?
 tibble( sitename=settings_eval$sitenames ) %>% 
   dplyr::filter( sitename %in% sitenames_ORG ) %>%

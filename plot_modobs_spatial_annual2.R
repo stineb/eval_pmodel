@@ -26,11 +26,16 @@ plot_modobs_spatial_annual2 <- function( out_eval ){
   rsq_lab_spatial <-  format(out_eval$gpp$fluxnet2015$metrics$spatial$rsq, digits = 2)
   rmse_lab_spatial <- format(out_eval$gpp$fluxnet2015$metrics$spatial$rmse, digits = 3)
   
+  # df <- df %>% 
+  #   ungroup() %>% 
+  #   mutate(mylabel = ifelse(slope<0.2, sitename, ""))
+  
   gg <- df %>% 
     ggplot() +
     geom_segment(aes(x=xmin, y=ymin, xend=xmax, yend=ymax)) +
     geom_line(data = fortify(out_eval$gpp$fluxnet2015$data$linmod_meandf), aes(x = mod, y = .fitted), color="red") +
     geom_abline(intercept=0, slope=1, linetype="dotted") +
+    # ggrepel::geom_text_repel(data = df, aes(x = xmax, y = ymax, label = mylabel)) +
     theme_classic() +
     xlim(0,NA) +
     ylim(0,NA) +
