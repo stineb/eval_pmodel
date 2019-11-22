@@ -100,7 +100,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 
@@ -156,9 +156,9 @@ settings_sims <- prepare_setup_sofun(
     metric           = "rmse",
     dir_results      = "~/eval_pmodel/calib_results",
     name = "FULL_DT",
-    par = list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
-                soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-                soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
+    par = list( kphio       = list( lower=0.06, upper=0.1, init=0.085 ),
+                soilm_par_a = list( lower=0.0,  upper=1.0, init=0.0 ),
+                soilm_par_b = list( lower=0.0,  upper=1.5, init=0.6 ) ),
     datasource = list( gpp = "fluxnet2015_DT" ),
     filter_temp_min = NA,
     filter_soilm_min = NA,
@@ -207,14 +207,14 @@ settings_sims <- prepare_setup_sofun(
   ##------------------------------------------
   ## Single calibration
   ##------------------------------------------
-  # set.seed(1982)
-  # settings_calib_DT <- calib_sofun(
-  #   setup          = setup_sofun,
-  #   settings_calib = settings_calib_DT,
-  #   settings_sims  = settings_sims,
-  #   settings_input = settings_input,
-  #   ddf_obs        = obs_calib
-  #   )
+  set.seed(1982)
+  settings_calib_DT <- calib_sofun(
+    setup          = setup_sofun,
+    settings_calib = settings_calib_DT,
+    settings_sims  = settings_sims,
+    settings_input = settings_input,
+    ddf_obs        = obs_calib
+    )
 
 
   ##------------------------------------------
@@ -293,9 +293,9 @@ settings_sims <- prepare_setup_sofun(
     metric           = "rmse",
     dir_results      = "~/eval_pmodel/calib_results",
     name = "FULL_NT",
-    par = list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
-                soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-                soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
+    par = list( kphio       = list( lower=0.06, upper=0.1, init=0.085 ),
+                soilm_par_a = list( lower=0.0,  upper=1.0, init=0.0 ),
+                soilm_par_b = list( lower=0.0,  upper=1.5, init=0.6 ) ),
     datasource = list( gpp = "fluxnet2015_NT" ),
     filter_temp_min = NA,
     filter_soilm_min = NA,
@@ -344,14 +344,14 @@ settings_sims <- prepare_setup_sofun(
   ##------------------------------------------
   ## Single calibration
   ##------------------------------------------
-  # set.seed(1982)
-  # settings_calib_NT <- calib_sofun(
-  #   setup          = setup_sofun,
-  #   settings_calib = settings_calib_NT,
-  #   settings_sims  = settings_sims,
-  #   settings_input = settings_input,
-  #   ddf_obs        = obs_calib
-  #   )
+  set.seed(1982)
+  settings_calib_NT <- calib_sofun(
+    setup          = setup_sofun,
+    settings_calib = settings_calib_NT,
+    settings_sims  = settings_sims,
+    settings_input = settings_input,
+    ddf_obs        = obs_calib
+    )
 
 
   ##------------------------------------------
@@ -430,9 +430,9 @@ settings_sims <- prepare_setup_sofun(
     metric           = "rmse",
     dir_results      = "~/eval_pmodel/calib_results",
     name = "FULL_Ty",
-    par = list( kphio       = list( lower=0.01, upper=0.4, init=0.1 ),
-                soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-                soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
+    par = list( kphio       = list( lower=0.06, upper=0.1, init=0.085 ),
+                soilm_par_a = list( lower=0.0,  upper=1.0, init=0.0 ),
+                soilm_par_b = list( lower=0.0,  upper=1.5, init=0.6 ) ),
     datasource = list( gpp = "fluxnet2015_Ty" ),
     filter_temp_min = NA,
     filter_soilm_min = NA,
@@ -481,14 +481,14 @@ settings_sims <- prepare_setup_sofun(
   ##------------------------------------------
   ## Single calibration
   ##------------------------------------------
-  # set.seed(1982)
-  # settings_calib_Ty <- calib_sofun(
-  #   setup          = setup_sofun,
-  #   settings_calib = settings_calib_Ty,
-  #   settings_sims  = settings_sims,
-  #   settings_input = settings_input,
-  #   ddf_obs        = obs_calib
-  #   )
+  set.seed(1982)
+  settings_calib_Ty <- calib_sofun(
+    setup          = setup_sofun,
+    settings_calib = settings_calib_Ty,
+    settings_sims  = settings_sims,
+    settings_input = settings_input,
+    ddf_obs        = obs_calib
+    )
 
 
   ##------------------------------------------

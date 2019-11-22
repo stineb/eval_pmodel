@@ -144,7 +144,7 @@ settings_calib <- list(
   par = list( kphio       = list( lower=0.01, upper=0.4, init= 0.0858 ),
               soilm_par_a = list( lower=0.0,  upper=1.0, init=0.0 ),
               soilm_par_b = list( lower=0.0,  upper=1.5, init=0.6 ) ),
-  datasource = list( gpp = "fluxnet2015_NT" ),
+  datasource = list( gpp = "fluxnet2015_NT" ), 
   filter_temp_min = NA,
   filter_soilm_min = NA
  )
