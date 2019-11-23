@@ -107,16 +107,16 @@ settings_sims <- prepare_setup_sofun(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-# inputdata <- prepare_input_sofun(
-#   settings_input        = settings_input,
-#   settings_sims         = settings_sims,
-#   return_data           = FALSE,
-#   overwrite_csv_climate = FALSE,
-#   overwrite_climate     = FALSE,
-#   overwrite_csv_fapar   = TRUE,
-#   overwrite_fapar       = TRUE,
-#   verbose               = TRUE
-#   )
+inputdata <- prepare_input_sofun(
+  settings_input        = settings_input,
+  settings_sims         = settings_sims,
+  return_data           = FALSE,
+  overwrite_csv_climate = FALSE,
+  overwrite_climate     = FALSE,
+  overwrite_csv_fapar   = TRUE,
+  overwrite_fapar       = TRUE,
+  verbose               = TRUE
+  )
 
 
 ##//////////////////////////////////////////
@@ -207,14 +207,14 @@ settings_sims <- prepare_setup_sofun(
   ##------------------------------------------
   ## Single calibration
   ##------------------------------------------
-  set.seed(1982)
-  settings_calib_DT <- calib_sofun(
-    setup          = setup_sofun,
-    settings_calib = settings_calib_DT,
-    settings_sims  = settings_sims,
-    settings_input = settings_input,
-    ddf_obs        = obs_calib
-    )
+  # set.seed(1982)
+  # settings_calib_DT <- calib_sofun(
+  #   setup          = setup_sofun,
+  #   settings_calib = settings_calib_DT,
+  #   settings_sims  = settings_sims,
+  #   settings_input = settings_input,
+  #   ddf_obs        = obs_calib
+  #   )
 
 
   ##------------------------------------------
@@ -328,7 +328,7 @@ settings_sims <- prepare_setup_sofun(
   ##------------------------------------------
   ## Collect caliration target data
   ##------------------------------------------
-  filn <- "~/eval_pmodel/data/obs_calib_NT.Rdata"
+  filn <- "~/eval_pmodel/data/obs_calib_NTsub.Rdata"
   if (file.exists(filn)){
     load(filn)
   } else {
@@ -344,14 +344,14 @@ settings_sims <- prepare_setup_sofun(
   ##------------------------------------------
   ## Single calibration
   ##------------------------------------------
-  set.seed(1982)
-  settings_calib_NT <- calib_sofun(
-    setup          = setup_sofun,
-    settings_calib = settings_calib_NT,
-    settings_sims  = settings_sims,
-    settings_input = settings_input,
-    ddf_obs        = obs_calib
-    )
+  # set.seed(1982)
+  # settings_calib_NT <- calib_sofun(
+  #   setup          = setup_sofun,
+  #   settings_calib = settings_calib_NT,
+  #   settings_sims  = settings_sims,
+  #   settings_input = settings_input,
+  #   ddf_obs        = obs_calib
+  #   )
 
 
   ##------------------------------------------
@@ -481,14 +481,14 @@ settings_sims <- prepare_setup_sofun(
   ##------------------------------------------
   ## Single calibration
   ##------------------------------------------
-  set.seed(1982)
-  settings_calib_Ty <- calib_sofun(
-    setup          = setup_sofun,
-    settings_calib = settings_calib_Ty,
-    settings_sims  = settings_sims,
-    settings_input = settings_input,
-    ddf_obs        = obs_calib
-    )
+  # set.seed(1982)
+  # settings_calib_Ty <- calib_sofun(
+  #   setup          = setup_sofun,
+  #   settings_calib = settings_calib_Ty,
+  #   settings_sims  = settings_sims,
+  #   settings_input = settings_input,
+  #   ddf_obs        = obs_calib
+  #   )
 
 
   ##------------------------------------------

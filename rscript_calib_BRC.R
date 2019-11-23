@@ -3,7 +3,7 @@
 ##------------------------------------------
 library(rsofun)
 load_dependencies_rsofun()
-systr <- "''"    # for Mac
+sys tr <- "''"    # for Mac
 # systr <- ""      # for Linux
 overwrite <- TRUE
 

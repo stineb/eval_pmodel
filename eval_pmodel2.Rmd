@@ -117,7 +117,7 @@ cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.2))
 
 ggsave("./fig/map_sites.pdf", width = 7, height = 4)
 
-cap_siteoverview_fig <- fig_nums( "siteoverview_fig", caption=" Geographical distribution of sites selected for the bias evaluation. Sites listed in Table S1 as group 1 are in green, sites of group 2 are in black. The color of land area represents aridity, quantified as the ratio of potential evapotranspiration over precipitation from xxx" )
+# cap_siteoverview_fig <- fig_nums( "siteoverview_fig", caption=" Geographical distribution of sites selected for the bias evaluation. Sites listed in Table S1 as group 1 are in green, sites of group 2 are in black. The color of land area represents aridity, quantified as the ratio of potential evapotranspiration over precipitation from xxx" )
 ```
 
 Creating an overview table for the Appendix.

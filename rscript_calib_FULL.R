@@ -3,8 +3,8 @@
 ##------------------------------------------
 library(rsofun)
 load_dependencies_rsofun()
-systr <- "''"    # for Mac
-# systr <- ""      # for Linux
+# systr <- "''"    # for Mac
+systr <- ""      # for Linux
 overwrite <- TRUE
 
 ##------------------------------------------
@@ -104,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 
@@ -175,16 +175,16 @@ settings_eval <- list(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-inputdata <- prepare_input_sofun(
-  settings_input = settings_input,
-  settings_sims = settings_sims,
-  return_data = FALSE,
-  overwrite_csv_climate = FALSE,
-  overwrite_climate = FALSE,
-  overwrite_csv_fapar = TRUE,
-  overwrite_fapar = TRUE,
-  verbose = TRUE
-  )
+# inputdata <- prepare_input_sofun(
+#   settings_input        = settings_input,
+#   settings_sims         = settings_sims,
+#   return_data           = FALSE,
+#   overwrite_csv_climate = FALSE,
+#   overwrite_climate     = FALSE,
+#   overwrite_csv_fapar   = TRUE,
+#   overwrite_fapar       = TRUE,
+#   verbose               = TRUE
+#   )
 
 
 ##------------------------------------------
@@ -216,20 +216,20 @@ if (file.exists(filn)){
   save(obs_eval, file = filn)
 }  
 
-# if (!exists("out_oob_FULL") || overwrite){
-#   out_oob_FULL <- oob_calib_eval_sofun(
-#     setup = setup_sofun,
-#     settings_calib = settings_calib,
-#     settings_eval = settings_eval,
-#     settings_sims = settings_sims,
-#     settings_input = settings_input,
-#     ddf_obs_calib = ddf_obs_calib,
-#     ddf_obs_eval = obs_eval
-#   )
-#   save(out_oob_FULL, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
-# } else {
-#   load("~/eval_pmodel/data/out_oob_FULL.Rdata")
-# }
+if (!exists("out_oob_FULL") || overwrite){
+  out_oob_FULL <- oob_calib_eval_sofun(
+    setup = setup_sofun,
+    settings_calib = settings_calib,
+    settings_eval = settings_eval,
+    settings_sims = settings_sims,
+    settings_input = settings_input,
+    ddf_obs_calib = ddf_obs_calib,
+    ddf_obs_eval = obs_eval
+  )
+  save(out_oob_FULL, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
+} else {
+  load("~/eval_pmodel/data/out_oob_FULL.Rdata")
+}
 
 
 ##------------------------------------------
@@ -247,7 +247,7 @@ settings_calib <- calib_sofun(
 
 filn <- "./data/mod_FULL.Rdata"
 overwrite <- TRUE
-if (file.exists(filn) || overwrite){
+if (file.exists(filn) && !overwrite){
   load(filn)
 } else {
   ## Update parameters

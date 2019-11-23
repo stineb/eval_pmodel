@@ -104,7 +104,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 
@@ -145,9 +145,9 @@ settings_calib <- list(
   metric           = "rmse",
   dir_results      = "~/eval_pmodel/calib_results",
   name             = "FULL_FPARitp",
-  par              = list( kphio        = list( lower=0.01, upper=0.4, init=0.1 ),
-                            soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-                            soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
+  par = list( kphio       = list( lower=0.01, upper=0.4, init= 0.0858 ),
+              soilm_par_a = list( lower=0.0,  upper=1.0, init=0.0 ),
+              soilm_par_b = list( lower=0.0,  upper=1.5, init=0.6 ) ),
   datasource = list( gpp = "fluxnet2015_NT" ),
   filter_temp_min = NA,
   filter_soilm_min = NA
@@ -179,16 +179,16 @@ settings_eval <- list(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-inputdata <- prepare_input_sofun(
-  settings_input        = settings_input,
-  settings_sims         = settings_sims,
-  return_data           = FALSE,
-  overwrite_csv_climate = FALSE,
-  overwrite_climate     = FALSE,
-  overwrite_csv_fapar   = TRUE,
-  overwrite_fapar       = TRUE,
-  verbose               = TRUE
-  )
+# inputdata <- prepare_input_sofun(
+#   settings_input        = settings_input,
+#   settings_sims         = settings_sims,
+#   return_data           = FALSE,
+#   overwrite_csv_climate = FALSE,
+#   overwrite_climate     = FALSE,
+#   overwrite_csv_fapar   = TRUE,
+#   overwrite_fapar       = TRUE,
+#   verbose               = TRUE
+#   )
 
 
 ##------------------------------------------
@@ -225,14 +225,14 @@ if (file.exists(filn)){
 ## Single calibration and evaluation for FULL_FPARitp
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-# set.seed(1982)
-# settings_calib <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_calib
-# )
+set.seed(1982)
+settings_calib <- calib_sofun(
+  setup          = setup_sofun,
+  settings_calib = settings_calib,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
+  ddf_obs        = ddf_obs_calib
+)
 
 filn <- "./data/mod_FULL_FPARitp.Rdata"
 if (file.exists(filn)){
