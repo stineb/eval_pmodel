@@ -145,9 +145,9 @@ settings_calib <- list(
   metric           = "rmse",
   dir_results      = "~/eval_pmodel/calib_results",
   name = "FULL_EVI",
-  par = list( kphio = list( lower=0.01, upper=0.4, init=0.1 ),
-                            soilm_par_a = list( lower=0.0,  upper=1.0, init=0.2 ),
-                            soilm_par_b = list( lower=0.0,  upper=2.0, init=0.2 ) ),
+  par = list( kphio       = list( lower=0.10, upper=0.15, init= 0.13266 ),
+              soilm_par_a = list( lower=0.01, upper=0.5,  init=0.05833 ),
+              soilm_par_b = list( lower=0.0,  upper=1.1,  init=0.7715 ) ),
   datasource = list( gpp = "fluxnet2015_NT" ),
   filter_temp_min = NA,
   filter_soilm_min = NA
@@ -226,14 +226,14 @@ if (file.exists(filn)){
 ## Single calibration and evaluation for FULL_EVI
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 filn <- "./data/mod_FULL_EVI.Rdata"
 if (file.exists(filn)){

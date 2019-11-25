@@ -8,7 +8,6 @@ systr <- "''"    # for Mac
 overwrite <- TRUE
 source("filter_days.R")
 
-
 ##------------------------------------------
 ## Simulation settings
 ##------------------------------------------
@@ -100,23 +99,23 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-inputdata <- prepare_input_sofun(
-  settings_input        = settings_input,
-  settings_sims         = settings_sims,
-  return_data           = FALSE,
-  overwrite_csv_climate = FALSE,
-  overwrite_climate     = FALSE,
-  overwrite_csv_fapar   = TRUE,
-  overwrite_fapar       = TRUE,
-  verbose               = TRUE
-  )
+# inputdata <- prepare_input_sofun(
+#   settings_input        = settings_input,
+#   settings_sims         = settings_sims,
+#   return_data           = FALSE,
+#   overwrite_csv_climate = FALSE,
+#   overwrite_climate     = FALSE,
+#   overwrite_csv_fapar   = TRUE,
+#   overwrite_fapar       = TRUE,
+#   verbose               = TRUE
+#   )
 
 
 ##//////////////////////////////////////////
@@ -392,7 +391,6 @@ inputdata <- prepare_input_sofun(
     save(obs_eval_NTsub, file = filn)
   }  
 
-
 ##//////////////////////////////////////////
 ## Ty
 ##------------------------------------------
@@ -600,7 +598,7 @@ out_eval_NTsub <- eval_sofun(
 ## write to files
 save(out_eval_NTsub, file = paste0(settings_calib_NT$dir_results, "/out_eval_FULL_NTsub.Rdata"))
 save(settings_eval_NTsub,  file = "./data/settings_eval_FULL_NTsub.Rdata")
-save(settings_calib_NTsub, file = "./data/settings_calib_NTsub.Rdata")
+save(settings_calib_NT, file = "./data/settings_calib_FULL_NTsub.Rdata")
 
 ##------------------------------------------
 ## Ty

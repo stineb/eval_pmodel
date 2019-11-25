@@ -133,8 +133,10 @@ sites_used <- out_eval_FULL$gpp$fluxnet2015$data$ddf$sitename %>% unique()
 df_zones_used <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
   dplyr::filter( sitename %in% sites_used ) %>% 
   mutate( hemisphere = ifelse( lat>0, "north", "south" ) ) %>% 
+  dplyr::select(sitename, koeppen_code, hemisphere) %>% 
   group_by( koeppen_code, hemisphere ) %>%
-  summarise( nsites = n() ) %>% 
+  nest() %>%
+  mutate(nsites = purrr::map_int(data, ~nrow(.))) %>% 
   filter(nsites > 3) %>%
   left_join( dplyr::rename( rsofun::koeppen_legend, koeppen_code = Code ), by = "koeppen_code" )%>%
   arrange( -nsites ) %>% 
@@ -190,7 +192,7 @@ LUE is a constant and is calibrated, given GPP data (here based on the nighttime
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 filn <- "~/eval_pmodel/data/obs_eval_NT_WITHFORCING.Rdata"
 settings_eval$benchmark <- list(gpp = "fluxnet2015_NT")
-overwrite <- TRUE
+overwrite <- FALSE
 
 if (file.exists(filn) && !overwrite){
   load(filn)
@@ -237,6 +239,20 @@ row_rsqtable_NULL <- bind_cols( Setup = "NULL", getrow_statstable( out_eval_NULL
 
 
 ## Metrics tables
+
+Collect calibrated parameter values.
+```{r}
+df_params <- read_csv("~/eval_pmodel/calib_results/params_opt_FULL.csv") %>%        bind_cols(tibble(setup = "FULL"), .)  %>% 
+  bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_BRC.csv") %>%          bind_cols(tibble(setup = "BRC"), .)) %>% 
+  bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_ORG.csv") %>%          bind_cols(tibble(setup = "ORG"), .)) %>% 
+  bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_FPARitp.csv") %>% bind_cols(tibble(setup = "FULL_FPARitp"), .)) %>% 
+  bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_EVI.csv") %>%     bind_cols(tibble(setup = "FULL_EVI"), .)) %>% 
+  bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_DT.csv") %>%      bind_cols(tibble(setup = "FULL_DT"), .)) %>% 
+  bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_NT.csv") %>%      bind_cols(tibble(setup = "FULL_NTsub"), .)) %>% 
+  bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_Ty.csv") %>%      bind_cols(tibble(setup = "FULL_Ty"), .)) %>% 
+  mutate_all(format, digits = 4)
+df_params
+```
 
 Create a latex table for $R^2$ and RMSE:
 ```{r, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE}
@@ -491,6 +507,22 @@ ggsave("fig/meandoy_byzone.pdf", width=8, height=8)
 ```
 
 
+### Mean seasonality by site
+
+Observed values are in black, simulated in red. The solid line in the centre of the shaded range is the mean by day of year (DOY) across multiply years, shaded ranges indicate the minimum and maximum by DOY across years.
+
+```{r, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
+source("plot_by_doy_allsites.R")
+plot_by_doy_allsites( 
+  out_eval_FULL, out_eval_BRC, out_eval_ORG, out_eval_NULL, 
+  df_zones_used,
+  makepdf=TRUE, label="",
+  lab1="FULL", lab2="BRC", lab3="ORG", lab4="NULL"
+  )
+```
+
+
+
 ## Drought response (Fig. 5)
 
 Load fLUE data to use their definition of soil moisture droughts.
@@ -530,13 +562,14 @@ df_dday_agg <- df_dday_agg_BRC %>%
     mutate( df_dday_agg_FULL, setup = "FULL")
     )
 usecol = colorRampPalette( c("wheat3", "white") )( 5 )[2]
+
 df_dday_agg %>% 
   ggplot() +
   # annotate("rect", xmin = 0, xmax = 105, ymin = -1.2, ymax = 2.2, alpha = .8, fill = usecol) + 
   geom_hline(yintercept = 0, color = "black", linetype = "dotted") +
   geom_vline(xintercept = 0, color = "black", linetype = "dotted") +
   geom_line(
-    aes(x = dday, y = bias_gpp_median, color = setup)) +
+    aes(x = dday, y = bias_gpp_median, color = setup), size = 0.9) +
   geom_ribbon(
     aes(x = dday, ymin = bias_gpp_q33, ymax = bias_gpp_q66, fill = setup), 
     alpha = 0.3) +
@@ -545,6 +578,7 @@ df_dday_agg %>%
   ylim(-1.2, 2.2) + xlim(-20, 105) +
   scale_x_continuous(expand = c(0,0)) + scale_y_continuous(expand = c(0,0)) +
   labs(x = "Days after drought onset", y = expression( paste( "Bias (g C m"^{-1}, " d"^{-1}, ")")) )
+
 ggsave("fig/droughtresponse.pdf", width = 6, height = 4)
 ```
 
@@ -1975,12 +2009,5 @@ siteinfo %>%
 ```
 
 
-## Mean seasonality by site
-
-Observed values are in black, simulated in red. The solid line in the centre of the shaded range is the mean by day of year (DOY) across multiply years, shaded ranges indicate the minimum and maximum by DOY across years.
-
-```{r, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
-plot_by_doy_allsites( out_eval$data$meandoydf_stats, makepdf=FALSE )
-```
 
  -->

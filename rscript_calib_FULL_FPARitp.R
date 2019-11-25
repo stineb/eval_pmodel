@@ -179,16 +179,16 @@ settings_eval <- list(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-# inputdata <- prepare_input_sofun(
-#   settings_input        = settings_input,
-#   settings_sims         = settings_sims,
-#   return_data           = FALSE,
-#   overwrite_csv_climate = FALSE,
-#   overwrite_climate     = FALSE,
-#   overwrite_csv_fapar   = TRUE,
-#   overwrite_fapar       = TRUE,
-#   verbose               = TRUE
-#   )
+inputdata <- prepare_input_sofun(
+  settings_input        = settings_input,
+  settings_sims         = settings_sims,
+  return_data           = FALSE,
+  overwrite_csv_climate = FALSE,
+  overwrite_climate     = FALSE,
+  overwrite_csv_fapar   = TRUE,
+  overwrite_fapar       = TRUE,
+  verbose               = TRUE
+  )
 
 
 ##------------------------------------------
@@ -206,18 +206,18 @@ if (file.exists(filn)){
   save(ddf_obs_calib, file = filn)  
 }
 
-filn <- "~/eval_pmodel/data/ddf_obs_eval_NT.Rdata"
+filn <- "~/eval_pmodel/data/obs_eval_NT.Rdata"
 if (file.exists(filn)){
   load(filn)
 } else {
-  ddf_obs_eval  <- get_obs_eval( 
+  obs_eval  <- get_obs_eval( 
     settings_eval = settings_eval, 
     settings_sims = settings_sims, 
     overwrite     = TRUE, 
     light         = TRUE,
     add_forcing   = FALSE
   )
-  save(ddf_obs_eval, file = filn)
+  save(obs_eval, file = filn)
 }  
 
 
@@ -225,14 +225,14 @@ if (file.exists(filn)){
 ## Single calibration and evaluation for FULL_FPARitp
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 filn <- "./data/mod_FULL_FPARitp.Rdata"
 if (file.exists(filn)){
@@ -258,7 +258,7 @@ out_eval_FULL_FPARitp <- eval_sofun(
   mod,
   settings_eval,
   settings_sims,
-  obs_eval = ddf_obs_eval,
+  obs_eval = obs_eval,
   overwrite = TRUE,
   light = FALSE
   )
