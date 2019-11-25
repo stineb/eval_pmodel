@@ -3,12 +3,10 @@
 ## Workflow
 
 1. Calibrate and evaluate for site-level run setups
-	- `submit_calib_*.sh` runs `rscript_calib_*.R`
-	- Outputs for calibration and evaluation done with the same set (complete) of sites is in `calib_results/out_eval_<setup>.Rdata`, `calib_results/params_opt_<setup>.csv`, and `out_gensa_<setup>.Rdata`
-	- Outputs for calibration and evaluation done with the leave-one-site-out calibration is in subdirectories `org`, `brc`, and `full`; consodilated outputs from leave-one-site-out calibration is in `data/out_oob_<setup>.Rdata`
+  - Single calibration/evaluation for all setups done with `./rscript_calib_<SETUP>.R` locally. Calibration and evaluation results are in `./calib_results/`.
+  - Out-of-bag calibration/evaluation done on Euler (see also ./rscript_calib_<SETUP>.R). Job submissions with `submit_calib_<SETUP>.sh` which runs `rscript_calib_<SETUP>.R`. Calibration and evaluation results are in `./calib_results/oob_<SETUP>/`.
 
-2. Get statistics and create figures with `eval_pmodel2.Rmd`
- 	- Loads outputs of `rscript_calib_*.R`
+2. Get statistics and create all figures for site-scale evaluations of GPP with `eval_pmodel2.Rmd`, and for LUE with `eval_lue.Rmd`.
 
 3. Global simulations for ORG, BRC, and FULL using calibrate parameters from 1.
 	- Run `./linkdirs_sofun_ORG_GLOBAL.py`

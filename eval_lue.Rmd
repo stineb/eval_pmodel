@@ -25,30 +25,71 @@ Evaluate light use efficiency.
 ## Daily
 ```{r}
 showsites <- c("FR-Pue", "AU-How", "BE-Vie")
-load("data/v3/out_eval_ORG.Rdata")
-load("data/v3/out_eval_FULL.Rdata")
+if (!exists("out_eval_ORG"))  load("./calib_results/out_eval_ORG.Rdata")
+if (!exists("out_eval_FULL")) load("./calib_results/out_eval_FULL.Rdata")
+
+load("~/eval_pmodel/data/obs_eval_NT_WITHFORCING.Rdata")
+
 mc <- 12.0107  # molecular mass of carbon
 
-ddf_FULL <- out_eval_FULL$data$ddf %>% 
+ddf_FULL <- out_eval_FULL$gpp$fluxnet2015$data$ddf %>% 
+  left_join(dplyr::select(obs_eval_NT$ddf, date, sitename, fapar, ppfd_fluxnet2015), by = c("sitename", "date")) %>% 
   mutate(ppfd_fluxnet2015 = myapprox(ppfd_fluxnet2015),
          fapar            = myapprox(fapar)) %>%
   mutate(apar = ppfd_fluxnet2015 * fapar) %>% 
   dplyr::filter(apar > 0.1) %>% 
+  rename(gpp_obs = obs, gpp_mod = mod) %>% 
   mutate(lue_obs = gpp_obs / (mc * apar),
          lue_mod = gpp_mod / (mc * apar) ) %>% 
   mutate(lue_obs = remove_outliers(lue_obs),
          lue_mod = remove_outliers(lue_mod))
 
-ddf_ORG <- out_eval_ORG$data$ddf %>% 
+ddf_ORG <- out_eval_ORG$gpp$fluxnet2015$data$ddf %>% 
+  left_join(dplyr::select(obs_eval_NT$ddf, date, sitename, fapar, ppfd_fluxnet2015), by = c("sitename", "date")) %>% 
   mutate(ppfd_fluxnet2015 = myapprox(ppfd_fluxnet2015),
          fapar            = myapprox(fapar)) %>%
   mutate(apar = ppfd_fluxnet2015 * fapar) %>% 
   dplyr::filter(apar > 0.1) %>% 
+  rename(gpp_obs = obs, gpp_mod = mod) %>% 
   mutate(lue_obs = gpp_obs / (mc * apar),
          lue_mod = gpp_mod / (mc * apar) ) %>% 
   mutate(lue_obs = remove_outliers(lue_obs),
          lue_mod = remove_outliers(lue_mod))
 ```
+
+Something is going odd. Check distribution of LUE values. 
+```{r}
+ddf_FULL %>% 
+  drop_na(gpp_obs, gpp_mod) %>% 
+  mutate(gpp_mod = gpp_mod * 1e3, gpp_obs = gpp_obs * 1e3) %>% 
+  gather(modobs, gpp, c(gpp_obs, gpp_mod)) %>% 
+  ggplot(aes(x = modobs, y=gpp, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("gpp_obs", "gpp_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("gpp (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+ddf_FULL %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  gather(modobs, lue, c(lue_obs, lue_mod)) %>% 
+  ggplot(aes(x = modobs, y=lue, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("lue_obs", "lue_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("LUE (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+
+gg <- ddf_FULL %>% analyse_modobs2("lue_obs", "lue_mod", type = "heat")
+gg
+```
+
 
 Compare coefficient of variations in LUE model.
 ```{r}
@@ -60,6 +101,7 @@ df_cv <- ddf_FULL %>%
             ppfd_fluxnet2015 = cv(ppfd_fluxnet2015, na.rm=TRUE),
             fapar = cv(fapar, na.rm=TRUE),
             lue_obs = cv(lue_obs, na.rm=TRUE))
+print(df_cv)
 ```
 
 
@@ -71,14 +113,14 @@ mdf_FULL <- ddf_FULL %>%
   group_by(sitename, year, moy) %>% 
   summarise(lue_obs = mean(lue_obs, na.rm=TRUE),
             lue_mod = mean(lue_mod, na.rm=TRUE)) %>% 
-  right_join(out_eval_FULL$data$mdf, by = c("sitename", "year", "moy"))
+  right_join(dplyr::rename(out_eval_FULL$gpp$fluxnet2015$data$mdf, gpp_mod = mod, gpp_obs = obs), by = c("sitename", "year", "moy"))
 
 mdf_ORG <- ddf_ORG %>%
   mutate(moy = month(date), year = year(date)) %>% 
   group_by(sitename, year, moy) %>% 
   summarise(lue_obs = mean(lue_obs, na.rm=TRUE),
             lue_mod = mean(lue_mod, na.rm=TRUE)) %>% 
-  right_join(out_eval_ORG$data$mdf, by = c("sitename", "year", "moy"))
+  right_join(dplyr::rename(out_eval_ORG$gpp$fluxnet2015$data$mdf, gpp_mod = mod, gpp_obs = obs), by = c("sitename", "year", "moy"))
 
 # FULL
 out_mdf_FULL <- mdf_FULL %>% 
@@ -108,14 +150,14 @@ print(gg_modobs_mdf_ORG)
 <!-- ## 8-daily -->
 
 <!-- ```{r} -->
-<!-- xdf <- out_eval_FULL$data$xdf -->
+<!-- xdf <- out_eval_FULL$gpp$fluxnet2015$data$xdf -->
 
 <!-- xdf <- ddf_FULL %>% -->
 <!--   mutate(moy = month(date), year = year(date)) %>%  -->
 <!--   group_by(sitename, year, moy) %>%  -->
 <!--   summarise(lue_obs = mean(lue_obs, na.rm=TRUE), -->
 <!--             lue_mod = mean(lue_mod, na.rm=TRUE)) %>%  -->
-<!--   right_join(out_eval_FULL$data$xdf, by = c("sitename", "year", "moy")) -->
+<!--   right_join(out_eval_FULL$gpp$fluxnet2015$data$xdf, by = c("sitename", "year", "moy")) -->
 
 <!-- xdf %>%  -->
 <!--   ungroup %>%  -->
@@ -162,11 +204,12 @@ adf_FULL <- ddf_FULL %>%
   group_by(sitename, year) %>% 
   summarise( apar = sum(apar)) %>% 
   dplyr::filter(apar > 0.1) %>% 
-  right_join(out_eval_FULL$data$adf, by=c("sitename", "year")) %>% 
+  right_join(out_eval_FULL$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>% 
+  rename(gpp_obs = obs, gpp_mod = mod) %>% 
   mutate(lue_obs = gpp_obs / (mc * apar),
          lue_mod = gpp_mod / (mc * apar) ) %>% 
   ungroup()  %>% 
-  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% select(sitename, classid), 
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid), 
             by="sitename") %>% 
   mutate(lue_obs = remove_outliers(lue_obs),
          lue_mod = remove_outliers(lue_mod))
@@ -180,11 +223,12 @@ adf_ORG <- ddf_ORG %>%
   group_by(sitename, year) %>% 
   summarise( apar = sum(apar)) %>% 
   dplyr::filter(apar > 0.1) %>% 
-  right_join(out_eval_ORG$data$adf, by=c("sitename", "year")) %>% 
+  right_join(out_eval_ORG$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>% 
+  rename(gpp_obs = obs, gpp_mod = mod) %>% 
   mutate(lue_obs = gpp_obs / (mc * apar),
          lue_mod = gpp_mod / (mc * apar) ) %>% 
   ungroup()  %>% 
-  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% select(sitename, classid), 
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid), 
             by="sitename") %>% 
   mutate(lue_obs = remove_outliers(lue_obs),
          lue_mod = remove_outliers(lue_mod))
@@ -201,7 +245,7 @@ df_FULL <- adf_FULL %>%
   group_by(sitename) %>% 
   summarise(lue_obs = mean(lue_obs, na.rm = TRUE),
             lue_mod = mean(lue_mod, na.rm = TRUE)) %>% 
-  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% select(sitename, classid), 
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid), 
             by="sitename") %>% 
   drop_na(lue_obs, lue_mod) %>% 
   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3)
@@ -210,7 +254,7 @@ df_ORG <- adf_ORG %>%
   group_by(sitename) %>% 
   summarise(lue_obs = mean(lue_obs, na.rm = TRUE),
             lue_mod = mean(lue_mod, na.rm = TRUE)) %>% 
-  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% select(sitename, classid), 
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid), 
             by="sitename") %>% 
   drop_na(lue_obs, lue_mod) %>% 
   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3)
@@ -373,25 +417,25 @@ print(gg_ORG)
 ggsave("fig/boxplot_lue_bysite_classid_ORG.pdf", width=5, height=5)
 ```
 
-## By vegetation type
+<!-- ## By vegetation type -->
 
-```{r}
+<!-- ```{r} -->
 
-vegdf_FULL %>% 
-  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
-  rbeni::analyse_modobs2("lue_mod", "lue_obs")
-  
-  
-  ggplot(aes(x=lue_mod, y=lue_obs)) +
-  geom_point(size=1.5) +
-  geom_smooth(method = "lm", color="red", size=0.5) +
-  geom_abline(intercept=0, slope=1, linetype="dotted") +
-  # coord_fixed() +
-  theme_classic() +
-  scale_color_brewer(palette="Paired")
+<!-- vegdf_FULL %>%  -->
+<!--   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>%  -->
+<!--   rbeni::analyse_modobs2("lue_mod", "lue_obs") -->
 
 
-```
+<!-- ggplot(aes(x=lue_mod, y=lue_obs)) + -->
+<!--   geom_point(size=1.5) + -->
+<!--   geom_smooth(method = "lm", color="red", size=0.5) + -->
+<!--   geom_abline(intercept=0, slope=1, linetype="dotted") + -->
+<!--   # coord_fixed() + -->
+<!--   theme_classic() + -->
+<!--   scale_color_brewer(palette="Paired") -->
+
+
+<!-- ``` -->
 
 ## Re-calculating
 
@@ -407,14 +451,14 @@ $$
 $$
 
 ```{r}
-load("data/linmod_NULL.RData")
+load("./calib_results/linmod_NULL.RData")
 lue_fit <- coef(linmod)
-load("data/v3/out_eval_NULL.Rdata")
+load("calib_results/out_eval_NULL.Rdata")
 
 ddf_FULL_test <- ddf_FULL %>% 
   sample_frac(0.1) %>% 
   mutate(gpp_mod_reNULL = lue_fit * fapar * ppfd_fluxnet2015) %>% 
-  left_join( select(out_eval_NULL$data$ddf, sitename, date, gpp_mod_NULL = gpp_mod), by = c("sitename", "date")) %>% 
+  left_join( select(out_eval_NULL$gpp$fluxnet2015$data$ddf, sitename, date, gpp_mod_NULL = gpp_mod), by = c("sitename", "date")) %>% 
   tidyr::drop_na(lue_mod, lue_obs, gpp_mod_NULL, gpp_mod_reNULL)
 
 ddf_FULL_test %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab="Modelled LUE", ylab="Observed LUE", type="heat")

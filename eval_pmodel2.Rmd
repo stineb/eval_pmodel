@@ -250,7 +250,7 @@ df_params <- read_csv("~/eval_pmodel/calib_results/params_opt_FULL.csv") %>%    
   bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_DT.csv") %>%      bind_cols(tibble(setup = "FULL_DT"), .)) %>% 
   bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_NT.csv") %>%      bind_cols(tibble(setup = "FULL_NTsub"), .)) %>% 
   bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_Ty.csv") %>%      bind_cols(tibble(setup = "FULL_Ty"), .)) %>% 
-  mutate_all(format, digits = 4)
+  mutate_all(format, digits = 8)
 df_params
 ```
 
@@ -583,7 +583,7 @@ ggsave("fig/droughtresponse.pdf", width = 6, height = 4)
 ```
 
 
-## Mean seasonal cycle for different greenness data (Fig. 6)
+## Greenness data: Mean seasonal cycle (Fig. 6)
 
 Look at seasonality for three zones with alternative greenness data.
 ```{r echo=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
@@ -592,12 +592,12 @@ if (!exists("out_eval_FULL_FPARitp")) load("data/out_eval_FULL_FPARitp.Rdata")
 if (!exists("out_eval_FULL_EVI"))    load("data/out_eval_FULL_EVI.Rdata")
   
 ## combine data
-df_meandoy_byclim <- out_eval_FULL$gpp$fluxnet2015$gpp$fluxnet2015$data$meandoydf_byclim %>% 
+df_meandoy_byclim <- out_eval_FULL$gpp$fluxnet2015$data$meandoydf_byclim %>% 
   bind_rows() %>%
   mutate( mod_mean = obs_mean) %>% 
   mutate(setup = "Observed") %>% 
   bind_rows(
-    out_eval_FULL$gpp$fluxnet2015$gpp$fluxnet2015$data$meandoydf_byclim %>% 
+    out_eval_FULL$gpp$fluxnet2015$data$meandoydf_byclim %>% 
     bind_rows() %>% 
     mutate(setup = "FULL")
   ) %>% 
@@ -613,7 +613,8 @@ df_meandoy_byclim <- out_eval_FULL$gpp$fluxnet2015$gpp$fluxnet2015$data$meandoyd
   ) %>% 
   filter(climatezone %in% c("Dfb north", "BSk north")) %>% 
   # mutate(setup = factor(setup, levels = c("Observed", "FULL", "BRC", "ORG", "NULL"))) %>% 
-  left_join(select(df_zones_used, climatezone, Climate), by = "climatezone")
+  left_join(dplyr::select(df_zones_used, climatezone, Climate), by = "climatezone")
+
 df_meandoy_byclim$setup <- factor(df_meandoy_byclim$setup, levels = c("FULL_EVI", "FULL_FPARitp", "Observed", "FULL"))
 
 ## new try
@@ -642,7 +643,7 @@ plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), m
 plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
 ```
 
-### GPP flux decomposition method (Fig. 7)
+### Flux decomposition method (Fig. 7)
 
 Look at seasonality for three zones with alternative greenness data.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
@@ -750,13 +751,17 @@ ggsave(filn, width=10, height=7)
 
 ```{r}
 ddf <- out_eval_FULL$gpp$fluxnet2015$data$idvdf %>% 
+  dplyr::rename(gpp_obs = obs, gpp_mod = mod) %>% 
   tidyr::drop_na(gpp_obs) %>% 
-  select(gpp_mod, gpp_obs) %>%
+  dplyr::select(gpp_mod, gpp_obs) %>%
   tidyr::gather(source, anom, c(gpp_obs, gpp_mod))
+
 xdf <- out_eval_FULL$gpp$fluxnet2015$data$ixvdf %>% 
+  dplyr::rename(gpp_obs = obs, gpp_mod = mod) %>% 
   tidyr::drop_na(gpp_obs) %>% 
-  select(gpp_mod, gpp_obs) %>%
+  dplyr::select(gpp_mod, gpp_obs) %>%
   tidyr::gather(source, anom, c(gpp_obs, gpp_mod))
+
 gg_ddf <- ddf %>% 
   ggplot() +
   geom_histogram(
@@ -767,12 +772,12 @@ gg_ddf <- ddf %>%
   annotate( 
     "text", x = 5, y = 0.8, 
     label = paste("sigma[obs] == ", 
-                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$idvdf$gpp_obs, na.rm = TRUE), digits = 3)), 
+                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$idvdf$obs, na.rm = TRUE), digits = 3)), 
     parse = TRUE, hjust = 0) +
   annotate( 
     "text", x = 5, y = 0.76, 
     label = paste("sigma[mod] == ", 
-                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$idvdf$gpp_mod, na.rm = TRUE), digits = 3)), 
+                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$idvdf$mod, na.rm = TRUE), digits = 3)), 
     parse = TRUE, hjust = 0) +
   xlim(-10,10) + ylim(0, 0.8) +
   theme(legend.position=c(0.05, 0.95), 
@@ -789,12 +794,12 @@ gg_xdf <- xdf %>%
   annotate( 
     "text", x = 4, y = 0.8, 
     label = paste("sigma[obs] == ", 
-                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$ixvdf$gpp_obs, na.rm = TRUE), digits = 3)), 
+                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$ixvdf$obs, na.rm = TRUE), digits = 3)), 
     parse = TRUE, hjust = 0) +
   annotate( 
     "text", x = 4, y = 0.76, 
     label = paste("sigma[mod] == ", 
-                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$ixvdf$gpp_mod, na.rm = TRUE), digits = 3)), 
+                  format( sd(out_eval_FULL$gpp$fluxnet2015$data$ixvdf$mod, na.rm = TRUE), digits = 3)), 
     parse = TRUE, hjust = 0) +
   xlim(-10,10) + ylim(0, 0.8) +
   theme(plot.title = element_text(hjust = 0)) +

@@ -116,8 +116,8 @@ nc_sif_mean$vars$gpp <- abind(
 ## mask out gridcells based on P-model grid
 nc_sif_mean$vars$sif[which(is.na(nc_pmodel_full_3g_meanann$vars$gpp))] <- NA
 
-#plot_map3(nc_gpp_mean)
-#plot_map3(nc_sif_mean)
+plot_map3(nc_gpp_mean)
+plot_map3(nc_sif_mean)
 ```
 
 ### Create plots
@@ -187,18 +187,18 @@ plot_map3(diff_pmodel3g_fluxcom, colorscale = "mycentered", nbin = 10, width = 0
 filn <- "./data/df_tseries.csv"
 overwrite <- FALSE
 if (!file.exists(filn) || overwrite){
-df_tseries <- integrate_lonlat(fil_pmodel_org_modis, landfil) %>% 
+df_tseries <- integrate_lonlat(fil_pmodel_full_modis, landfil) %>% 
   rename(gpp_pmodel_org_modis = gpp) %>% 
-  left_join(
-    integrate_lonlat(fil_pmodel_brc_modis, landfil) %>% 
-      rename(gpp_pmodel_brc_modis = gpp),
-    by = "date"
-  )  %>% 
-  left_join(
-    integrate_lonlat(fil_pmodel_full_modis, landfil) %>% 
-      rename(gpp_pmodel_full_modis = gpp),
-    by = "date"
-  ) %>% 
+  # left_join(
+  #   integrate_lonlat(fil_pmodel_brc_modis, landfil) %>% 
+  #     rename(gpp_pmodel_brc_modis = gpp),
+  #   by = "date"
+  # )  %>% 
+  # left_join(
+  #   integrate_lonlat(fil_pmodel_org_modis, landfil) %>% 
+  #     rename(gpp_pmodel_full_modis = gpp),
+  #   by = "date"
+  # ) %>% 
   left_join(
     integrate_lonlat(fil_pmodel_org_3g, landfil) %>% 
       rename(gpp_pmodel_org_3g = gpp),
