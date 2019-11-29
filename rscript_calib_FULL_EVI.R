@@ -76,6 +76,7 @@ settings_input <-  list(
   path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
   path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_hh      = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
+  threshold_GPP            = 0.5,
   get_from_remote          = FALSE,
   settings_gee             = get_settings_gee( 
     bundle = "evi", 
@@ -83,7 +84,7 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_EVI_MOD13Q1",
-  splined_fapar = FALSE
+  splined_fapar = TRUE
   )
 
 
@@ -137,6 +138,7 @@ settings_calib <- list(
   timescale        = list( gpp = "d" ),
   path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_hh= "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
+  threshold_GPP            = 0.5,
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
   maxit            = 10, # (5 for gensa) (30 for optimr)    #
   sitenames        = calibsites,

@@ -28,6 +28,7 @@ library(rbeni)
 library(cowplot)
 source("filter_days.R")
 source("extract_metric_oob.R")
+source("extract_params_oob.R")
 source("create_table_latex.R")
 source("getrow_statstable.R")
 load_dependencies_rsofun()
@@ -72,6 +73,27 @@ missing_mod <- purrr::map_lgl( mod$daily, ~identical(., NA ) ) %>% which() %>% n
 evalsites <- evalsites[which(!(evalsites %in% missing_mod))]
 
 calibsites <- settings_calib$sitenames
+```
+
+Number of valid data points for calibration and evaluation:
+```{r}
+out_eval_FULL$gpp$fluxnet2015$data$ddf %>% 
+  dplyr::filter(!is.na(obs)) %>% 
+  nrow()
+
+out_eval_FULL$gpp$fluxnet2015$data$xdf %>% 
+  dplyr::filter(!is.na(obs)) %>% 
+  nrow()
+
+load("~/eval_pmodel/data/ddf_obs_calib_NT.Rdata")
+ddf_obs_calib %>% 
+  dplyr::filter(!is.na(gpp_obs)) %>% 
+  nrow()
+
+load("~/eval_pmodel/data/obs_eval_NT.Rdata")
+obs_eval$ddf %>% 
+  dplyr::filter(!is.na(gpp)) %>% 
+  nrow()
 ```
 
 
@@ -809,11 +831,159 @@ cowplot::plot_grid(gg_ddf, gg_xdf, nrow = 1, labels = "auto", label_size = 12)
 ggsave("fig/hist_anomalies.pdf", width = 7, height = 4)
 ```
 
+## OOB
+
+### ORG
+
+Out-of-bag calibration.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+## out-of-bag calibration/evaluation
+if (!exists("out_oob_ORG")){ 
+  load("./calib_results/out_oob_ORG.Rdata")
+}
+
+## extract metrics from individual left-out calibrations/evaluations
+df_metrics_oob_ORG <- extract_metric_oob(out_oob_ORG, metric = "rsq") %>% 
+  left_join(extract_metric_oob(out_oob_ORG, metric = "rmse"), by = "sitename")
+
+# get parameters from individual left-out calibrations
+df_params_oob_ORG <- extract_params_oob(param = "kphio", path = "~/eval_pmodel/calib_results/oob_ORG/", sitenames = df_metrics_oob_ORG$sitename)
+  
+# get calibrated parameters from single-site calibration
+df_params_single_ORG <- read_csv("./calib_results/params_opt_ORG.csv")
+
+# get evaluation results from single-site calibration ('out_eval_ORG')
+load("./calib_results/out_eval_ORG.Rdata")
+
+df_params_oob_ORG %>% 
+  ggplot() +
+  geom_histogram(aes(x=kphio, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.0001, 
+    position="identity") +
+  geom_vline(xintercept = df_params_single_ORG$kphio, col = "red") +
+  theme_classic() +
+  labs(x = latex2exp::TeX("$\\widehat{\\varphi_0} \\;(mol\\; mol^{-1})$"), y = "Count", title = "ORG") +   # bquote(varphi[0])
+  xlim(x = c(0.0485, 0.051))
+
+df_metrics_oob_ORG %>% 
+  ggplot() +
+  geom_histogram(aes(x = rsq, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.05, 
+    position="identity") +
+  geom_vline(xintercept = out_eval_ORG$gpp$fluxnet2015$metrics$xdaily_pooled$rsq, col = "red") +
+  geom_vline(xintercept = mean(df_metrics_oob_ORG$rsq), col = "red", linetype = "dashed") + 
+  theme_classic() +
+  labs(x = bquote(italic(R)^2), y = "Count")
+
+df_metrics_oob_ORG %>% 
+  ggplot() +
+  geom_histogram(aes(x = rmse, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.5, 
+    position="identity") +
+  geom_vline(xintercept = out_eval_ORG$gpp$fluxnet2015$metrics$xdaily_pooled$rmse, col = "red") +
+  geom_vline(xintercept = mean(df_metrics_oob_ORG$rmse), col = "red", linetype = "dashed") + 
+  theme_classic() +
+  labs(x = expression( paste("RMSE (g C m"^-2, " d"^-1, ")" ) ), y = "Count")
+
+row_rsqtable_ORG <- bind_cols( Setup = "ORG", getrow_statstable( out_eval_ORG, stat = "rsq" ) )
+```
+
+### FULL
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+## out-of-bag calibration/evaluation
+if (!exists("out_oob_FULL")){ 
+  load("./calib_results/out_oob_FULL.Rdata") 
+}
+
+## extract metrics from individual left-out calibrations/evaluations
+df_metrics_oob_FULL <- extract_metric_oob(out_oob_FULL, metric = "rsq") %>% 
+  left_join(extract_metric_oob(out_oob_FULL, metric = "rmse"), by = "sitename")
+
+# get parameters from individual left-out calibrations
+df_params_oob_FULL <- extract_params_oob(param = "kphio", path = "~/eval_pmodel/calib_results/oob_FULL/", sitenames = df_metrics_oob_FULL$sitename)
+  
+# get calibrated parameters from single-site calibration
+df_params_single_FULL <- read_csv("./calib_results/params_opt_FULL.csv")
+
+# get evaluation results from single-site calibration ('out_eval_FULL')
+if (!exists("out_eval_FULL")){
+  load("./calib_results/out_eval_FULL.Rdata") 
+}
+
+## kphio parameter
+gg_kphio <- df_params_oob_FULL %>% 
+  ggplot() +
+  geom_histogram(aes(x=kphio, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.0001, 
+    position="identity") +
+  geom_vline(xintercept = df_params_single_FULL$kphio, col = "red") +
+  geom_vline(aes(xintercept = mean(df_params_oob_FULL$kphio)), col = "red", linetype = "dashed") +  # Mean across out-of-bag evaluations
+  theme_classic() +
+  labs(x = latex2exp::TeX("$\\widehat{c_L} \\;(mol\\; mol^{-1})$"), y = "Count")  # bquote(varphi[0])
+
+## a-parameter
+gg_apar <- df_params_oob_FULL %>% 
+  ggplot() +
+  geom_histogram(aes(x=soilm_par_a, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.01, 
+    position="identity") +
+  geom_vline(xintercept = df_params_single_FULL$soilm_par_a, col = "red") +
+  geom_vline(aes(xintercept = mean(df_params_oob_FULL$soilm_par_a)), col = "red", linetype = "dashed") +  # Mean across out-of-bag evaluations
+  theme_classic() +
+  labs(x = latex2exp::TeX("$\\widehat{a_\\theta}$"), y = "Count") +  # bquote(varphi[0])
+  xlim(x = c(-0.01, 0.1))
+
+## b-parameter
+gg_bpar <- df_params_oob_FULL %>% 
+  ggplot() +
+  geom_histogram(aes(x=soilm_par_b, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.01, 
+    position="identity") +
+  geom_vline(xintercept = df_params_single_FULL$soilm_par_b, col = "red") +
+  geom_vline(aes(xintercept = mean(df_params_oob_FULL$soilm_par_b)), col = "red", linetype = "dashed") +  # Mean across out-of-bag evaluations
+  theme_classic() +
+  labs(x = latex2exp::TeX("$\\widehat{b_\\theta}$"), y = "Count")  # bquote(varphi[0])
+
+## R2
+gg_rsq <- df_metrics_oob_FULL %>% 
+  ggplot() +
+  geom_histogram(aes(x = rsq, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.05, 
+    position="identity") +
+  geom_vline(aes(xintercept = out_eval_FULL$gpp$fluxnet2015$metrics$xdaily_pooled$rsq), col = "red") +  # All sites simultaneously
+  geom_vline(aes(xintercept = mean(df_metrics_oob_FULL$rsq)), col = "red", linetype = "dashed") +  # Mean across out-of-bag evaluations
+  theme_classic() +
+  labs(x = bquote(italic(R)^2), y = "Count")
+  # scale_linetype_manual(name = "", values = c(all = "solid", mean = "dashed"), labels = c(all = "All sites simultaneously", mean = "Mean across out-of-bag evaluations")) +
+  # theme(legend.position="top")
+
+## RMSE
+gg_rmse <- df_metrics_oob_FULL %>% 
+  ggplot() +
+  geom_histogram(aes(x = rmse, y = ..count..),
+    color = "black", alpha = 0.3, binwidth = 0.5, 
+    position="identity") +
+  geom_vline(aes(xintercept = out_eval_FULL$gpp$fluxnet2015$metrics$xdaily_pooled$rmse, linetype = "all"), col = "red") +
+  geom_vline(aes(xintercept = mean(df_metrics_oob_FULL$rmse), linetype = "mean"), col = "red") + 
+  theme_classic() +
+  labs(x = expression( paste("RMSE (g C m"^-2, " d"^-1, ")" ) ), y = "Count") +
+  scale_linetype_manual(name = "", values = c(all = "solid", mean = "dashed"), labels = c(all = "All sites simultaneously", mean = "Mean across out-of-bag evaluations"))
+  # theme(legend.position = c(0.6,0.85))
+
+toprow <- plot_grid(gg_apar, gg_bpar, gg_kphio, labels = "auto", ncol = 3)
+bottomrow <- plot_grid(gg_rsq, gg_rmse, labels = c("d", "e"), ncol = 2, rel_widths = c(1,2))
+
+cowplot::plot_grid(toprow, bottomrow, nrow = 2)
+ggsave("./fig/oob_grid.pdf", width = 8, height = 5)
+```
+
 
 ## Remaining figures
 
 - For Fig. 8 and 9, see `eval_pmodel_global.Rmd`.
 - For Fig. 10, see XXX MISSING RMD FILE ON GITHUB XXX
+
 
 <!-- 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -943,55 +1113,6 @@ row_rsqtable_NULL <- bind_cols( Setup = "NULL", getrow_statstable( out_eval_NULL
 ### ORG: Original setup
 
 Without soil moisture stress and with constant quantum yield effiency. Run SOFUN with calibrated parameters for the simulation suite based on splined MODIS FPAR MCD15A3H fAPAR data and excluding cold (<10$^{\circ}$) and dry (relative soil moisture below XXX) days. and  `r `
-```{r, eval=TRUE, message=FALSE, warning=FALSE}
-## out-of-bag calibration/evaluation
-load("./data/out_oob_ORG.Rdata")
-
-## extract metrics from individual left-out calibrations/evaluations
-df_metrics_oob_ORG <- extract_metric_oob(out_oob_ORG, metric = "rsq") %>% 
-  left_join(extract_metric_oob(out_oob_ORG, metric = "rmse"), by = "sitename")
-
-# get parameters from individual left-out calibrations
-df_params_oob_ORG <- extract_params_oob(param = "kphio", path = "~/eval_pmodel/calib_results/org/", sitenames = df_metrics_oob$sitename)
-  
-# get calibrated parameters from single-site calibration
-df_params_single_ORG <- read_csv("./calib_results/org/params_opt_ORG.csv")
-
-# get evaluation results from single-site calibration ('out_eval_ORG')
-load("./calib_results/out_eval_ORG.Rdata")
-
-df_params_oob_ORG %>% 
-  ggplot() +
-  geom_histogram(aes(x=kphio, y = ..count..),
-    color = "black", alpha = 0.3, binwidth = 0.0001, 
-    position="identity") +
-  geom_vline(xintercept = df_params_single_ORG$kphio, col = "red") +
-  theme_classic() +
-  labs(x = latex2exp::TeX("$\\widehat{\\varphi_0} \\;(mol\\; mol^{-1})$"), y = "Count", title = "ORG") +   # bquote(varphi[0])
-  xlim(x = c(0.048, 0.052))
-
-df_metrics_oob %>% 
-  ggplot() +
-  geom_histogram(aes(x = rsq, y = ..count..),
-    color = "black", alpha = 0.3, binwidth = 0.05, 
-    position="identity") +
-  geom_vline(xintercept = out_eval_ORG$gpp$fluxnet2015$metrics$xdaily_pooled$rsq, col = "red") +
-  geom_vline(xintercept = mean(df_metrics_oob$rsq), col = "red", linetype = "dashed") + 
-  theme_classic() +
-  labs(x = bquote(italic(R)^2), y = "Count")
-
-df_metrics_oob %>% 
-  ggplot() +
-  geom_histogram(aes(x = rmse, y = ..count..),
-    color = "black", alpha = 0.3, binwidth = 0.5, 
-    position="identity") +
-  geom_vline(xintercept = out_eval_ORG$gpp$fluxnet2015$metrics$xdaily_pooled$rmse, col = "red") +
-  geom_vline(xintercept = mean(df_metrics_oob$rmse), col = "red", linetype = "dashed") + 
-  theme_classic() +
-  labs(x = expression( paste("RMSE (g C m"^-2, " d"^-1, ")" ) ), y = "Count")
-
-row_rsqtable_ORG <- bind_cols( Setup = "ORG", getrow_statstable( out_eval_ORG, stat = "rsq" ) )
-```
 
 ### BRC: Temperature-dependent quantum yield efficiency
 

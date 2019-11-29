@@ -76,6 +76,7 @@ settings_input <-  list(
   path_co2                 = "~/data/co2/cCO2_rcp85_const850-1765.dat",
   path_fluxnet2015         = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_hh      = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
+  threshold_GPP            = 0.5,
   get_from_remote          = FALSE,
   settings_gee             = get_settings_gee( 
     bundle = "fpar", 
@@ -83,7 +84,7 @@ settings_input <-  list(
     gee_path = "~/gee_subset/gee_subset/"
     ),
   fapar = "MODIS_FPAR_MCD15A3H",
-  splined_fapar = FALSE
+  splined_fapar = TRUE
   )
 
 
@@ -104,7 +105,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = FALSE 
+  write_paramfils = TRUE 
   )
 
 
@@ -133,6 +134,7 @@ settings_calib <- list(
   timescale        = list( gpp = "d" ),
   path_fluxnet2015 = "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_1d/original/unpacked/",
   path_fluxnet2015_hh= "~/data/FLUXNET-2015_Tier1/20160128/point-scale_none_0.5h/original/unpacked/",
+  threshold_GPP            = 0.5,
   path_gepisat     = "~/data/gepisat/v3_fluxnet2015/daily_gpp/",
   maxit            = 10, # (5 for gensa) (30 for optimr)    #
   sitenames        = calibsites,
@@ -175,16 +177,16 @@ settings_eval <- list(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-inputdata <- prepare_input_sofun(
-  settings_input        = settings_input,
-  settings_sims         = settings_sims,
-  return_data           = FALSE,
-  overwrite_csv_climate = FALSE,
-  overwrite_climate     = FALSE,
-  overwrite_csv_fapar   = TRUE,
-  overwrite_fapar       = TRUE,
-  verbose               = TRUE
-  )
+# inputdata <- prepare_input_sofun(
+#   settings_input        = settings_input,
+#   settings_sims         = settings_sims,
+#   return_data           = FALSE,
+#   overwrite_csv_climate = FALSE,
+#   overwrite_climate     = FALSE,
+#   overwrite_csv_fapar   = TRUE,
+#   overwrite_fapar       = TRUE,
+#   verbose               = TRUE
+#   )
 
 
 ##------------------------------------------
@@ -226,9 +228,9 @@ if (file.exists(filn)){
 #     ddf_obs_calib = ddf_obs_calib,
 #     ddf_obs_eval = obs_eval
 #   )
-#   save(out_oob_FULL, file = "~/eval_pmodel/data/out_oob_FULL.Rdata")
+#   save(out_oob_FULL, file = paste0(settings_calib$dir_results, "/out_oob_FULL.Rdata"))
 # } else {
-#   load("~/eval_pmodel/data/out_oob_FULL.Rdata")
+#   load( paste0(settings_calib$dir_results, "/out_oob_FULL.Rdata"))
 # }
 
 
@@ -236,14 +238,14 @@ if (file.exists(filn)){
 ## Single calibration and evaluation for FULL
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-# set.seed(1982)
-# settings_calib <- calib_sofun(
-#   setup          = setup_sofun,
-#   settings_calib = settings_calib,
-#   settings_sims  = settings_sims,
-#   settings_input = settings_input,
-#   ddf_obs        = ddf_obs_calib
-# )
+set.seed(1982)
+settings_calib <- calib_sofun(
+  setup          = setup_sofun,
+  settings_calib = settings_calib,
+  settings_sims  = settings_sims,
+  settings_input = settings_input,
+  ddf_obs        = ddf_obs_calib
+)
 
 filn <- "./data/mod_FULL.Rdata"
 overwrite <- TRUE
