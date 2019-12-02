@@ -394,6 +394,7 @@ settings_sims <- prepare_setup_sofun(
     save(obs_eval_NTsub, file = filn)
   }  
 
+
 ##//////////////////////////////////////////
 ## Ty
 ##------------------------------------------
@@ -532,6 +533,7 @@ settings_sims <- prepare_setup_sofun(
   }  
 
 
+
 ##//////////////////////////////////////////
 ## Combine obs_eval data for DT, NT, and Ty
 ##------------------------------------------
@@ -564,6 +566,7 @@ obs_eval_NTsub$xdf$gpp <- merged$gpp_NT
 obs_eval_Ty$xdf <- obs_eval_Ty$xdf %>% 
   dplyr::select(-gpp) %>% 
   left_join(dplyr::select(merged, sitename, inbin, gpp = gpp_Ty), by = c("sitename", "inbin"))
+
 
 
 ##//////////////////////////////////////////

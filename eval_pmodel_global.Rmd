@@ -48,7 +48,7 @@ fil_pmodel_full_3g_meanann    <- "~/sofun_outputs/output_nc_global_sofun/global_
 
 fil_pmodel_simpleorg_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_simpleORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
 
-landfil <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.fland.nc"
+landfil <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.fland.nc"
 
 fil_pmodel_stocker19 <- "~/data/stocker19natgeo_outputs/s0_fapar3g_v2_global.a.gpp.nc"
 

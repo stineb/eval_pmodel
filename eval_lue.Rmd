@@ -196,45 +196,92 @@ doydf_ORG %>%
     ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")")), type="heat")
 ```
 
+## Check time series for suspicious sites
+
+```{r}
+ddf_FULL %>%
+  filter(sitename == "AR-SLu") %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = lue_obs)) +
+  geom_line(aes(x = date, y = lue_mod), col='red')
+
+ddf_FULL %>%
+  filter(sitename == "CH-Oe1") %>% 
+  ggplot() +
+  geom_line(aes(x = date, y = lue_obs)) +
+  geom_line(aes(x = date, y = lue_mod), col='red')
+```
+
+
 ## Annual
 
 ```{r}
-adf_FULL <- ddf_FULL %>%   
-  mutate(year = year(date)) %>% 
-  group_by(sitename, year) %>% 
-  summarise( apar = sum(apar)) %>% 
-  dplyr::filter(apar > 0.1) %>% 
-  right_join(out_eval_FULL$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>% 
-  rename(gpp_obs = obs, gpp_mod = mod) %>% 
+## calculate annual LUE as annual total gpp devided by annual toal light ==> bad
+adf_FULL <- ddf_FULL %>%
+  mutate(year = year(date)) %>%
+  group_by(sitename, year) %>%
+  summarise( apar = sum(apar)) %>%
+  dplyr::filter(apar > 0.1) %>%
+  right_join(out_eval_FULL$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>%
+  rename(gpp_obs = obs, gpp_mod = mod) %>%
   mutate(lue_obs = gpp_obs / (mc * apar),
-         lue_mod = gpp_mod / (mc * apar) ) %>% 
-  ungroup()  %>% 
-  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid), 
-            by="sitename") %>% 
+         lue_mod = gpp_mod / (mc * apar) ) %>%
+  ungroup()  %>%
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid),
+            by="sitename") %>%
   mutate(lue_obs = remove_outliers(lue_obs),
          lue_mod = remove_outliers(lue_mod))
-  
+
 out_adf_FULL <- adf_FULL %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab = expression(paste("Modelled LUE (mol mol" ^{-1}, ")")), ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")")))
 print(out_adf_FULL$gg)
 
-
-adf_ORG <- ddf_ORG %>%   
-  mutate(year = year(date)) %>% 
-  group_by(sitename, year) %>% 
-  summarise( apar = sum(apar)) %>% 
-  dplyr::filter(apar > 0.1) %>% 
-  right_join(out_eval_ORG$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>% 
-  rename(gpp_obs = obs, gpp_mod = mod) %>% 
+## calculate annual LUE as annual total gpp devided by annual toal light ==> bad
+adf_ORG <- ddf_ORG %>%
+  mutate(year = year(date)) %>%
+  group_by(sitename, year) %>%
+  summarise( apar = sum(apar)) %>%
+  dplyr::filter(apar > 0.1) %>%
+  right_join(out_eval_ORG$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>%
+  rename(gpp_obs = obs, gpp_mod = mod) %>%
   mutate(lue_obs = gpp_obs / (mc * apar),
-         lue_mod = gpp_mod / (mc * apar) ) %>% 
-  ungroup()  %>% 
-  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid), 
-            by="sitename") %>% 
+         lue_mod = gpp_mod / (mc * apar) ) %>%
+  ungroup()  %>%
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid),
+            by="sitename") %>%
   mutate(lue_obs = remove_outliers(lue_obs),
          lue_mod = remove_outliers(lue_mod))
-  
-out_adf_ORG <- adf_ORG %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab = expression(paste("Modelled LUE (mol mol" ^{-1}, ")")), ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")"))) # , filnam = "fig/modobs_lue_annual.pdf"
+
+out_adf_ORG <- adf_ORG %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab = expression(paste("Modelled LUE (mol mol" ^{-1}, ")")), ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")")))
 print(out_adf_ORG$gg)
+
+# ## FULL: calculate annual LUE mean across daily LUE  ==> better? 
+# adf_FULL <- ddf_FULL %>%   
+#   mutate(year = year(date)) %>% 
+#   group_by(sitename, year) %>% 
+#   summarise( lue_obs = mean(lue_obs, na.rm = TRUE), lue_mod = mean(lue_mod, na.rm = TRUE)) %>% 
+#   # right_join(out_eval_FULL$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>%
+#   ungroup()  %>%
+#   left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid),
+#             by="sitename") %>% 
+#   mutate(lue_obs = remove_outliers(lue_obs),
+#          lue_mod = remove_outliers(lue_mod))
+#   
+# out_adf_FULL <- adf_FULL %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab = expression(paste("Modelled LUE (mol mol" ^{-1}, ")")), ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")")))
+# out_adf_FULL$gg
+# 
+# ## ORG: calculate annual LUE mean across daily LUE  ==> better? 
+# adf_ORG <- ddf_ORG %>%   
+#   mutate(year = year(date)) %>% 
+#   group_by(sitename, year) %>% 
+#   summarise( lue_obs = mean(lue_obs, na.rm = TRUE), lue_mod = mean(lue_mod, na.rm = TRUE)) %>% 
+#   ungroup()  %>%
+#   left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid),
+#             by="sitename") %>% 
+#   mutate(lue_obs = remove_outliers(lue_obs),
+#          lue_mod = remove_outliers(lue_mod))
+#   
+# out_adf_ORG <- adf_ORG %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab = expression(paste("Modelled LUE (mol mol" ^{-1}, ")")), ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")")))
+# out_adf_ORG$gg
 ```
 
 ## By site (spatial) and veg type
@@ -333,7 +380,7 @@ ggsave("fig/modobs_lue_bysite_classid_FULL.pdf", width=5, height=5)
 # ORG setup
 ##################
 out_df_ORG <- df_ORG %>% 
-  dplyr::filter(classid != "OSH") %>% 
+  # dplyr::filter(classid != "OSH") %>% 
   rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab="Modelled LUE", ylab="Observed LUE")
 
 rsq_lab <- format( out_df_ORG$df_metrics %>% dplyr::filter(.metric=="rsq") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 2 )
@@ -351,6 +398,7 @@ rmse_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="rmse")
 bias_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="bias") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
 slope_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="slope") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
 n_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="n") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+
 gg_lue_spatial_ORG <- ggplot() +
   geom_point(data=df_ORG, aes(x=lue_mod, y=lue_obs, color=classid), size=1.5) +
   geom_point(data=vegdf_ORG, aes(x=lue_mod, y=lue_obs, color=classid), size=5) +

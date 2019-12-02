@@ -13,6 +13,9 @@
 	- Run simulations and process output
 	- Run `eval_pmodel_global.Rmd`
 	
+4. Create sites table with `plot_table_siteselection.Rmd`
+
+	
 ## Global simulations	
 
 !----------------                          !----------!----------                                                                                    !

@@ -25,33 +25,34 @@ library(dplyr)
 library(rsofun)
 ```
 
+Get info of which sites were used for calibration and evaluation from saved settings and an example model output.
+```{r}
+## Calibration settings from FULL
+load("./data/settings_calib_FULL.Rdata")
+load("./data/settings_eval_FULL.Rdata")
+load("./data/settings_sims_FULL.Rdata")
+load("./data/mod_FULL.Rdata")
 
-First, get the 68 calibration sites as a vector.
-```{r message=FALSE, warning=FALSE}
-calibsites <- readr::read_csv( "/alphadata01/bstocker/data/flue/flue_stocker18nphyt.csv" ) %>%
-              dplyr::filter( !is.na(cluster) ) %>%
-              dplyr::select( site ) %>%
-              distinct() %>%
+evalsites <- settings_eval$sitenames
+evalsites <- evalsites[which(evalsites %in% (mod$daily$sitename %>% unique()))]
+print(length(evalsites))
 
-              ## additionally exclude C4
-              dplyr::filter( !(site %in% dplyr::filter(metainfo_Tier1_sites_kgclimate_fluxnet2015, c4 )$sitename) ) %>%
-
-              dplyr::select( site ) %>%
-              unlist()
+calibsites <- settings_calib$sitenames
+calibsites <- calibsites[which(calibsites %in% (mod$daily$sitename %>% unique()))]
+print(length(calibsites))
 ```
 
-Then, use the `metainfo_Tier1_sites_kgclimate_fluxnet2015` data frame and add this info.
+Use the `metainfo_Tier1_sites_kgclimate_fluxnet2015` data frame and add this info.
 ```{r siteoverview, warning=FALSE, message=FALSE}
 siteinfo <- rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
-            dplyr::filter( c4 %in% c(FALSE, NA) & classid != "CRO" ) %>%
-            mutate( calib = ifelse(sitename %in% calibsites, "Y", "") ) %>%
-            # mutate( Reference = paste0("[@", sitename ,"]") )
-            mutate( Reference = paste0("cite{", sitename ,"}") )
+  dplyr::filter(sitename %in% evalsites) %>% 
+  mutate( calib = ifelse(sitename %in% calibsites, "Y", "") ) %>%
+  mutate( Reference = paste0("cite{", sitename ,"}") )
 
 ## add number of daily GPP values in NT
 load("./data/obs_eval_NT.Rdata")
 siteinfo <- obs_eval_NT$ddf %>% 
-  dplyr::select( sitename, gpp_obs ) %>% 
+  dplyr::select( sitename, gpp ) %>% 
   tidyr::drop_na() %>% 
   group_by( sitename ) %>%
   summarise( ndaily_gpp = n() ) %>% 
@@ -67,42 +68,9 @@ siteinfo_table <- siteinfo %>%
 siteinfo_table %>% knitr::kable( caption = "Sites used for calibration. Lon. is longitude, negative values indicate west longitude; Lat. is latitude, positive values indicate north latitude; Veg. is vegetation type: deciduous broadleaf forest (DBF); evergreen broadleaf forest (EBF); evergreen needleleaf forest (ENF); grassland (GRA); mixed deciduous and evergreen needleleaf forest (MF); savanna ecosystem (SAV); shrub ecosystem (SHR); wetland (WET)." )
 ```
 
-Plot a map.
-```{r siteoverview_fig, echo=FALSE, warning=FALSE}
-suppressMessages(require(ncdf4, quietly = TRUE))
-ncfiln <- "/alphadata01/bstocker/data/greve/ep_over_p_cru_ncep.nc"
-if (!file.exists(ncfiln)) {
-  epop <- array( 1, dim=c(720,360) )
-} else {
-  nc <- nc_open( ncfiln )
-  epop <- ncvar_get( nc, varid="EP_OVER_P_CRU_NCEP" )
-}
-source("plot_map_siteoverview.R")
-suppressMessages( plot_map_siteoverview( siteinfo, 1/epop, plotfiln="fig/map_sites.pdf" ) ) # 
-# cap_siteoverview_fig <- fig_nums( "siteoverview_fig", caption=" Geographical distribution of sites selected for the bias evaluation. Sites listed in Table S1 as group 1 are in green, sites of group 2 are in black. The color of land area represents aridity, quantified as the ratio of precipitation over potential evapotranspiration  from Greve et al.[@greve14]" )
-```
-
-
-Export table
+Export table.
 ```{r}
 source("create_table_latex.R")
-create_table_latex(siteinfo_table, caption="caption", filn="table.tex")
+create_table_latex(siteinfo_table, caption="caption", filn="tab/sitestable.tex")
 ```
 
-
-```{r}
-print(paste("Number of sites for calibration: ", length(calibsites)))
-print(paste("Number of sites for evaluation: ", nrow(siteinfo_table)))
-ncalib <- siteinfo %>% dplyr::filter(calib=="Y") %>% summarise( total=sum(ndaily_gpp) )
-print(paste("Number of daily data points for calibration: ", ncalib))
-neval <- siteinfo %>% summarise( total=sum(ndaily_gpp) )
-print(paste("Number of daily data points for calibration: ", neval))
-
-## C4 vegetation
-metainfo_Tier1_sites_kgclimate_fluxnet2015 %>%
-            dplyr::filter( !(c4 %in% c(FALSE, NA)) ) %>% 
-            select(sitename) %>% 
-            unlist()
-```
-
-# References

@@ -105,7 +105,7 @@ setup_sofun <- list(
 settings_sims <- prepare_setup_sofun( 
   settings = settings_sims,
   setup = setup_sofun,
-  write_paramfils = TRUE 
+  write_paramfils = FALSE 
   )
 
 
@@ -244,14 +244,14 @@ if (file.exists(filn)){
 ## Single calibration and evaluation for BRC
 ## Using 75% of data for training and 25% for testing
 ##------------------------------------------
-set.seed(1982)
-settings_calib <- calib_sofun(
-  setup          = setup_sofun,
-  settings_calib = settings_calib,
-  settings_sims  = settings_sims,
-  settings_input = settings_input,
-  ddf_obs        = ddf_obs_calib
-)
+# set.seed(1982)
+# settings_calib <- calib_sofun(
+#   setup          = setup_sofun,
+#   settings_calib = settings_calib,
+#   settings_sims  = settings_sims,
+#   settings_input = settings_input,
+#   ddf_obs        = ddf_obs_calib
+# )
 
 filn <- "./data/mod_BRC.Rdata"
 if (file.exists(filn)){

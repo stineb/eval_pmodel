@@ -272,7 +272,7 @@ df_params <- read_csv("~/eval_pmodel/calib_results/params_opt_FULL.csv") %>%    
   bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_DT.csv") %>%      bind_cols(tibble(setup = "FULL_DT"), .)) %>% 
   bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_NT.csv") %>%      bind_cols(tibble(setup = "FULL_NTsub"), .)) %>% 
   bind_rows(read_csv("~/eval_pmodel/calib_results/params_opt_FULL_Ty.csv") %>%      bind_cols(tibble(setup = "FULL_Ty"), .)) %>% 
-  mutate_all(format, digits = 8)
+  mutate_all(format, digits = 5)
 df_params
 ```
 
@@ -979,10 +979,110 @@ ggsave("./fig/oob_grid.pdf", width = 8, height = 5)
 ```
 
 
-## Remaining figures
+## Remaining figures and tables
 
 - For Fig. 8 and 9, see `eval_pmodel_global.Rmd`.
 - For Fig. 10, see XXX MISSING RMD FILE ON GITHUB XXX
+
+### Sites table
+
+```{r siteoverview, echo=FALSE, warning=FALSE, message=FALSE}
+require(readr, quietly = TRUE)
+require(dplyr, quietly = TRUE)
+siteinfo <- readr::read_csv("siteinfo_eval.csv") %>%
+            mutate( Reference = paste0("[@", sitename ,"]") ) %>%
+            mutate( Period = paste0(as.character(year_start), "-", as.character(year_end)) ) %>%
+            dplyr::select( -year_start, -year_end )
+siteinfo %>%
+  dplyr::rename( Site=sitename, Lon.=lon, Lat.=lat, Elevation=elv, Veg.=classid, Clim.=koeppen_code, N = ndailygpp ) %>%
+  dplyr::select( Site, Lon., Lat., Period, Veg., Clim., N, Reference ) %>%
+  knitr::kable( caption = "Sites used for evaluation. Lon. is longitude, negative values indicate west longitude; Lat. is latitude, positive values indicate north latitude; Veg. is vegetation type: deciduous broadleaf forest (DBF); evergreen broadleaf forest (EBF); evergreen needleleaf forest (ENF); grassland (GRA); mixed deciduous and evergreen needleleaf forest (MF); savanna ecosystem (SAV); shrub ecosystem (SHR); wetland (WET)." )
+```
+
+## Data for Zenodo
+
+Save flat tables of daily data as CSV files.
+```{r}
+out_eval_ORG$gpp$fluxnet2015$data$ddf %>% 
+  dplyr::select(sitename, date, gpp = mod) %>% 
+  mutate(setup = "ORG") %>% 
+  bind_rows(
+    out_eval_BRC$gpp$fluxnet2015$data$ddf %>% 
+    dplyr::select(sitename, date, gpp = mod) %>% 
+    mutate(setup = "BRC")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL$gpp$fluxnet2015$data$ddf %>% 
+    dplyr::select(sitename, date, gpp = mod) %>% 
+    mutate(setup = "FULL") 
+  ) %>% 
+  write_csv(path = "./data_public/gpp_pmodel_fluxnet2015_stocker19gmd_daily.csv")
+
+out_eval_ORG$gpp$fluxnet2015$data$xdf %>% 
+  dplyr::select(sitename, date_start = inbin, gpp = mod) %>% 
+  mutate(setup = "ORG") %>% 
+  bind_rows(
+    out_eval_BRC$gpp$fluxnet2015$data$xdf %>% 
+    dplyr::select(sitename, date_start = inbin, gpp = mod) %>% 
+    mutate(setup = "BRC")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL$gpp$fluxnet2015$data$xdf %>% 
+    dplyr::select(sitename, date_start = inbin, gpp = mod) %>% 
+    mutate(setup = "FULL") 
+  ) %>% 
+  write_csv(path = "./data_public/gpp_pmodel_fluxnet2015_stocker19gmd_8daily.csv")
+
+out_eval_ORG$gpp$fluxnet2015$data$adf %>% 
+  dplyr::select(sitename, gpp = mod, date) %>% 
+  mutate(setup = "ORG", year = lubridate::year(date)) %>%
+  dplyr::select(-date) %>% 
+  bind_rows(
+    out_eval_BRC$gpp$fluxnet2015$data$adf %>% 
+    dplyr::select(sitename, gpp = mod, date) %>% 
+    mutate(setup = "BRC", year = lubridate::year(date)) %>%
+    dplyr::select(-date)
+  ) %>% 
+  bind_rows(
+    out_eval_FULL$gpp$fluxnet2015$data$adf %>% 
+    dplyr::select(sitename, gpp = mod, date) %>% 
+    mutate(setup = "FULL", year = lubridate::year(date)) %>%
+    dplyr::select(-date) 
+  ) %>% 
+  write_csv(path = "./data_public/gpp_pmodel_fluxnet2015_stocker19gmd_annual.csv")
+
+out_eval_ORG$gpp$fluxnet2015$data$meandoydf %>% 
+  dplyr::select(sitename, doy, gpp = mod_mean) %>% 
+  mutate(setup = "ORG") %>% 
+  bind_rows(
+    out_eval_BRC$gpp$fluxnet2015$data$meandoydf %>% 
+    dplyr::select(sitename, doy, gpp = mod_mean) %>% 
+    mutate(setup = "BRC")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL$gpp$fluxnet2015$data$meandoydf %>% 
+    dplyr::select(sitename, doy, gpp = mod_mean) %>% 
+    mutate(setup = "FULL") 
+  ) %>% 
+  write_csv(path = "./data_public/gpp_pmodel_fluxnet2015_stocker19gmd_meanseason.csv")
+
+out_eval_ORG$gpp$fluxnet2015$data$meandf %>% 
+  dplyr::select(sitename, gpp = mod) %>% 
+  mutate(setup = "ORG") %>% 
+  bind_rows(
+    out_eval_BRC$gpp$fluxnet2015$data$meandf %>% 
+    dplyr::select(sitename, gpp = mod) %>% 
+    mutate(setup = "BRC")
+  ) %>% 
+  bind_rows(
+    out_eval_FULL$gpp$fluxnet2015$data$meandf %>% 
+    dplyr::select(sitename, gpp = mod) %>% 
+    mutate(setup = "FULL") 
+  ) %>% 
+  write_csv(path = "./data_public/gpp_pmodel_fluxnet2015_stocker19gmd_spatial.csv")
+
+```
+
 
 
 <!-- 
@@ -1699,20 +1799,6 @@ The features of variability in GPP, for which model-observation agreement is cal
 
 ### Save flat tables
 
-Save flat tables of daily data as CSV files.
-```{r}
-write_csv(dplyr::select(out_eval_ORG$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_ORG.csv")
-write_csv(dplyr::select(out_eval_BRC$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_BRC.csv")
-write_csv(dplyr::select(out_eval_FULL$gpp$fluxnet2015$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL.csv")
-write_csv(dplyr::select(out_eval_NULL$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_NULL.csv")
-write_csv(dplyr::select(out_eval_NULLpft$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_NULLpft.csv")
-write_csv(dplyr::select(out_eval_FULL_EVI$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_EVI.csv")
-write_csv(dplyr::select(out_eval_FULL_FPARitp$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_FPARitp.csv")
-write_csv(dplyr::select(out_eval_DT$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_DT.csv")
-write_csv(dplyr::select(out_eval_NTsub$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_NTsub.csv")
-write_csv(dplyr::select(out_eval_Ty$data$ddf, sitename, date, gpp_mod), path = "data_public/ddf_FULL_Ty.csv")
-```
-
 
 ### Variability versus aggregation
 ```{r}
@@ -2120,19 +2206,6 @@ modobs_adf <- plot_modobs_annual( out_eval$data$adf, makepdf=FALSE )
 
 # Appendix
 
-## Sites table
-```{r siteoverview, echo=FALSE, warning=FALSE, message=FALSE}
-require(readr, quietly = TRUE)
-require(dplyr, quietly = TRUE)
-siteinfo <- readr::read_csv("siteinfo_eval.csv") %>%
-            mutate( Reference = paste0("[@", sitename ,"]") ) %>%
-            mutate( Period = paste0(as.character(year_start), "-", as.character(year_end)) ) %>%
-            dplyr::select( -year_start, -year_end )
-siteinfo %>%
-  dplyr::rename( Site=sitename, Lon.=lon, Lat.=lat, Elevation=elv, Veg.=classid, Clim.=koeppen_code, N = ndailygpp ) %>%
-  dplyr::select( Site, Lon., Lat., Period, Veg., Clim., N, Reference ) %>%
-  knitr::kable( caption = "Sites used for evaluation. Lon. is longitude, negative values indicate west longitude; Lat. is latitude, positive values indicate north latitude; Veg. is vegetation type: deciduous broadleaf forest (DBF); evergreen broadleaf forest (EBF); evergreen needleleaf forest (ENF); grassland (GRA); mixed deciduous and evergreen needleleaf forest (MF); savanna ecosystem (SAV); shrub ecosystem (SHR); wetland (WET)." )
-```
 
 
 
