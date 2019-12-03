@@ -1,0 +1,421 @@
+---
+title: "LUE variations"
+author: "Beni Stocker"
+date: "5/10/2019"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    number_sections: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+library(tidyr)
+library(rbeni)
+library(RColorBrewer)
+```
+
+Evaluate light use efficiency.
+
+## Daily data
+
+Gather data and create one nice data frame with daily data.
+```{r}
+if (!exists("out_eval_ORG"))  load("./calib_results/out_eval_ORG.Rdata")
+if (!exists("out_eval_FULL")) load("./calib_results/out_eval_FULL.Rdata")
+load("~/eval_pmodel/data/obs_eval_NT_WITHFORCING.Rdata")
+mc <- 12.0107  # molecular mass of carbon
+
+## As done for publication:
+ddf <- out_eval_FULL$gpp$fluxnet2015$data$ddf %>% 
+  left_join(dplyr::select(obs_eval_NT$ddf, date, sitename, fapar, ppfd_fluxnet2015, temp_day_fluxnet2015, vpd_day_fluxnet2015, prec_fluxnet2015, patm_fluxnet2015), by = c("sitename", "date")) %>% 
+  mutate(setup_pmodel = "FULL") %>% 
+  
+  ## Calculate APAR (using interpolated PPFD and fAPAR for very few points)
+  mutate(ppfd_fluxnet2015 = myapprox(ppfd_fluxnet2015),
+         fapar            = myapprox(fapar)) %>%
+  mutate(apar = ppfd_fluxnet2015 * fapar) %>% 
+
+  ## Remove very low APAR 
+  dplyr::filter(apar > 0.1) %>% 
+  rename(gpp_obs = obs, gpp_mod = mod) %>% 
+  
+  ## Calculate LUE (division by molecular mass to get LUE in units of mol/mol!)
+  mutate(lue_obs = gpp_obs / (mc * apar),
+         lue_mod = gpp_mod / (mc * apar) ) %>% 
+  
+  ## Remove outliers (outside 1.5 times the inter-quartile-range)
+  mutate(lue_obs = remove_outliers(lue_obs),
+         lue_mod = remove_outliers(lue_mod))
+```
+
+Look at distribution of values and comparison to obs-derived LUE with daily data.
+```{r}
+ddf %>% 
+  filter(setup_pmodel == "FULL") %>% 
+  drop_na(gpp_obs, gpp_mod) %>% 
+  mutate(gpp_mod = gpp_mod * 1e3, gpp_obs = gpp_obs * 1e3) %>% 
+  gather(modobs, gpp, c(gpp_obs, gpp_mod)) %>% 
+  ggplot(aes(x = modobs, y=gpp, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("gpp_obs", "gpp_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Source", y=expression(paste("gpp (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+ddf %>% 
+  filter(setup_pmodel == "FULL") %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  gather(modobs, lue, c(lue_obs, lue_mod)) %>% 
+  ggplot(aes(x = modobs, y=lue, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("lue_obs", "lue_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("LUE (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+ddf %>% 
+  filter(setup_pmodel == "FULL") %>% 
+  ggplot() +
+  geom_histogram(
+    aes(x = apar, y = ..density..), 
+    color = "black", alpha = 0.3, binwidth = 0.5, 
+    position="identity")
+
+gg <- ddf %>% analyse_modobs2("lue_obs", "lue_mod", type = "heat")
+gg$gg
+```
+
+Ok. They are on the same order.
+
+Compare coefficient of variations in LUE model.
+```{r}
+cv <- function(vec, ...){
+  sd(vec, ...) / mean(vec, ...)
+}
+df_cv <- ddf %>% 
+  summarise(gpp_obs = cv(gpp_obs, na.rm=TRUE),
+            ppfd_fluxnet2015 = cv(ppfd_fluxnet2015, na.rm=TRUE),
+            fapar = cv(fapar, na.rm=TRUE),
+            lue_obs = cv(lue_obs, na.rm=TRUE))
+print(df_cv)
+```
+
+
+## Monthly
+
+Aggregate to monthly values. 
+
+Sum GPP and APAR and get LUE from sums ==> works much better? But is dominated by large values.
+```{r}
+mdf_nice <- ddf %>%
+  mutate(moy = month(date), year = year(date)) %>%
+  group_by(sitename, year, moy) %>%
+  summarise( apar = sum(apar)) %>%
+  dplyr::filter(apar > 30) %>%
+  right_join(out_eval_FULL$gpp$fluxnet2015$data$mdf, by=c("sitename", "year")) %>%
+  rename(gpp_obs = obs, gpp_mod = mod) %>%
+  mutate(lue_obs = gpp_obs / (mc * apar),
+         lue_mod = gpp_mod / (mc * apar) ) %>%
+  ungroup()  %>%
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid),
+            by="sitename")
+
+mdf_nice %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  gather(modobs, lue, c(lue_obs, lue_mod)) %>% 
+  ggplot(aes(x = modobs, y=lue, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("lue_obs", "lue_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("LUE (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+out_mdf <- mdf_nice %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs", type = "heat")
+
+gg_modobs_mdf_nice <- out_mdf$gg +
+  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
+       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
+
+gg_modobs_mdf_nice
+```
+
+Mean across daily values ==> works worse? This is now in the paper.
+```{r}
+mdf <- ddf %>%
+  mutate(moy = month(date), year = year(date)) %>% 
+  group_by(sitename, year, moy) %>% 
+  summarise(lue_obs = mean(lue_obs, na.rm=TRUE),
+            lue_mod = mean(lue_mod, na.rm=TRUE)) %>% 
+  mutate(lue_obs = ifelse(is.nan(lue_obs), NA, lue_obs)) %>% 
+  mutate(lue_mod = ifelse(is.nan(lue_mod), NA, lue_mod)) %>% 
+  ungroup()
+
+mdf %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  gather(modobs, lue, c(lue_obs, lue_mod)) %>% 
+  ggplot(aes(x = modobs, y=lue, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("lue_obs", "lue_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("LUE (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+out_mdf <- mdf %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs", type = "heat")
+
+gg_modobs_mdf <- out_mdf$gg +
+  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
+       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
+print(gg_modobs_mdf)
+```
+
+
+
+## Annual
+
+Sum GPP and APAR and get LUE from sums ==> works much better? But is dominated by large values as for monthly
+```{r}
+adf_nice <- ddf %>%
+  mutate(year = year(date)) %>%
+  group_by(sitename, year) %>%
+  summarise( apar = sum(apar)) %>%
+  # dplyr::filter(apar > 300) %>%
+  right_join(out_eval_FULL$gpp$fluxnet2015$data$adf, by=c("sitename", "year")) %>%
+  rename(gpp_obs = obs, gpp_mod = mod) %>%
+  mutate(lue_obs = gpp_obs / (mc * apar),
+         lue_mod = gpp_mod / (mc * apar) ) %>%
+  ungroup()  %>%
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid),
+            by="sitename")
+
+adf_nice %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  gather(modobs, lue, c(lue_obs, lue_mod)) %>% 
+  ggplot(aes(x = modobs, y=lue, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("lue_obs", "lue_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("LUE (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+out_adf <- adf_nice %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs")
+
+gg_modobs_adf <- out_adf$gg +
+  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
+       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
+
+gg_modobs_adf
+```
+
+Mean across daily values ==> works worse? This is now in the paper.
+```{r}
+adf <- ddf %>%
+  mutate(year = year(date)) %>% 
+  group_by(sitename, year) %>% 
+  summarise(lue_obs = mean(lue_obs, na.rm=TRUE),
+            lue_mod = mean(lue_mod, na.rm=TRUE)) %>% 
+  mutate(lue_obs = ifelse(is.nan(lue_obs), NA, lue_obs)) %>% 
+  mutate(lue_mod = ifelse(is.nan(lue_mod), NA, lue_mod)) %>% 
+  ungroup()
+
+adf %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  gather(modobs, lue, c(lue_obs, lue_mod)) %>% 
+  ggplot(aes(x = modobs, y=lue, fill=modobs)) +
+  geom_violin() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("lue_obs", "lue_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("LUE (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+
+out_adf <- adf %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs")
+
+gg_modobs_adf <- out_adf$gg +
+  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
+       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
+print(gg_modobs_adf)
+```
+
+Some sites have really outlier years. These are the ones where modelled LUE is very low and observed very high.
+```{r}
+adf <- adf %>% 
+  mutate(res = lue_obs - lue_mod)
+
+adf %>% 
+  filter(res > quantile(res, 0.99, na.rm = TRUE))
+
+adf_nice <- adf_nice %>% 
+  mutate(res = lue_obs - lue_mod)
+
+adf_nice %>% 
+  filter(res > quantile(res, 0.99, na.rm = TRUE))
+```
+
+Let's remove them for good and re-calculate correlation of annual values.
+```{r}
+adf <- adf %>% 
+  filter(res < quantile(res, 0.99, na.rm = TRUE))
+
+out_adf <- adf %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs")
+
+gg_modobs_adf <- out_adf$gg +
+  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
+       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
+gg_modobs_adf
+
+adf_nice <- adf_nice %>% 
+  filter(res < quantile(res, 0.99, na.rm = TRUE))
+
+
+out_adf <- adf_nice %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs")
+
+gg_modobs_adf <- out_adf$gg +
+  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
+       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
+gg_modobs_adf
+```
+
+
+## By site (spatial) and veg type
+
+Now do this with the version that performed better above (`adf_nice`).
+```{r}
+## mean by site
+df <- adf_nice %>% 
+  group_by(sitename) %>% 
+  summarise(lue_obs = mean(lue_obs, na.rm = TRUE),
+            lue_mod = mean(lue_mod, na.rm = TRUE)) %>% 
+  left_join(rsofun::metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% dplyr::select(sitename, classid), 
+            by="sitename") %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3)
+
+## mean by vegetation type
+vegdf <- df %>% 
+  ungroup() %>% 
+  group_by(classid) %>% 
+  summarise(lue_obs = mean(lue_obs, na.rm = TRUE),
+            lue_mod = mean(lue_mod, na.rm = TRUE))
+
+##################
+# FULL setup
+##################
+out_df <- df %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab="Modelled LUE", ylab="Observed LUE") # , filnam = "fig/modobs_lue_bysite.pdf"
+
+rsq_lab <- format( out_df$df_metrics %>% dplyr::filter(.metric=="rsq") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 2 )
+rmse_lab <- format( out_df$df_metrics %>% dplyr::filter(.metric=="rmse") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+bias_lab <- format( out_df$df_metrics %>% dplyr::filter(.metric=="bias") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+slope_lab <- format( out_df$df_metrics %>% dplyr::filter(.metric=="slope") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+n_lab <- format( out_df$df_metrics %>% dplyr::filter(.metric=="n") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+
+out_vegdf <- vegdf %>% 
+  rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab="Modelled LUE", ylab="Observed LUE")
+
+rsq_lab2 <- format( out_vegdf$df_metrics %>% dplyr::filter(.metric=="rsq") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 2 )
+rmse_lab2 <- format( out_vegdf$df_metrics %>% dplyr::filter(.metric=="rmse") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+bias_lab2 <- format( out_vegdf$df_metrics %>% dplyr::filter(.metric=="bias") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+slope_lab2 <- format( out_vegdf$df_metrics %>% dplyr::filter(.metric=="slope") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+n_lab2 <- format( out_vegdf$df_metrics %>% dplyr::filter(.metric=="n") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+
+## scatterplot
+gg_lue_spatial <- ggplot() +
+  geom_point(data=df, aes(x=lue_mod, y=lue_obs, color=classid), size=1.5) +
+  geom_point(data=vegdf, aes(x=lue_mod, y=lue_obs, color=classid), size=5) +
+  geom_smooth(data=df, aes(x=lue_mod, y=lue_obs), method = "lm", color="red", size=0.5) +
+  geom_abline(intercept=0, slope=1, linetype="dotted") +
+  theme_classic() +
+  scale_color_brewer(palette="Paired") +
+  labs(
+        subtitle = bquote(
+          # atop(
+            # "Sites:" ~
+            italic(R)^2 == .(rsq_lab) ~ (.(rsq_lab2)) ~~~
+            # RMSE == .(rmse_lab) ~~~
+            # bias == .(bias_lab) ~~~
+            slope == .(slope_lab) ~ (.(slope_lab2)) ~~~
+            italic(N) == .(n_lab) ~ (.(n_lab2))
+          # , 
+          # "Vegetation types:" ~
+          # italic(R)^2 == .(rsq_lab2) ~~~
+          # RMSE == .(rmse_lab2) ~~~
+          # bias == .(bias_lab2) ~~~
+          # slope == .(slope_lab2) ~~~
+          # italic(N) == .(n_lab2) 
+        # )
+         ),
+        x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")), 
+        y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")),
+        color="")
+print(gg_lue_spatial)
+
+# xxxxxx take this
+# ggsave("fig/modobs_lue_bysite_classid.pdf", width=5, height=5)
+
+
+## boxplot 
+gg <- df %>% 
+  drop_na(lue_obs, lue_mod) %>% 
+  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
+  gather(modobs, lue, c(lue_obs, lue_mod)) %>% 
+  ggplot(aes(x=classid, y=lue, fill=modobs)) +
+  geom_boxplot() +
+  theme_classic() +
+  scale_fill_brewer(palette="Paired", 
+                    breaks=c("lue_obs", "lue_mod"), 
+                    labels=c("Observed", "Modelled")) +
+  labs(fill="", x="Vegetation type", y=expression(paste("LUE (mmol mol" ^{-1}, ")"))) + 
+  theme(legend.position="top")
+print(gg)
+# ggsave("fig/boxplot_lue_bysite_classid.pdf", width=5, height=5)
+```
+
+
+
+## Publication figure
+
+```{r}
+library(cowplot)
+plot_grid(gg_modobs_mdf, gg_lue_spatial, labels = "auto", label_size = 12, rel_widths = c(1, 1.1))
+ggsave("fig/modobs_lue.pdf", width=10, height=5)  
+```
