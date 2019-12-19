@@ -212,9 +212,9 @@ LUE is a constant and is calibrated, given GPP data (here based on the nighttime
 **Important:**  Make sure that the fAPAR files are splined MODIS FPAR before collecting respective data with `get_obs_eval()`.
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-filn <- "~/eval_pmodel/data/obs_eval_NT_WITHFORCING.Rdata"
+filn <- "~/eval_pmodel/data/obs_eval_NT_WITHFORCING_FPARspl.Rdata"
 settings_eval$benchmark <- list(gpp = "fluxnet2015_NT")
-overwrite <- FALSE
+overwrite <- TRUE
 
 if (file.exists(filn) && !overwrite){
   load(filn)
@@ -1083,7 +1083,37 @@ out_eval_ORG$gpp$fluxnet2015$data$meandf %>%
 
 ```
 
+## Data for sharing in group
 
+```{r}
+if (!exists("out_eval_FULL")) load("./calib_results/out_eval_FULL.Rdata")
+if (!exists("out_eval_ORG"))  load("./calib_results/out_eval_ORG.Rdata")
+if (!exists("out_eval_BRC"))  load("./calib_results/out_eval_BRC.Rdata")
+load("~/eval_pmodel/data/obs_eval_NT_WITHFORCING_FPARitpl.Rdata")
+obs_eval_itpl <- obs_eval_NT
+
+load("~/eval_pmodel/data/obs_eval_NT_WITHFORCING_FPARspl.Rdata")
+obs_eval_spl <- obs_eval_NT
+
+ddf <- out_eval_FULL$gpp$fluxnet2015$data$ddf %>% 
+  rename(gpp_mod_FULL = mod, gpp_obs = obs) %>% 
+  left_join(dplyr::select(out_eval_ORG$gpp$fluxnet2015$data$ddf, sitename, date, gpp_mod_ORG = mod)) %>% 
+  left_join(dplyr::select(out_eval_BRC$gpp$fluxnet2015$data$ddf, sitename, date, gpp_mod_BRC = mod)) %>% 
+  left_join(dplyr::select(obs_eval_itpl$ddf, date, sitename, fapar_itpl = fapar, ppfd_fluxnet2015, temp_day_fluxnet2015, vpd_day_fluxnet2015, prec_fluxnet2015, patm_fluxnet2015), by = c("sitename", "date")) %>% 
+  left_join(dplyr::select(obs_eval_spl$ddf, date, sitename, fapar_spl = fapar), by = c("sitename", "date"))
+
+ddf %>% 
+  write_csv(path = "./data_share/ddf_fluxnet2015_pmodel_with_forcings_stocker19gmd.csv")
+
+# test
+ddf %>% 
+  filter(sitename == "CH-Lae") %>% 
+  ggplot() +
+  geom_line(aes(date, fapar_itpl)) +
+  geom_line(aes(date, fapar_spl), color = "red")
+```
+
+xxxx
 
 <!-- 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

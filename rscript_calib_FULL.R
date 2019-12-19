@@ -177,16 +177,16 @@ settings_eval <- list(
 ##------------------------------------------
 ## Prepare input files
 ##------------------------------------------
-# inputdata <- prepare_input_sofun(
-#   settings_input        = settings_input,
-#   settings_sims         = settings_sims,
-#   return_data           = FALSE,
-#   overwrite_csv_climate = FALSE,
-#   overwrite_climate     = FALSE,
-#   overwrite_csv_fapar   = TRUE,
-#   overwrite_fapar       = TRUE,
-#   verbose               = TRUE
-#   )
+inputdata <- prepare_input_sofun(
+  settings_input        = settings_input,
+  settings_sims         = settings_sims,
+  return_data           = FALSE,
+  overwrite_csv_climate = FALSE,
+  overwrite_climate     = FALSE,
+  overwrite_csv_fapar   = TRUE,
+  overwrite_fapar       = TRUE,
+  verbose               = TRUE
+  )
 
 
 ##------------------------------------------

@@ -28,7 +28,7 @@ Gather data and create one nice data frame with daily data.
 ```{r}
 if (!exists("out_eval_ORG"))  load("./calib_results/out_eval_ORG.Rdata")
 if (!exists("out_eval_FULL")) load("./calib_results/out_eval_FULL.Rdata")
-load("~/eval_pmodel/data/obs_eval_NT_WITHFORCING.Rdata")
+load("~/eval_pmodel/data/obs_eval_NT_WITHFORCING_FPARspl.Rdata")
 mc <- 12.0107  # molecular mass of carbon
 
 ## As done for publication:
@@ -285,35 +285,35 @@ adf_nice %>%
   filter(res > quantile(res, 0.99, na.rm = TRUE))
 ```
 
-Let's remove them for good and re-calculate correlation of annual values.
-```{r}
-adf <- adf %>% 
-  filter(res < quantile(res, 0.99, na.rm = TRUE))
+<!-- Let's remove them for good and re-calculate correlation of annual values. -->
+<!-- ```{r} -->
+<!-- adf <- adf %>% -->
+<!--   filter(res < quantile(res, 0.99, na.rm = TRUE)) -->
 
-out_adf <- adf %>% 
-  drop_na(lue_obs, lue_mod) %>% 
-  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
-  rbeni::analyse_modobs2("lue_mod", "lue_obs")
+<!-- out_adf <- adf %>% -->
+<!--   drop_na(lue_obs, lue_mod) %>% -->
+<!--   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% -->
+<!--   rbeni::analyse_modobs2("lue_mod", "lue_obs") -->
 
-gg_modobs_adf <- out_adf$gg +
-  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
-       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
-gg_modobs_adf
+<!-- gg_modobs_adf <- out_adf$gg + -->
+<!--   labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")), -->
+<!--        y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")"))) -->
+<!-- gg_modobs_adf -->
 
-adf_nice <- adf_nice %>% 
-  filter(res < quantile(res, 0.99, na.rm = TRUE))
+<!-- adf_nice <- adf_nice %>% -->
+<!--   filter(res < quantile(res, 0.99, na.rm = TRUE)) -->
 
 
-out_adf <- adf_nice %>% 
-  drop_na(lue_obs, lue_mod) %>% 
-  mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 
-  rbeni::analyse_modobs2("lue_mod", "lue_obs")
+<!-- out_adf <- adf_nice %>% -->
+<!--   drop_na(lue_obs, lue_mod) %>% -->
+<!--   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% -->
+<!--   rbeni::analyse_modobs2("lue_mod", "lue_obs") -->
 
-gg_modobs_adf <- out_adf$gg +
-  labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")),
-       y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")))
-gg_modobs_adf
-```
+<!-- gg_modobs_adf <- out_adf$gg + -->
+<!--   labs(x = expression(paste("Modelled LUE (mmol mol" ^{-1}, ")")), -->
+<!--        y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")"))) -->
+<!-- gg_modobs_adf -->
+<!-- ``` -->
 
 
 ## By site (spatial) and veg type

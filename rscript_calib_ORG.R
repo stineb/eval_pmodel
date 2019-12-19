@@ -199,11 +199,6 @@ filn <- "~/eval_pmodel/data/ddf_obs_calib_NT.Rdata"
 if (file.exists(filn)){
   load(filn)
 } else {
-  ddf_obs_calib <- get_obs_calib( 
-    settings_calib = settings_calib, 
-    settings_sims, 
-    settings_input 
-  )
   save(ddf_obs_calib, file = filn)  
 }
 
