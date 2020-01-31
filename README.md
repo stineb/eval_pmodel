@@ -15,16 +15,4 @@
 	
 4. Create sites table with `plot_table_siteselection.Rmd`
 
-	
-## Global simulations	
 
-!----------------                          !----------!----------                                                                                    !
-! Simulation name                          ! Setup    ! fAPAR forcing file                                                                           !
-!----------------                          !----------!----------                                                                                    !
-! global_ORG_MODIS-C006_MOD15A2_2000_2016  ! ORG      ! MODIS-C006_MOD15A2__LAI_FPAR__LPDAAC__GLOBAL_0.5degree__UHAM-ICDC__2000_2018__MON__fv0.02.nc !        
-! global_BRC_MODIS-C006_MOD15A2_2000_2016  ! BRC      ! MODIS-C006_MOD15A2__LAI_FPAR__LPDAAC__GLOBAL_0.5degree__UHAM-ICDC__2000_2018__MON__fv0.02.nc !        
-! global_FULL_MODIS-C006_MOD15A2_2000_2016 ! FULL     ! MODIS-C006_MOD15A2__LAI_FPAR__LPDAAC__GLOBAL_0.5degree__UHAM-ICDC__2000_2018__MON__fv0.02.nc !         
-! global_ORG_fAPAR3g_v2_2000_2016          ! ORG      ! fAPAR3g_v2_1982_2016_FILLED.nc                                                               !
-! global_BRC_fAPAR3g_v2_2000_2016          ! BRC      ! fAPAR3g_v2_1982_2016_FILLED.nc                                                               !
-! global_FULL_fAPAR3g_v2_2000_2016         ! FULL     ! fAPAR3g_v2_1982_2016_FILLED.nc                                                               !
-!----------------                          !----------!----------                                                                                    !     
