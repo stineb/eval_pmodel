@@ -31,7 +31,7 @@ source("extract_metric_oob.R")
 source("extract_params_oob.R")
 source("create_table_latex.R")
 source("getrow_statstable.R")
-load_dependencies_rsofun()
+# load_dependencies_rsofun()
 systr <- "''"    # for Mac
 # systr <- ""      # for Linux
 ```
@@ -140,6 +140,20 @@ cowplot::plot_grid(gg$ggmap, gg$gglegend, ncol = 2, rel_widths = c(1, 0.2))
 ggsave("./fig/map_sites.pdf", width = 7, height = 4)
 
 # cap_siteoverview_fig <- fig_nums( "siteoverview_fig", caption=" Geographical distribution of sites selected for the bias evaluation. Sites listed in Table S1 as group 1 are in green, sites of group 2 are in black. The color of land area represents aridity, quantified as the ratio of potential evapotranspiration over precipitation from xxx" )
+
+## simple map
+gg <- plot_map3(
+  1/epop, 
+  breaks = c(0,0.2,0.3,0.4,0.5,0.7,1,1.3,1.6,2,2.5,3,Inf), 
+  colorscale = c( "grey70" ), 
+  combine = FALSE,
+  legend_title = "" 
+  )
+
+gg$ggmap <- gg$ggmap +
+  geom_point( data = df_evalsites, aes(x = lon, y = lat), col='black', pch=21, bg='tomato', size=2 ) +
+  geom_point( data = df_calibsites, aes(x = lon, y = lat), col='black', pch=21, bg='tomato', size=2 )
+
 ```
 
 Creating an overview table for the Appendix.
@@ -665,7 +679,7 @@ plot_modobs_spatial_annual( out_eval_FULL, xlim = c(0,4000), ylim = c(0,4000), m
 plot_modobs_spatial_annual( out_eval_FULL_EVI, xlim = c(0,4000), ylim = c(0,4000), makepdf = TRUE, label = "EVI" )
 ```
 
-### Flux decomposition method (Fig. 7)
+## Flux decomposition method (Fig. 7)
 
 Look at seasonality for three zones with alternative greenness data.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.width=7.6, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE}
@@ -727,43 +741,46 @@ gg_Ty <- out_eval_Ty$gpp$fluxnet2015$data$meandoydf_byclim %>%
     out_eval_NTsub$gpp$fluxnet2015$data$xdf,
     "gpp_mod",
     "gpp_obs",
-    type = "heat"
+    type = "heat",
+    shortsubtitle = TRUE
     )
   modobs_xdf_DT <- analyse_modobs2(
     out_eval_DT$gpp$fluxnet2015$data$xdf,
     "gpp_mod",
     "gpp_obs",
-    type = "heat"
+    type = "heat",
+    shortsubtitle = TRUE
     )  
   modobs_xdf_Ty <- analyse_modobs2(
     out_eval_Ty$gpp$fluxnet2015$data$xdf,
     "gpp_mod",
     "gpp_obs",
-    type = "heat"
+    type = "heat",
+    shortsubtitle = TRUE
     )  
   
   ## print plot
   gg_modobs_NT <- modobs_xdf_NT$gg +
-    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
-         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+    labs(x = expression( paste("simulated GPP (g C m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (g C m"^-2, "d"^-1, ")" ) ),
          title = "NT") +
     xlim(0, 20) +
     ylim(0, 20)
   gg_modobs_DT <- modobs_xdf_DT$gg +
-    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
-         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+    labs(x = expression( paste("simulated GPP (g C m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (g C m"^-2, "d"^-1, ")" ) ),
          title = "DT") +
     xlim(0, 20) +
     ylim(0, 20)
   gg_modobs_Ty <- modobs_xdf_Ty$gg +
-    labs(x = expression( paste("simulated GPP (gC m"^-2, "d"^-1, ")" ) ), 
-         y = expression( paste("observed GPP (gC m"^-2, "d"^-1, ")" ) ),
+    labs(x = expression( paste("simulated GPP (g C m"^-2, "d"^-1, ")" ) ), 
+         y = expression( paste("observed GPP (g C m"^-2, "d"^-1, ")" ) ),
          title = "Ty") +
     xlim(0, 20) +
     ylim(0, 20)
   
 ## arrange and save
-cowplot::plot_grid(gg_NT, gg_DT, gg_Ty, gg_modobs_NT, gg_modobs_DT, gg_modobs_Ty, nrow = 2, labels = "auto", label_size = 12, rel_heights = c(1, 1.2))
+cowplot::plot_grid(gg_NT, gg_DT, gg_Ty, gg_modobs_NT, gg_modobs_DT, gg_modobs_Ty, nrow = 2, labels = c("(a)", "(b)", "(c)", "(d)", "(e)", "(f)"), label_size = 12, rel_heights = c(1, 1.2))
 filn <- paste0( dir_figs, "meandoy_modobs_gpp_data.pdf" )
 ggsave(filn, width=10, height=7)  
 ```
@@ -989,10 +1006,16 @@ ggsave("./fig/oob_grid.pdf", width = 8, height = 5)
 ```{r siteoverview, echo=FALSE, warning=FALSE, message=FALSE}
 require(readr, quietly = TRUE)
 require(dplyr, quietly = TRUE)
+
+metainfo_Tier1_sites_kgclimate_fluxnet2015 %>% 
+  filter(sitename %in% settings_eval$sitenames)
+
+
 siteinfo <- readr::read_csv("siteinfo_eval.csv") %>%
             mutate( Reference = paste0("[@", sitename ,"]") ) %>%
             mutate( Period = paste0(as.character(year_start), "-", as.character(year_end)) ) %>%
             dplyr::select( -year_start, -year_end )
+
 siteinfo %>%
   dplyr::rename( Site=sitename, Lon.=lon, Lat.=lat, Elevation=elv, Veg.=classid, Clim.=koeppen_code, N = ndailygpp ) %>%
   dplyr::select( Site, Lon., Lat., Period, Veg., Clim., N, Reference ) %>%
@@ -1094,6 +1117,9 @@ obs_eval_itpl <- obs_eval_NT
 
 load("~/eval_pmodel/data/obs_eval_NT_WITHFORCING_FPARspl.Rdata")
 obs_eval_spl <- obs_eval_NT
+
+load("~/eval_pmodel/calib_results/out_eval_FULL_EVI.Rdata")
+xxxxx
 
 ddf <- out_eval_FULL$gpp$fluxnet2015$data$ddf %>% 
   rename(gpp_mod_FULL = mod, gpp_obs = obs) %>% 

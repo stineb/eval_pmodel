@@ -220,6 +220,7 @@ adf_FULL <- ddf_FULL %>%
          lue_mod = remove_outliers(lue_mod))
 out_adf_FULL <- adf_FULL %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab = expression(paste("Modelled LUE (mol mol" ^{-1}, ")")), ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")")))
 print(out_adf_FULL$gg)
+
 ## calculate annual LUE as annual total gpp devided by annual toal light ==> bad
 adf_ORG <- ddf_ORG %>%
   mutate(year = year(date)) %>%
@@ -237,6 +238,7 @@ adf_ORG <- ddf_ORG %>%
          lue_mod = remove_outliers(lue_mod))
 out_adf_ORG <- adf_ORG %>% rbeni::analyse_modobs2("lue_mod", "lue_obs", xlab = expression(paste("Modelled LUE (mol mol" ^{-1}, ")")), ylab = expression(paste("Observed LUE (mol mol" ^{-1}, ")")))
 print(out_adf_ORG$gg)
+
 # ## FULL: calculate annual LUE mean across daily LUE  ==> better? 
 # adf_FULL <- ddf_FULL %>%   
 #   mutate(year = year(date)) %>% 
@@ -279,6 +281,7 @@ df_FULL <- adf_FULL %>%
             by="sitename") %>% 
   drop_na(lue_obs, lue_mod) %>% 
   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3)
+
 df_ORG <- adf_ORG %>% 
   group_by(sitename) %>% 
   summarise(lue_obs = mean(lue_obs, na.rm = TRUE),
@@ -287,12 +290,14 @@ df_ORG <- adf_ORG %>%
             by="sitename") %>% 
   drop_na(lue_obs, lue_mod) %>% 
   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3)
+
 ## mean by vegetation type
 vegdf_FULL <- df_FULL %>% 
   ungroup() %>% 
   group_by(classid) %>% 
   summarise(lue_obs = mean(lue_obs, na.rm = TRUE),
             lue_mod = mean(lue_mod, na.rm = TRUE))
+
 vegdf_ORG <- df_ORG %>% 
   ungroup() %>% 
   group_by(classid) %>% 
@@ -315,6 +320,7 @@ rmse_lab2 <- format( out_vegdf_FULL$df_metrics %>% dplyr::filter(.metric=="rmse"
 bias_lab2 <- format( out_vegdf_FULL$df_metrics %>% dplyr::filter(.metric=="bias") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
 slope_lab2 <- format( out_vegdf_FULL$df_metrics %>% dplyr::filter(.metric=="slope") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
 n_lab2 <- format( out_vegdf_FULL$df_metrics %>% dplyr::filter(.metric=="n") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+
 ## scatterplot
 gg_lue_spatial_FULL <- ggplot() +
   geom_point(data=df_FULL, aes(x=lue_mod, y=lue_obs, color=classid), size=1.5) +
@@ -366,6 +372,7 @@ rmse_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="rmse")
 bias_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="bias") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
 slope_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="slope") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
 n_lab2 <- format( out_vegdf_ORG$df_metrics %>% dplyr::filter(.metric=="n") %>% dplyr::select(.estimate) %>% unlist() %>% unname(), digits = 3 )
+
 gg_lue_spatial_ORG <- ggplot() +
   geom_point(data=df_ORG, aes(x=lue_mod, y=lue_obs, color=classid), size=1.5) +
   geom_point(data=vegdf_ORG, aes(x=lue_mod, y=lue_obs, color=classid), size=5) +
@@ -395,8 +402,10 @@ gg_lue_spatial_ORG <- ggplot() +
         y = expression(paste("Observed LUE (mmol mol" ^{-1}, ")")),
         color="")
 print(gg_lue_spatial_ORG)
+
 # xxxxxx take this
 ggsave("fig/modobs_lue_bysite_classid_ORG.pdf", width=5, height=5)
+
 ## boxplot 
 gg_FULL <- df_FULL %>% 
   drop_na(lue_obs, lue_mod) %>% 
@@ -412,6 +421,7 @@ gg_FULL <- df_FULL %>%
   theme(legend.position="top")
 print(gg_FULL)
 ggsave("fig/boxplot_lue_bysite_classid_FULL.pdf", width=5, height=5)
+
 gg_ORG <- df_ORG %>% 
   drop_na(lue_obs, lue_mod) %>% 
   mutate(lue_mod = lue_mod * 1e3, lue_obs = lue_obs * 1e3) %>% 

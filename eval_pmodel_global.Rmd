@@ -35,20 +35,20 @@ load_dependencies_rsofun()
 
 ## Define file paths
 ```{r}
-fil_pmodel_org_modis  <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
-fil_pmodel_brc_modis  <- "~/sofun_outputs/output_nc_global_sofun/global_BRC_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
-fil_pmodel_full_modis <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
+fil_pmodel_org_modis  <- "~/data/stocker20gmd_outputs/global/global_ORG_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
+fil_pmodel_brc_modis  <- "~/data/stocker20gmd_outputs/global/global_BRC_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
+fil_pmodel_full_modis <- "~/data/stocker20gmd_outputs/global/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp.nc"
 
-fil_pmodel_org_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_ORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
-fil_pmodel_brc_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_BRC_fAPAR3g_v2_2000_2016.a.gpp.nc"
-fil_pmodel_full_3g <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_fAPAR3g_v2_2000_2016.a.gpp.nc"
+fil_pmodel_org_3g  <- "~/data/stocker20gmd_outputs/global/global_ORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
+fil_pmodel_brc_3g  <- "~/data/stocker20gmd_outputs/global/global_BRC_fAPAR3g_v2_2000_2016.a.gpp.nc"
+fil_pmodel_full_3g <- "~/data/stocker20gmd_outputs/global/global_FULL_fAPAR3g_v2_2000_2016.a.gpp.nc"
 
-fil_pmodel_full_modis_meanann <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp_MEANANN.nc"
-fil_pmodel_full_3g_meanann    <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_fAPAR3g_v2_2000_2016.a.gpp_MEANANN.nc"
+fil_pmodel_full_modis_meanann <- "~/data/stocker20gmd_outputs/global/global_FULL_MODIS-C006_MOD15A2_2000_2016.a.gpp_MEANANN.nc"
+fil_pmodel_full_3g_meanann    <- "~/data/stocker20gmd_outputs/global/global_FULL_fAPAR3g_v2_2000_2016.a.gpp_MEANANN.nc"
 
-fil_pmodel_simpleorg_3g  <- "~/sofun_outputs/output_nc_global_sofun/global_simpleORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
+fil_pmodel_simpleorg_3g  <- "~/data/stocker20gmd_outputs/global/global_simpleORG_fAPAR3g_v2_2000_2016.a.gpp.nc"
 
-landfil <- "~/sofun_outputs/output_nc_global_sofun/global_FULL_MODIS-C006_MOD15A2_2000_2016.fland.nc"
+landfil <- "~/data/stocker20gmd_outputs/global/global_FULL_MODIS-C006_MOD15A2_2000_2016.fland.nc"
 
 fil_pmodel_stocker19 <- "~/data/stocker19natgeo_outputs/s0_fapar3g_v2_global.a.gpp.nc"
 
@@ -111,6 +111,8 @@ nc_gpp_mean$vars$gpp <- abind(
 ## mask out gridcells based on P-model grid
 nc_gpp_mean$vars$gpp[which(is.na(nc_pmodel_full_3g_meanann$vars$gpp))] <- NA
 
+## save to file
+save(nc_gpp_mean, file = "~/eval_pmodel/data/nc_gpp_mean.Rdata")
 
 ## combine and take mean across SiF data
 nc_sif_mean <- nc_mte
@@ -124,7 +126,16 @@ nc_sif_mean$vars$gpp <- abind(
 ## mask out gridcells based on P-model grid
 nc_sif_mean$vars$sif[which(is.na(nc_pmodel_full_3g_meanann$vars$gpp))] <- NA
 
-plot_map3(nc_gpp_mean)
+plot_map3(
+  nc_gpp_mean, 
+  colorscale = viridis, 
+  nbin = 15, 
+  # plot_title = "GPP: Mean of other models", 
+  plot_subtitle = expression( paste("g C m"^-2, " yr"^-1 ) ), 
+  breaks = c(seq(0, 3000, 200), Inf)
+  )
+ggsave("~/teaching/gcb/photosynthesis.pdf", width = 8, height = 4)
+
 plot_map3(nc_sif_mean)
 ```
 

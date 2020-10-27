@@ -1,0 +1,50 @@
+---
+title: "Annual mean GPP at FLUXNET evaluation"
+author: "Beni"
+date: "10/27/2020"
+output: html_document
+---
+
+This is from the git repository *eval_pmodel* available [here](https://github.com/stineb/eval_pmodel).
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rsofun)
+library(rbeni)
+library(cowplot)
+
+load( "~/eval_pmodel/calib_results/out_eval_FULL.Rdata")
+```
+
+## Evaluation
+
+This is the part of the evaluation from Stocker et al., 2020 GMD where annual mean GPP from P-model site-scale simulations are evaluated against observations from FLUXNET2015 sites.
+
+The relevant data is in the list as follows:
+```{r}
+print(out_eval_FULL$gpp$fluxnet2015$data$meandf)
+```
+
+Site meta information, including geographical position, are available from the ingestr package (object `siteinfo_fluxnet2015`).
+```{r}
+library(ingestr)
+siteinfo_fluxnet2015
+```
+
+
+## Visualisation
+
+Using the data as shown above run this to reproduce Fig. XXX in Stocker et al., 2020 GMD.
+```{r cars}
+source("plot_modobs_spatial_annual2.R")
+
+gg_FULL <- plot_modobs_spatial_annual2(out_eval_FULL)
+
+gg_FULL +
+  labs(title = "FULL", 
+       y = expression( paste("observed GPP (gC m"^-2, "yr"^-1, ")" ) ), 
+       x = expression( paste("simulated GPP (gC m"^-2, "yr"^-1, ")" ) )
+      ) +
+  xlim(0, 4000) + ylim(0, 4000)
+```
+
