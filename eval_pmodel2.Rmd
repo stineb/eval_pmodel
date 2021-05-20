@@ -913,6 +913,25 @@ if (!exists("out_oob_FULL")){
   load("./calib_results/out_oob_FULL.Rdata") 
 }
 
+## for mlflx dslab course
+df_metrics_oob <- out_oob_FULL %>% 
+  purrr::map("gpp") %>% 
+  purrr::map("fluxnet2015") %>% 
+  purrr::map("metrics") %>% 
+  purrr::map("daily_pooled") %>% 
+  bind_rows(.id = "site")
+
+write_csv(df_metrics_oob, file = "data/df_metrics_oob_stocker20gmd_fig2.csv")
+
+## for mlflx dslab course
+df_metrics_oob %>% 
+  ggplot(aes(x = rsq, y = ..count..)) +
+  geom_histogram(color = "black", alpha = 0.3, binwidth = 0.05, position="identity") +
+  theme_classic() +
+  labs(x = bquote(italic(R)^2), y = "Count", title = "Out-of-sample evaluation of daily GPP",
+       subtitle = "Stocker et al., 2020 GMD")
+ggsave("fig/rsq_oob_stocker20gmd_fig2.pdf", width = 4, height = 4)
+  
 ## extract metrics from individual left-out calibrations/evaluations
 df_metrics_oob_FULL <- extract_metric_oob(out_oob_FULL, metric = "rsq") %>% 
   left_join(extract_metric_oob(out_oob_FULL, metric = "rmse"), by = "sitename")
@@ -974,6 +993,7 @@ gg_rsq <- df_metrics_oob_FULL %>%
   labs(x = bquote(italic(R)^2), y = "Count")
   # scale_linetype_manual(name = "", values = c(all = "solid", mean = "dashed"), labels = c(all = "All sites simultaneously", mean = "Mean across out-of-bag evaluations")) +
   # theme(legend.position="top")
+
 
 ## RMSE
 gg_rmse <- df_metrics_oob_FULL %>% 

@@ -7,13 +7,15 @@ output: html_document
 
 This is from the git repository *eval_pmodel* available [here](https://github.com/stineb/eval_pmodel).
 
+Data loaded here (`~/eval_pmodel/calib_results/out_eval_FULL.Rdata`) is available on Euler at `~/data/stocker20gmd_outputs/rdata_objects/`.
+
 ```{r setup, include=FALSE}
 library(tidyverse)
 library(rsofun)
 library(rbeni)
 library(cowplot)
 
-load( "~/eval_pmodel/calib_results/out_eval_FULL.Rdata")
+load("~/eval_pmodel/calib_results/out_eval_FULL.Rdata")
 ```
 
 ## Evaluation
